@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proje A - Yapı Bedeli Yönetim Paneli</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1800px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 20px;
+            background: none;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6c757d;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab-button:hover {
+            background-color: #e9ecef;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            background-color: white;
+            border-bottom-color: #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 40px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 22px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        /* Form Stilleri */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        label .required {
+            color: #dc3545;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s;
+            background-color: white;
+            color: #333;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background-color: white;
+        }
+
+        input:disabled, select:disabled, textarea:disabled {
+            background-color: #e9ecef;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        input:read-only {
+            background-color: #f8f9fa;
+        }
+
+        /* Number input okları gizle (spinner) */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        /* Button Styles */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #218838;
+        }
+
+        .btn-warning {
+            background-color: #ffc107;
+            color: #333;
+        }
+
+        .btn-warning:hover {
+            background-color: #e0a800;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #c82333;
+        }
+
+        .btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #5a6268;
+        }
+
+        /* Table Styles */
+        .table-container {
+            overflow-x: auto;
+            margin-top: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        th, td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #dee2e6;
+        }
+
+        th {
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 13px;
+            letter-spacing: 0.5px;
+        }
+
+        tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 20px;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Class Grid Styles */
+        .class-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .class-card {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+
+        .class-card h3 {
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+
+        .group-input-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .group-label {
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .delete-icon {
+            cursor: pointer;
+            color: #dc3545;
+            font-size: 18px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>⚙️ Yönetici Paneli - Yönetim Sistemi</h1>
+        </header>
+
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button type="button" class="tab-button active" onclick="showTab('birimFiyat', event)">💰 Birim Fiyat Yönetimi</button>
+            <button type="button" class="tab-button" onclick="showTab('raportor', event)">👨‍💼 Raportör Yönetimi</button>
+            <button type="button" class="tab-button" onclick="showTab('kurum', event)">🏢 Kurum Yönetimi</button>
+            <button type="button" class="tab-button" onclick="showTab('yipranmaPayi', event)">📉 Yıpranma Payı Yönetimi</button>
+            <button type="button" class="tab-button" onclick="showTab('eksikImalat', event)">🔧 Eksik İmalat Yönetimi</button>
+        </div>
+
+        <!-- Birim Fiyat Tab -->
+        <div id="birimFiyat" class="tab-content active">
+            <h2>Birim Fiyat Yönetimi</h2>
+            
+            <div class="alert alert-info">
+                💡 Aynı yılda birden fazla birim fiyat tebliği varsa dönem numarası ile ayırabilirsiniz (örn: 2022/1, 2022/2).
+                Tek tebliği olan yıllarda sadece yıl görüntülenir.
+            </div>
+
+            <!-- Yıl/Dönem Ekleme Formu -->
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Yıl <span class="required">*</span></label>
+                    <input type="number" id="yil" min="2000" max="2100" placeholder="Örn: 2024" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Dönem <span class="required">*</span></label>
+                    <input type="number" id="donem" min="1" max="10" value="1" placeholder="Örn: 1" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Resmi Gazete Tarihi</label>
+                    <input type="date" id="resmiGazeteTarih" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Resmi Gazete Sayılı</label>
+                    <input type="text" id="resmiGazeteSayili" placeholder="Örn: 32768" autocomplete="off">
+                </div>
+                <div class="form-group" style="grid-column: 1 / -1;">
+                    <label>Tebliğ Adı</label>
+                    <input type="text" id="tebligAdi" placeholder="Örn: 2024 Yılı Yapı Yaklaşık Birim Maliyetleri" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button type="button" class="btn btn-primary" onclick="yeniDonemEkle()">➕ Yeni Dönem Ekle</button>
+                <button type="button" class="btn btn-secondary" onclick="donemleriListele()">🔄 Listeyi Yenile</button>
+            </div>
+
+            <!-- Dönem Listesi -->
+            <div class="table-container" id="donemListesiContainer" style="margin-top: 30px;">
+                <table id="donemListesi">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Yıl/Dönem</th>
+                            <th>R.G. Tarihi</th>
+                            <th>R.G. Sayılı</th>
+                            <th>Tebliğ Adı</th>
+                            <th>Durum</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Dinamik içerik -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Grup/Fiyat Düzenleme Bölümü -->
+            <div id="grupDuzenlemeBolumu" style="display: none; margin-top: 40px;">
+                <h2>Sınıf ve Grup Fiyatları - <span id="seciliDonemBaslik"></span></h2>
+                
+                <div class="alert alert-info">
+                    💡 Her sınıf için gerekli grupları (A, B, C, D, E) ekleyin ve birim fiyatlarını girin.
+                </div>
+
+                <div class="class-grid" id="sinifGrupContainer">
+                    <!-- Dinamik olarak 5 sınıf için gruplar -->
+                </div>
+
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-success" onclick="gruplariKaydet()">💾 Tüm Grupları Kaydet</button>
+                    <button type="button" class="btn btn-secondary" onclick="grupDuzenlemeyiKapat()">❌ İptal</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Raportör Yönetimi Tab -->
+        <div id="raportor" class="tab-content">
+            <h2>Raportör Yönetimi</h2>
+            
+            <div class="alert alert-info">
+                👨‍💼 Burada raportörleri ekleyebilir, düzenleyebilir ve silebilirsiniz. Ana formda bu raportörler listeden seçilebilir.
+            </div>
+
+            <!-- Raportör Ekleme Formu -->
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Ad <span class="required">*</span></label>
+                    <input type="text" id="raportorAdi" placeholder="Raportör adı" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Soyad <span class="required">*</span></label>
+                    <input type="text" id="raportorSoyadi" placeholder="Raportör soyadı" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Ünvan <span class="required">*</span></label>
+                    <select id="raportorUnvani" required>
+                        <option value="">Ünvan Seçiniz...</option>
+                        <optgroup label="Mühendislik Ünvanları">
+                            <option value="Mimar">Mimar</option>
+                            <option value="İnşaat Mühendisi">İnşaat Mühendisi</option>
+                            <option value="Harita Mühendisi">Harita Mühendisi</option>
+                            <option value="Şehir Plancısı">Şehir Plancısı</option>
+                            <option value="Jeolog">Jeolog</option>
+                            <option value="Peyzaj Mimarı">Peyzaj Mimarı</option>
+                            <option value="Makine Mühendisi">Makine Mühendisi</option>
+                            <option value="Elektrik Mühendisi">Elektrik Mühendisi</option>
+                            <option value="Ziraat Mühendisi">Ziraat Mühendisi</option>
+                            <option value="Orman Mühendisi">Orman Mühendisi</option>
+                        </optgroup>
+                        <optgroup label="İdari Ünvanlar">
+                            <option value="İl Müdürü">İl Müdürü</option>
+                            <option value="İl Müdür Yardımcısı">İl Müdür Yardımcısı</option>
+                            <option value="Şube Müdürü">Şube Müdürü</option>
+                            <option value="Müdür Yardımcısı">Müdür Yardımcısı</option>
+                            <option value="Başkan">Başkan</option>
+                            <option value="Başkan Yardımcısı">Başkan Yardımcısı</option>
+                            <option value="Daire Başkanı">Daire Başkanı</option>
+                            <option value="Şef">Şef</option>
+                            <option value="Uzman">Uzman</option>
+                            <option value="Kontrolör">Kontrolör</option>
+                        </optgroup>
+                    </select>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button type="button" class="btn btn-primary" onclick="yeniRaportorEkle()">➕ Raportör Ekle</button>
+                <button type="button" class="btn btn-secondary" onclick="raportorleriListele()">🔄 Listeyi Yenile</button>
+                <button type="button" class="btn btn-warning" onclick="raportorFormuTemizle()">🗑️ Formu Temizle</button>
+            </div>
+
+            <!-- Raportör Listesi -->
+            <div class="table-container" id="raportorListesiContainer" style="margin-top: 30px;">
+                <table id="raportorListesi">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Ad Soyad</th>
+                            <th>Ünvan</th>
+                            <th>Durum</th>
+                            <th>Oluşturma Tarihi</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Dinamik içerik -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Raportör Düzenleme Modal Alanı -->
+            <div id="raportorDuzenlemeBolumu" style="display: none; margin-top: 40px; padding: 20px; border: 2px solid #667eea; border-radius: 8px; background-color: #f8f9fa;">
+                <h3>Raportör Düzenle - <span id="duzenlenecekRaportorBaslik"></span></h3>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Ad <span class="required">*</span></label>
+                        <input type="text" id="duzenleRaportorAdi" placeholder="Raportör adı" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Soyad <span class="required">*</span></label>
+                        <input type="text" id="duzenleRaportorSoyadi" placeholder="Raportör soyadı" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Ünvan <span class="required">*</span></label>
+                        <select id="duzenleRaportorUnvani" required>
+                            <option value="">Ünvan Seçiniz...</option>
+                            <optgroup label="Mühendislik Ünvanları">
+                                <option value="Mimar">Mimar</option>
+                                <option value="İnşaat Mühendisi">İnşaat Mühendisi</option>
+                                <option value="Harita Mühendisi">Harita Mühendisi</option>
+                                <option value="Şehir Plancısı">Şehir Plancısı</option>
+                                <option value="Jeolog">Jeolog</option>
+                                <option value="Peyzaj Mimarı">Peyzaj Mimarı</option>
+                                <option value="Makine Mühendisi">Makine Mühendisi</option>
+                                <option value="Elektrik Mühendisi">Elektrik Mühendisi</option>
+                                <option value="Ziraat Mühendisi">Ziraat Mühendisi</option>
+                                <option value="Orman Mühendisi">Orman Mühendisi</option>
+                            </optgroup>
+                            <optgroup label="İdari Ünvanlar">
+                                <option value="İl Müdürü">İl Müdürü</option>
+                                <option value="İl Müdür Yardımcısı">İl Müdür Yardımcısı</option>
+                                <option value="Şube Müdürü">Şube Müdürü</option>
+                                <option value="Müdür Yardımcısı">Müdür Yardımcısı</option>
+                                <option value="Başkan">Başkan</option>
+                                <option value="Başkan Yardımcısı">Başkan Yardımcısı</option>
+                                <option value="Daire Başkanı">Daire Başkanı</option>
+                                <option value="Şef">Şef</option>
+                                <option value="Uzman">Uzman</option>
+                                <option value="Kontrolör">Kontrolör</option>
+                            </optgroup>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-success" onclick="raportorGuncelle()">💾 Güncelle</button>
+                    <button type="button" class="btn btn-secondary" onclick="raportorDuzenlemeyiKapat()">❌ İptal</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Kurum Yönetimi Tab -->
+        <div id="kurum" class="tab-content">
+            <h2>Kurum Yönetimi</h2>
+            
+            <div class="alert alert-info">
+                🏢 Burada kurumları ve alt kurumlarını ekleyebilir, düzenleyebilir ve silebilirsiniz. Ana formda bu kurumlar "Kurum (Alt Kurum)" formatında görüntülenir.
+            </div>
+
+            <!-- Kurum Ekleme Formu -->
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Kurum Adı <span class="required">*</span></label>
+                    <input type="text" id="kurumAdi" placeholder="Örn: Samsun Büyükşehir Belediyesi" required autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Alt Kurum</label>
+                    <input type="text" id="altKurum" placeholder="Örn: İmar ve Şehircilik Dairesi (İsteğe bağlı)" autocomplete="off">
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button type="button" class="btn btn-primary" onclick="yeniKurumEkle()">➕ Kurum Ekle</button>
+                <button type="button" class="btn btn-secondary" onclick="kurumlariListele()">🔄 Listeyi Yenile</button>
+                <button type="button" class="btn btn-warning" onclick="kurumFormuTemizle()">🗑️ Formu Temizle</button>
+            </div>
+
+            <!-- Kurum Listesi -->
+            <div class="table-container" id="kurumListesiContainer" style="margin-top: 30px;">
+                <table id="kurumListesi">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Kurum Adı</th>
+                            <th>Alt Kurum</th>
+                            <th>Tam Görünüm</th>
+                            <th>Durum</th>
+                            <th>Oluşturma Tarihi</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Dinamik içerik -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Kurum Düzenleme Modal Alanı -->
+            <div id="kurumDuzenlemeBolumu" style="display: none; margin-top: 40px; padding: 20px; border: 2px solid #667eea; border-radius: 8px; background-color: #f8f9fa;">
+                <h3>Kurum Düzenle - <span id="duzenlenecekKurumBaslik"></span></h3>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Kurum Adı <span class="required">*</span></label>
+                        <input type="text" id="duzenleKurumAdi" placeholder="Kurum adı" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Alt Kurum</label>
+                        <input type="text" id="duzenleAltKurum" placeholder="Alt kurum (İsteğe bağlı)">
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="button" class="btn btn-success" onclick="kurumGuncelle()">💾 Güncelle</button>
+                    <button type="button" class="btn btn-secondary" onclick="kurumDuzenlemeyiKapat()">❌ İptal</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Yıpranma Payı Tab -->
+        <div id="yipranmaPayi" class="tab-content">
+            <h2>Yıpranma Payı Yönetimi</h2>
+            
+            <div class="alert alert-info">
+                🚧 Bu bölüm şu anda yapım aşamasındadır. Yıpranma payı tabloları burada yönetilebilecek.
+            </div>
+
+            <!-- TODO: Yıpranma payı formları buraya eklenecek -->
+        </div>
+
+        <!-- Eksik İmalat Tab -->
+        <div id="eksikImalat" class="tab-content">
+            <h2>Eksik İmalat Yönetimi</h2>
+            
+            <div class="alert alert-info">
+                🚧 Bu bölüm şu anda yapım aşamasındadır. Eksik imalat oranları burada yönetilebilecek.
+            </div>
+
+            <!-- TODO: Eksik imalat formları buraya eklenecek -->
+        </div>
+    </div>
+
+    <script src="../scripts/admin.js"></script>
+</body>
+</html>

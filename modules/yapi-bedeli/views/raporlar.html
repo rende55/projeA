@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proje A - Yapı Bedeli Raporları</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4; /* Daha açık arka plan rengi */
+            margin: 0;
+            padding: 0;
+        }
+        
+        
+        .container {
+            max-width: 900px;
+            margin: 20px auto;
+            padding: 20px;
+            background-color: #ffffff; /* Form arka plan rengi */
+            border-radius: 8px; /* Kenar yuvarlama */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Daha belirgin gölge efekti */
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333; /* Başlık rengi */
+        }
+        
+        h2 {
+            color: #555; /* Alt başlık rengi */
+            margin-bottom: 15px; /* Alt başlık altındaki boşluk */
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse; /* Kenarları birleştir */
+        }
+        
+        th, td {
+            padding: 12px; /* Daha fazla iç boşluk */
+            text-align: left;
+            border: 1px solid #ddd; /* Kenar rengi */
+        }
+        
+        th {
+            background-color: #007bff; /* Başlık arka plan rengi */
+            color: white; /* Başlık yazı rengi */
+            font-weight: bold;
+        }
+        
+        tr:hover {
+            background-color: #f1f1f1; /* Satır hover rengi */
+        }
+        
+        .btn {
+            padding: 8px 12px; /* Buton boyutu */
+            margin-right: 5px; /* Butonlar arasında boşluk */
+            border: none;
+            border-radius: 4px; /* Kenar yuvarlama */
+            cursor: pointer; /* İmleci göster */
+            transition: background-color 0.3s; /* Geçiş efekti */
+            font-size: 14px; /* Buton yazı boyutu */
+            display: inline-block; /* Düğmeleri yan yana yerleştir */
+        }
+        
+        .sil-button {
+            background-color: #dc3545; /* Kırmızı */
+            color: white;
+        }
+        
+        .sil-button:hover {
+            background-color: #c82333; /* Kırmızı hover */
+        }
+        
+        .revize-button {
+            background-color: #ffc107; /* Sarı */
+            color: black;
+        }
+        
+        .revize-button:hover {
+            background-color: #e0a800; /* Sarı hover */
+        }
+        
+        .hesapla-button {
+            background-color: #007bff; /* Mavi */
+            color: white;
+        }
+        
+        .hesapla-button:hover {
+            background-color: #0069d9; /* Mavi hover */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Kayıtlı Raporlar</h1>
+        </header>
+        <main>
+            <h2>Rapor Listesi</h2>
+            <table id="raporlarTable">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Rapor Tarihi</th>
+                        <th>İlçe</th>
+                        <th>Mahalle</th>
+                        <th>Ada</th>
+                        <th>Parsel</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Raporlar buraya eklenecek -->
+                </tbody>
+            </table>
+            <div class="form-group">
+                <button id="closeButton" class="btn">Sayfayı Kapat</button>
+            </div>
+        </main>
+    </div>
+    <script src="../scripts/raporlar.js"></script>
+</body>
+</html>

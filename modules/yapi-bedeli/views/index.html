@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proje A - Yapı Bedeli Modülü</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .main-container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            min-height: 80vh;
+        }
+
+        .form-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .button-panel {
+            width: 280px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-left: 2px solid #dee2e6;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: sticky;
+            top: 0;
+            height: fit-content;
+            max-height: 100vh;
+            overflow-y: auto;
+        }
+
+        .button-panel h3 {
+            margin: 0 0 20px 0;
+            color: #495057;
+            font-size: 18px;
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        /* Tab Navigation */
+        .tab-navigation {
+            display: flex;
+            background-color: #f8f9fa;
+            border-bottom: 2px solid #dee2e6;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 18px 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s;
+            position: relative;
+        }
+
+        .tab-button:hover {
+            background-color: #e9ecef;
+            color: #495057;
+        }
+
+        .tab-button.active {
+            color: #667eea;
+            background-color: white;
+        }
+
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .tab-button.completed {
+            color: #28a745;
+        }
+
+        .tab-button.completed::before {
+            content: '✓ ';
+            font-weight: bold;
+        }
+
+        /* Tab Content */
+        .tab-content {
+            display: none;
+            padding: 40px;
+            animation: fadeIn 0.3s;
+            min-height: 500px;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 25px;
+            font-size: 22px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-row.full-width {
+            grid-template-columns: 1fr;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #495057;
+            font-size: 14px;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e9ecef;
+            border-radius: 6px;
+            font-size: 15px;
+            transition: all 0.3s;
+            background-color: #fff;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        input:read-only {
+            background-color: #f8f9fa;
+            color: #6c757d;
+            cursor: not-allowed;
+        }
+
+        /* Number input okları gizle (spinner) */
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        input[type="number"] {
+            -moz-appearance: textfield;
+        }
+
+        /* Navigation Buttons */
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 30px;
+            border-top: 2px solid #e9ecef;
+            gap: 15px;
+        }
+
+        .navigation-buttons button {
+            padding: 14px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            flex: 1;
+            max-width: 200px;
+        }
+
+        .btn-prev {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: white;
+        }
+
+        .btn-prev:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        .btn-next {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-next:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-next:disabled, .btn-prev:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Action Buttons - Button Panel */
+        .action-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .action-buttons button {
+            padding: 16px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            color: white;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .hesapla-button {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        }
+
+        .hesapla-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(23, 162, 184, 0.3);
+        }
+
+        .save-button {
+            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+        }
+
+        .save-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+
+        .clear-button {
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+            color: #212529;
+        }
+
+        .clear-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+        }
+
+        .show-reports-button {
+            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        }
+
+        .show-reports-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+        }
+
+        .show-admin-button {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        }
+
+        .show-admin-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-container {
+                flex-direction: column;
+            }
+            
+            .button-panel {
+                width: 100%;
+                position: static;
+                border-left: none;
+                border-top: 2px solid #dee2e6;
+                flex-direction: row;
+                flex-wrap: wrap;
+                justify-content: center;
+                padding: 20px;
+            }
+            
+            .action-buttons {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .action-buttons button {
+                flex: 1;
+                min-width: 200px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+            
+            .navigation-buttons {
+                flex-direction: column;
+            }
+            
+            .navigation-buttons button {
+                max-width: 100%;
+            }
+            
+            .button-panel {
+                padding: 15px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+            }
+            
+            .action-buttons button {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="form-container">
+            <header>
+                <h1>📊 Kıymet Takdir Raporu</h1>
+            </header>
+
+            <!-- Tab Navigation -->
+            <div class="tab-navigation">
+                <button type="button" class="tab-button active" data-tab="genel">📋 Genel Bilgiler</button>
+                <button type="button" class="tab-button" data-tab="arsa">🏘️ Arsa Bilgileri</button>
+                <button type="button" class="tab-button" data-tab="yapi">🏗️ Yapı Bilgileri</button>
+            </div>
+
+            <main>
+                <form id="form">
+                <!-- TAB 1: Genel Bilgiler -->
+                <div class="tab-content active" id="tab-genel">
+                    <h2>Genel Bilgiler</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="raporTarihi">Rapor Tarihi *</label>
+                            <input type="date" id="raporTarihi" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="raporNo">Rapor No *</label>
+                            <input type="text" id="raporNo" placeholder="Rapor numarasını girin" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="resmiYaziTarihi">Resmi Yazı Tarihi *</label>
+                            <input type="date" id="resmiYaziTarihi" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="resmiYaziSayisi">Resmi Yazı Sayısı *</label>
+                            <input type="text" id="resmiYaziSayisi" placeholder="Örn: E.12345" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ilgiliKurum">İlgili Kurum *</label>
+                            <select id="ilgiliKurum" required>
+                                <option value="">Kurum Seçiniz...</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="hesapYili">Hesap Dönemi *</label>
+                            <select id="hesapYili" required>
+                                <option value="">Seçiniz...</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="raportorSayisi">Raportör Sayısı *</label>
+                            <input type="number" id="raportorSayisi" min="1" max="5" value="1" required>
+                        </div>
+                        <div class="form-group">
+                            <!-- Boş alan -->
+                        </div>
+                    </div>
+
+                    <!-- Raportör Bilgileri (Dinamik) -->
+                    <div id="raportorContainer">
+                        <!-- Raportör alanları buraya eklenecek -->
+                    </div>
+
+                    <div class="navigation-buttons">
+                        <button type="button" class="btn-prev" disabled>◀ Geri</button>
+                        <button type="button" class="btn-next">İleri ▶</button>
+                    </div>
+                </div>
+
+                <!-- TAB 2: Arsa Bilgileri -->
+                <div class="tab-content" id="tab-arsa">
+                    <h2>Arsa Bilgileri</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ilce">İlçe *</label>
+                            <select id="ilce" required>
+                                <option value="">İlçe Seçiniz</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mahalle">Mahalle *</label>
+                            <input type="text" id="mahalle" placeholder="Mahalle adı" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="ada">Ada *</label>
+                            <input type="text" id="ada" placeholder="Ada numarası" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="parsel">Parsel *</label>
+                            <input type="text" id="parsel" placeholder="Parsel numarası" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="yuzolcumu">Yüzölçümü (m²) *</label>
+                            <input type="text" id="yuzolcumu" placeholder="Örn: 150.50" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="malik">Malik İsmi *</label>
+                            <input type="text" id="malik" placeholder="Malik adı soyadı" required>
+                        </div>
+                    </div>
+
+                    <div class="navigation-buttons">
+                        <button type="button" class="btn-prev">◀ Geri</button>
+                        <button type="button" class="btn-next">İleri ▶</button>
+                    </div>
+                </div>
+
+                <!-- TAB 3: Yapı Bilgileri -->
+                <div class="tab-content" id="tab-yapi">
+                    <h2>Yapı Bilgileri ve Hesaplama</h2>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="yapiNo">Yapı No *</label>
+                            <input type="text" id="yapiNo" placeholder="Yapı numarası" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="yapiAdi">Yapı Adı *</label>
+                            <input type="text" id="yapiAdi" placeholder="Yapı adı" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="yapiMaliki">Yapı Maliki *</label>
+                            <input type="text" id="yapiMaliki" placeholder="Malik adı soyadı" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="yapiYasi">Yapı Yaşı *</label>
+                            <input type="number" id="yapiYasi" placeholder="Yıl olarak" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="yapiSinifi">Yapı Sınıfı *</label>
+                            <select id="yapiSinifi" required>
+                                <option value="">Seçiniz...</option>
+                                <option value="1">1. Sınıf</option>
+                                <option value="2">2. Sınıf</option>
+                                <option value="3">3. Sınıf</option>
+                                <option value="4">4. Sınıf</option>
+                                <option value="5">5. Sınıf</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="yapiGrubu">Yapı Grubu *</label>
+                            <select id="yapiGrubu" required disabled>
+                                <option value="">Önce yapı sınıfı seçin...</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="yapimTeknigi">Yapım Tekniği *</label>
+                            <select id="yapimTeknigi" required>
+                                <option value="">Seçiniz...</option>
+                                <option value="Betonarme Karkas">Betonarme Karkas</option>
+                                <option value="Yığma Kagir">Yığma Kagir</option>
+                                <option value="Çelik Konstrüksiyon">Çelik Konstrüksiyon</option>
+                                <option value="Ahşap">Ahşap</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="birimFiyat">Birim Fiyat (TL/m²) *</label>
+                            <input type="number" step="0.01" id="birimFiyat" placeholder="Otomatik doldurulacak" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="yapiAlani">Yapı Alanı (m²) *</label>
+                            <input type="number" step="0.01" id="yapiAlani" placeholder="Örn: 120.50" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="yipranmaPay">Yıpranma Payı (%)</label>
+                            <input type="number" step="0.01" id="yipranmaPay" placeholder="Otomatik hesaplanacak" readonly>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="eksikImalatOrani">Eksik İmalat Oranı (%) *</label>
+                            <input type="number" step="0.01" id="eksikImalatOrani" placeholder="Örn: 10" required>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; margin-top: 30px; cursor: pointer;">
+                                <input type="checkbox" id="asgariLevazimHesapla" checked style="width: auto; margin-right: 10px;">
+                                <span>Asgari Levazım Bedeli Hesapla</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Fotoğraf Ekleme Alanı -->
+                    <div class="form-row">
+                        <div class="form-group" style="grid-column: 1 / -1;">
+                            <label for="fotograflar">📷 Rapora Eklenecek Fotoğraflar</label>
+                            <input type="file" id="fotograflar" accept="image/*" multiple>
+                            <small style="display: block; margin-top: 5px; color: #666;">
+                                Seçilen fotoğraflar raporun son sayfasına eklenecektir.
+                            </small>
+                            <div id="fotografOnizleme" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;">
+                                <!-- Önizleme alanı -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="yapiBedeliHesaplanan">Hesaplanan Yapı Bedeli (TL)</label>
+                            <input type="text" id="yapiBedeliHesaplanan" placeholder="Hesapla butonuna tıklayın" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label for="levazimBedeliHesaplanan">Asgari Levazım Bedeli (TL)</label>
+                            <input type="text" id="levazimBedeliHesaplanan" placeholder="Hesapla butonuna tıklayın" readonly>
+                        </div>
+                    </div>
+
+                    <div class="navigation-buttons">
+                        <button type="button" class="btn-prev">◀ Geri</button>
+                        <button type="button" class="btn-next" disabled>İleri ▶</button>
+                    </div>
+                </div>
+            </form>
+        </main>
+        </div>
+
+        <!-- Button Panel -->
+        <div class="button-panel">
+            <h3>🚀 İşlemler</h3>
+            <div class="action-buttons">
+                <button type="button" class="hesapla-button">🧮 Hesapla</button>
+                <button type="submit" class="save-button">💾 Raporu Kaydet</button>
+                <button type="button" class="clear-button">🗑️ Formu Temizle</button>
+                <button type="button" class="show-reports-button">📁 Kayıtlı Raporlar</button>
+                <button type="button" class="show-admin-button">⚙️ Yönetici Paneli</button>
+            </div>
+        </div>
+    </div>
+    <script src="../scripts/renderer.js"></script>
+</body>
+</html>

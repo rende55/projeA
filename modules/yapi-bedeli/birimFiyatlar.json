@@ -1,0 +1,42 @@
+{
+  "tebligler": [
+    {
+      "id": 1,
+      "yil": 2024,
+      "resmiGazeteTarih": "2024-01-15",
+      "resmiGazeteSayili": "32768",
+      "tebligAdi": "2024 Yılı Yapı Yaklaşık Birim Maliyetleri",
+      "fiyatlar": {
+        "1. Sınıf": 22500,
+        "2. Sınıf": 20000,
+        "3. Sınıf": 17500,
+        "4. Sınıf": 15000,
+        "5. Sınıf": 12500,
+        "6. Sınıf": 10000,
+        "7. Sınıf": 7500
+      }
+    },
+    {
+      "id": 2,
+      "yil": 2023,
+      "resmiGazeteTarih": "2023-01-12",
+      "resmiGazeteSayili": "32068",
+      "tebligAdi": "2023 Yılı Yapı Yaklaşık Birim Maliyetleri",
+      "fiyatlar": {
+        "1. Sınıf": 18500,
+        "2. Sınıf": 16500,
+        "3. Sınıf": 14500,
+        "4. Sınıf": 12500,
+        "5. Sınıf": 10500,
+        "6. Sınıf": 8500,
+        "7. Sınıf": 6500
+      }
+    }
+  ],
+  "varsayilan": {
+    "yil": 2024,
+    "id": 1
+  },
+  "aciklama": "Resmi Gazete'de yayınlanan yapı birim fiyatları. Yeni yıl eklemek için 'tebligler' dizisine yeni obje ekleyin."
+}
+

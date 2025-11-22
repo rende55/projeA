@@ -1,0 +1,81 @@
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #FEF9E1;
+    color: #6D2323;
+}
+
+.container {
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+header {
+    text-align: center;
+    padding: 20px 0;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #A31D1D;
+}
+
+h1 {
+    font-size: 2em;
+    color: #A31D1D;
+}
+
+.form-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px; /* Form satırları arasındaki boşluğu azalt */
+}
+
+.form-group {
+    flex-basis: 0;
+    flex-grow: 1;
+    margin-bottom: 5px; /* Form grubu altındaki boşluğu azalt */
+    /*margin-right: 10px; /* Sağ tarafta boşluk bırak */
+    /*margin-bottom: 10px; /* Alt tarafta boşluk bırak */
+}
+
+.form-group:last-child {
+    margin-right: 0; /* Son elemanın sağında boşluk olmasın */
+}
+
+.form-group input, .form-group select {
+    width: 90%; /* Genişliği %90 yap */
+    padding: 8px; /* Padding'i azalt */
+    font-size: 14px; /* Yazı boyutunu küçült */
+    border: 1px solid #ddd; /* Kenarlık rengi */
+    border-radius: 4px; /* Kenarları yuvarla */
+    
+}
+
+button {
+    background-color: #A31D1D;
+    color: white;
+    padding: 12px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 20px;
+}
+
+button:hover {
+    background-color: #6D2323;
+}
+
+select {
+    width: 90%; /* Seçim kutusunu tam genişlikte yap */
+    padding: 8px; /* İçerik için padding ekle */
+    font-size: 16px; /* Yazı boyutunu artır */
+    border: 1px solid #ddd; /* Kenarlık rengi */
+    border-radius: 4px; /* Kenarları yuvarla */
+    background-color: white; /* Arka plan rengi */
+    color: #333; /* Yazı rengi */
+}
+
+select option {
+    padding: 10px; /* Seçenekler için padding ekle */
+}

@@ -1,0 +1,7 @@
+node_modules/
+raporlar_cikti/
+*.db
+.DS_Store
+Thumbs.db
+
+

@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Proje A - Ana Sayfa</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 40px 20px;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 60px;
+            animation: fadeInDown 0.8s ease;
+        }
+
+        .header h1 {
+            font-size: 48px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .header p {
+            font-size: 20px;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        /* Modül Grid */
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 30px;
+            margin-bottom: 40px;
+        }
+
+        /* Modül Kartı */
+        .module-card {
+            background: white;
+            border-radius: 20px;
+            padding: 35px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+            cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.8s ease;
+            animation-fill-mode: both;
+        }
+
+        .module-card:nth-child(1) { animation-delay: 0.1s; }
+        .module-card:nth-child(2) { animation-delay: 0.2s; }
+        .module-card:nth-child(3) { animation-delay: 0.3s; }
+        .module-card:nth-child(4) { animation-delay: 0.4s; }
+
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.4s ease;
+        }
+
+        .module-card:hover::before {
+            transform: scaleX(1);
+        }
+
+        .module-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        }
+
+        .module-card.active:hover {
+            transform: translateY(-10px) scale(1.02);
+        }
+
+        .module-card.disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .module-card.disabled:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        /* Modül İkonu */
+        .module-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            display: block;
+            transition: transform 0.3s ease;
+        }
+
+        .module-card:hover .module-icon {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+        /* Modül Başlık */
+        .module-title {
+            font-size: 26px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 12px;
+        }
+
+        /* Modül Açıklama */
+        .module-description {
+            font-size: 15px;
+            color: #718096;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        /* Modül Durum Badge */
+        .module-status {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 15px;
+        }
+
+        .status-active {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+        }
+
+        .status-coming-soon {
+            background: linear-gradient(135deg, #ed8936 0%, #dd6b20 100%);
+            color: white;
+        }
+
+        /* Modül Özellikler */
+        .module-features {
+            list-style: none;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+        }
+
+        .module-features li {
+            font-size: 14px;
+            color: #4a5568;
+            margin-bottom: 8px;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .module-features li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #48bb78;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        /* Coming Soon Overlay */
+        .coming-soon-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(237, 137, 54, 0.95);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 16px;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .module-card.disabled:hover .coming-soon-overlay {
+            opacity: 1;
+        }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            color: white;
+            margin-top: 60px;
+            opacity: 0.9;
+            animation: fadeIn 1s ease 0.5s;
+            animation-fill-mode: both;
+        }
+
+        .footer p {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .version {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        /* Animasyonlar */
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 36px;
+            }
+
+            .header p {
+                font-size: 16px;
+            }
+
+            .modules-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .module-card {
+                padding: 25px;
+            }
+        }
+
+        /* Hover efekti için gradient background */
+        .module-card::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05) 0%, rgba(118, 75, 162, 0.05) 100%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+        }
+
+        .module-card:hover::after {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🚀 Proje A</h1>
+            <p>Proje Geliştirme Platformu</p>
+        </div>
+
+        <!-- Modüller Grid -->
+        <div class="modules-grid">
+            <!-- Yapı Bedeli Modülü -->
+            <div class="module-card active" data-module="yapi-bedeli">
+                <span class="module-icon">🏗️</span>
+                <span class="module-status status-active">✓ Aktif</span>
+                <h2 class="module-title">Yapı Bedeli</h2>
+                <p class="module-description">
+                    Yapı değerleme raporlarının Resmi Gazete tebliğlerine uygun şekilde oluşturulması ve yönetimi
+                </p>
+                <ul class="module-features">
+                    <li>3 adımlı form sistemi</li>
+                    <li>Otomatik hesaplama</li>
+                    <li>Birim fiyat yönetimi</li>
+                    <li>Word rapor çıktısı</li>
+                </ul>
+            </div>
+
+            <!-- Proje Bedeli Modülü -->
+            <div class="module-card disabled" data-module="proje-bedeli">
+                <span class="module-icon">💼</span>
+                <span class="module-status status-coming-soon">Yakında</span>
+                <h2 class="module-title">Proje Bedeli</h2>
+                <p class="module-description">
+                    Türkiye mevzuatına göre proje bedeli hesaplama ve yönetim sistemi
+                </p>
+                <ul class="module-features">
+                    <li>Yapı sınıfı bazlı hesaplama</li>
+                    <li>m² bazlı maliyet</li>
+                    <li>Vergi durumu hesaplamaları</li>
+                    <li>Ek imalat yönetimi</li>
+                </ul>
+                <div class="coming-soon-overlay">🚧 Çok Yakında</div>
+            </div>
+
+            <!-- Mevzuat Modülü -->
+            <div class="module-card disabled" data-module="mevzuat">
+                <span class="module-icon">📚</span>
+                <span class="module-status status-coming-soon">Yakında</span>
+                <h2 class="module-title">Mevzuat</h2>
+                <p class="module-description">
+                    Cari mevzuat yönetimi, görüntüleme ve arama sistemi
+                </p>
+                <ul class="module-features">
+                    <li>Mevzuat arşivi</li>
+                    <li>Gelişmiş arama</li>
+                    <li>Kategori yönetimi</li>
+                    <li>Güncel mevzuat takibi</li>
+                </ul>
+                <div class="coming-soon-overlay">🚧 Çok Yakında</div>
+            </div>
+
+            <!-- Hesaplama Modülü -->
+            <div class="module-card disabled" data-module="hesaplama">
+                <span class="module-icon">🧮</span>
+                <span class="module-status status-coming-soon">Yakında</span>
+                <h2 class="module-title">Hesaplama</h2>
+                <p class="module-description">
+                    Gelişmiş hesap makinesi ve birim dönüşüm araçları
+                </p>
+                <ul class="module-features">
+                    <li>Bilimsel hesaplama</li>
+                    <li>Birim dönüşümleri</li>
+                    <li>Formül kaydetme</li>
+                    <li>Geçmiş hesaplamalar</li>
+                </ul>
+                <div class="coming-soon-overlay">🚧 Çok Yakında</div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Proje Geliştirme Birimi</p>
+            <p class="version">Versiyon 2.0.0 • 2025</p>
+        </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>
