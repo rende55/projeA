@@ -8,7 +8,7 @@
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #f4f4f4; /* Daha açık arka plan rengi */
+            background-color: #F5F7FA;
             margin: 0;
             padding: 0;
         }
@@ -18,23 +18,66 @@
             max-width: 900px;
             margin: 20px auto;
             padding: 20px;
-            background-color: #ffffff; /* Form arka plan rengi */
-            border-radius: 8px; /* Kenar yuvarlama */
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* Daha belirgin gölge efekti */
+            background-color: #FFFFFF;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
         }
         
         header {
-            text-align: center;
-            margin-bottom: 20px;
+            background: linear-gradient(135deg, #2A4C6E 0%, #3C6B99 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 8px 8px 0 0;
+            margin: -20px -20px 20px -20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+            color: white;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+            min-width: 44px;
+        }
+        
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
         
         h1 {
-            color: #333; /* Başlık rengi */
+            color: #1A1A1A;
         }
         
         h2 {
-            color: #555; /* Alt başlık rengi */
-            margin-bottom: 15px; /* Alt başlık altındaki boşluk */
+            color: #333333;
+            margin-bottom: 15px;
         }
         
         table {
@@ -43,64 +86,74 @@
         }
         
         th, td {
-            padding: 12px; /* Daha fazla iç boşluk */
+            padding: 12px;
             text-align: left;
-            border: 1px solid #ddd; /* Kenar rengi */
+            border: 1px solid #D3DAE3;
         }
         
         th {
-            background-color: #007bff; /* Başlık arka plan rengi */
-            color: white; /* Başlık yazı rengi */
+            background-color: #2A4C6E;
+            color: white;
             font-weight: bold;
         }
         
         tr:hover {
-            background-color: #f1f1f1; /* Satır hover rengi */
+            background-color: #E8ECF2;
         }
         
         .btn {
-            padding: 8px 12px; /* Buton boyutu */
-            margin-right: 5px; /* Butonlar arasında boşluk */
+            padding: 8px 12px;
+            margin-right: 5px;
             border: none;
-            border-radius: 4px; /* Kenar yuvarlama */
-            cursor: pointer; /* İmleci göster */
-            transition: background-color 0.3s; /* Geçiş efekti */
-            font-size: 14px; /* Buton yazı boyutu */
-            display: inline-block; /* Düğmeleri yan yana yerleştir */
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 14px;
+            display: inline-block;
         }
         
         .sil-button {
-            background-color: #dc3545; /* Kırmızı */
+            background-color: #E53935;
             color: white;
         }
         
         .sil-button:hover {
-            background-color: #c82333; /* Kırmızı hover */
+            background-color: #c62828;
         }
         
         .revize-button {
-            background-color: #ffc107; /* Sarı */
-            color: black;
+            background-color: #FFC107;
+            color: #1D1D1D;
         }
         
         .revize-button:hover {
-            background-color: #e0a800; /* Sarı hover */
+            background-color: #F3C870;
         }
         
         .hesapla-button {
-            background-color: #007bff; /* Mavi */
+            background-color: #2196F3;
             color: white;
         }
         
         .hesapla-button:hover {
-            background-color: #0069d9; /* Mavi hover */
+            background-color: #1976D2;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>Kayıtlı Raporlar</h1>
+            <h1>📊 Kayıtlı Raporlar</h1>
+            <div class="nav-buttons">
+                <button class="nav-button" id="homeButton" title="Anasayfaya Dön">
+                    <span>🏠</span>
+                    <span>Anasayfa</span>
+                </button>
+                <button class="nav-button" id="formButton" title="Forma Dön">
+                    <span>📝</span>
+                    <span>Forma Dön</span>
+                </button>
+            </div>
         </header>
         <main>
             <h2>Rapor Listesi</h2>

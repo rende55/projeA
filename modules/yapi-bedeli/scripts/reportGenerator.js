@@ -78,9 +78,33 @@ function formatTarih(tarih) {
 // Rapor oluştur - KT_Sablon_1.docx formatında
 function generateReport(raporData, outputPath) {
     try {
+        // Yapı verilerini parse et
+        let yapilarData = [];
+        if (raporData.yapilarJSON) {
+            try {
+                yapilarData = JSON.parse(raporData.yapilarJSON);
+            } catch (e) {
+                console.error('Yapılar JSON parse hatası:', e);
+                // Eski format için fallback
+                yapilarData = [{
+                    yapiNo: raporData.yapiNo || '1',
+                    yapiAdi: raporData.yapiAdi || '',
+                    yapiYasi: raporData.yapiYasi || '',
+                    yapiSinifi: raporData.yapiSinifi || '',
+                    yapiGrubu: raporData.yapiGrubu || '',
+                    yapimTeknigi: raporData.yapimTeknigi || '',
+                    yapiAlani: raporData.yapiAlani || '',
+                    birimFiyat: raporData.birimFiyat || '',
+                    eksikImalatOrani: raporData.eksikImalatOrani || '',
+                    yipranmaPay: raporData.yipranmaPay || '',
+                    yapiBedeli: raporData.yapiBedeli || '0'
+                }];
+            }
+        }
+        
         // Hesaplamalar
-        const yapiBedeli = parseFloat(raporData.yapiBedeli) || 0;
-        const levazimBedeli = yapiBedeli * 0.7 * 0.75;
+        const toplamYapiBedeli = parseFloat(raporData.yapiBedeli) || 0;
+        const levazimBedeli = toplamYapiBedeli * 0.7 * 0.75;
         const asgariLevazimHesapla = raporData.asgariLevazimHesapla === 1 || raporData.asgariLevazimHesapla === '1' || raporData.asgariLevazimHesapla === true;
         
         // Raportör bilgilerini parse et
@@ -250,10 +274,11 @@ function generateReport(raporData, outputPath) {
                         ]
                     }),
                     
-                    // Yapı Bilgileri Tablosu
+                    // Yapı Bilgileri Tablosu - Çoklu yapı desteği
                     new Table({
                         width: { size: 100, type: WidthType.PERCENTAGE },
                         rows: [
+                            // Başlık satırı
                             new TableRow({
                                 children: [
                                     new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Y. NO", bold: true, size: 18 })] })] }),
@@ -268,20 +293,21 @@ function generateReport(raporData, outputPath) {
                                     new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPI BEDELİ", bold: true, size: 18 })] })] })
                                 ]
                             }),
-                            new TableRow({
+                            // Her yapı için satır
+                            ...yapilarData.map(yapi => new TableRow({
                                 children: [
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: raporData.yapiNo || '', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: raporData.yapiAdi || '', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: raporData.yapiSinifi || '', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: parseFloat(raporData.birimFiyat || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","), size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: parseFloat(raporData.yapiAlani || 0).toFixed(2), size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (raporData.yapiYasi || '') + '', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: raporData.yapimTeknigi || '', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (raporData.yipranmaPay || '0') + '%', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (raporData.eksikImalatOrani || '0') + '%', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapiBedeli.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","), size: 18 })] })] })
+                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapiNo || '', size: 18 })] })] }),
+                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapiAdi || '', size: 18 })] })] }),
+                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapiSinifi || '', size: 18 })] })] }),
+                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: parseFloat(yapi.birimFiyat || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","), size: 18 })] })] }),
+                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: parseFloat(yapi.yapiAlani || 0).toFixed(2), size: 18 })] })] }),
+                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (yapi.yapiYasi || '') + '', size: 18 })] })] }),
+                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapimTeknigi || '', size: 18 })] })] }),
+                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (yapi.yipranmaPay || '0') + '%', size: 18 })] })] }),
+                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (yapi.eksikImalatOrani || '0') + '%', size: 18 })] })] }),
+                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: parseFloat(yapi.yapiBedeli || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","), size: 18 })] })] })
                                 ]
-                            })
+                            }))
                         ]
                     }),
                     
@@ -293,7 +319,7 @@ function generateReport(raporData, outputPath) {
                         spacing: { after: 200 },
                         children: [
                             new TextRun({ text: "TOPLAM YAPI BEDELİ: ", bold: true, size: 24 }),
-                            new TextRun({ text: yapiBedeli.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' TL', size: 24 })
+                            new TextRun({ text: toplamYapiBedeli.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' TL', size: 24 })
                         ]
                     }),
                     
@@ -303,7 +329,7 @@ function generateReport(raporData, outputPath) {
                         spacing: { after: 400 },
                         children: [
                             new TextRun({
-                                text: `Yalnız ${sayiyiYaziyaCevir(yapiBedeli)} Türk Lirasıdır.`,
+                                text: `Yalnız ${sayiyiYaziyaCevir(toplamYapiBedeli)} Türk Lirasıdır.`,
                                 size: 24
                             })
                         ]

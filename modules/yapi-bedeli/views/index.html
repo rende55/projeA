@@ -13,7 +13,7 @@
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: #F5F7FA;
             min-height: 100vh;
             padding: 20px;
         }
@@ -22,9 +22,9 @@
             display: flex;
             max-width: 1400px;
             margin: 0 auto;
-            background-color: #fff;
+            background-color: #FFFFFF;
             border-radius: 12px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
             overflow: hidden;
             min-height: 80vh;
         }
@@ -37,8 +37,8 @@
 
         .button-panel {
             width: 280px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-            border-left: 2px solid #dee2e6;
+            background: #E8ECF2;
+            border-left: 2px solid #D3DAE3;
             padding: 30px 20px;
             display: flex;
             flex-direction: column;
@@ -52,18 +52,61 @@
 
         .button-panel h3 {
             margin: 0 0 20px 0;
-            color: #495057;
+            color: #1A1A1A;
             font-size: 18px;
             text-align: center;
             padding-bottom: 15px;
-            border-bottom: 2px solid #dee2e6;
+            border-bottom: 2px solid #D3DAE3;
         }
 
         header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2A4C6E 0%, #3C6B99 100%);
             color: white;
-            padding: 30px;
-            text-align: center;
+            padding: 20px 30px;
+            border-bottom: 2px solid #D3DAE3;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        
+        header h1 {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-height: 44px;
+            min-width: 44px;
+        }
+        
+        .nav-button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
+        .nav-button:active {
+            transform: translateY(0);
         }
 
         h1 {
@@ -75,8 +118,8 @@
         /* Tab Navigation */
         .tab-navigation {
             display: flex;
-            background-color: #f8f9fa;
-            border-bottom: 2px solid #dee2e6;
+            background-color: #E8ECF2;
+            border-bottom: 2px solid #D3DAE3;
         }
 
         .tab-button {
@@ -87,19 +130,19 @@
             cursor: pointer;
             font-size: 16px;
             font-weight: 600;
-            color: #6c757d;
+            color: #6F7A86;
             transition: all 0.3s;
             position: relative;
         }
 
         .tab-button:hover {
-            background-color: #e9ecef;
-            color: #495057;
+            background-color: #D3DAE3;
+            color: #333333;
         }
 
         .tab-button.active {
-            color: #667eea;
-            background-color: white;
+            color: #2A4C6E;
+            background-color: #FFFFFF;
         }
 
         .tab-button.active::after {
@@ -109,11 +152,11 @@
             left: 0;
             right: 0;
             height: 3px;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(90deg, #2A4C6E 0%, #3C6B99 100%);
         }
 
         .tab-button.completed {
-            color: #28a745;
+            color: #4CAF50;
         }
 
         .tab-button.completed::before {
@@ -139,11 +182,11 @@
         }
 
         h2 {
-            color: #333;
+            color: #1A1A1A;
             margin-bottom: 25px;
             font-size: 22px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid #2A4C6E;
         }
 
         .form-row {
@@ -166,29 +209,29 @@
             display: block;
             margin-bottom: 8px;
             font-weight: 600;
-            color: #495057;
+            color: #333333;
             font-size: 14px;
         }
 
         input, select {
             width: 100%;
             padding: 12px 15px;
-            border: 2px solid #e9ecef;
+            border: 2px solid #C9D1DB;
             border-radius: 6px;
             font-size: 15px;
             transition: all 0.3s;
-            background-color: #fff;
+            background-color: #FFFFFF;
         }
 
         input:focus, select:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            border-color: #2A4C6E;
+            box-shadow: 0 0 0 3px rgba(42, 76, 110, 0.1);
         }
 
         input:read-only {
-            background-color: #f8f9fa;
-            color: #6c757d;
+            background-color: #E8ECF2;
+            color: #6F7A86;
             cursor: not-allowed;
         }
 
@@ -209,7 +252,7 @@
             justify-content: space-between;
             margin-top: 30px;
             padding-top: 30px;
-            border-top: 2px solid #e9ecef;
+            border-top: 2px solid #D8DFE6;
             gap: 15px;
         }
 
@@ -226,23 +269,26 @@
         }
 
         .btn-prev {
-            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-            color: white;
+            background: #E8ECF2;
+            color: #2A4C6E;
+            border: 2px solid #2A4C6E;
         }
 
         .btn-prev:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+            background: #D3DAE3;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.07);
         }
 
         .btn-next {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
+            background: #2A4C6E;
+            color: #FFFFFF;
         }
 
         .btn-next:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            background: #3C6B99;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
         }
 
         .btn-next:disabled, .btn-prev:disabled {
@@ -272,49 +318,54 @@
         }
 
         .hesapla-button {
-            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            background: #2196F3;
         }
 
         .hesapla-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(23, 162, 184, 0.3);
+            background: #1976D2;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
         }
 
         .save-button {
-            background: linear-gradient(135deg, #28a745 0%, #218838 100%);
+            background: #4CAF50;
         }
 
         .save-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+            background: #45a049;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
         }
 
         .clear-button {
-            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
-            color: #212529;
+            background: #FFC107;
+            color: #1D1D1D;
         }
 
         .clear-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3);
+            background: #F3C870;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
         }
 
         .show-reports-button {
-            background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+            background: #2A4C6E;
         }
 
         .show-reports-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0, 123, 255, 0.3);
+            background: #3C6B99;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
         }
 
         .show-admin-button {
-            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            background: #4B7FA3;
         }
 
         .show-admin-button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(108, 117, 125, 0.3);
+            background: #3C6B99;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
         }
 
         /* Responsive */
@@ -327,7 +378,7 @@
                 width: 100%;
                 position: static;
                 border-left: none;
-                border-top: 2px solid #dee2e6;
+                border-top: 2px solid #D3DAE3;
                 flex-direction: row;
                 flex-wrap: wrap;
                 justify-content: center;
@@ -377,7 +428,17 @@
     <div class="main-container">
         <div class="form-container">
             <header>
-                <h1>📊 Kıymet Takdir Raporu</h1>
+                <h1>📊 Yapı Bedeli Modülü</h1>
+                <div class="nav-buttons">
+                    <button class="nav-button" id="homeButton" title="Anasayfaya Dön">
+                        <span>🏠</span>
+                        <span class="button-text">Anasayfa</span>
+                    </button>
+                    <button class="nav-button" id="reportsNavButton" title="Raporları Görüntüle">
+                        <span>📊</span>
+                        <span class="button-text">Raporlar</span>
+                    </button>
+                </div>
             </header>
 
             <!-- Tab Navigation -->
@@ -397,10 +458,6 @@
                         <div class="form-group">
                             <label for="raporTarihi">Rapor Tarihi *</label>
                             <input type="date" id="raporTarihi" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="raporNo">Rapor No *</label>
-                            <input type="text" id="raporNo" placeholder="Rapor numarasını girin" required>
                         </div>
                     </div>
 
@@ -481,12 +538,12 @@
 
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="yuzolcumu">Yüzölçümü (m²) *</label>
-                            <input type="text" id="yuzolcumu" placeholder="Örn: 150.50" required>
+                            <label for="yuzolcumu">Yüzölçümü (m²)</label>
+                            <input type="text" id="yuzolcumu" placeholder="Örn: 150.50">
                         </div>
                         <div class="form-group">
-                            <label for="malik">Malik İsmi *</label>
-                            <input type="text" id="malik" placeholder="Malik adı soyadı" required>
+                            <label for="malik">Malik İsmi</label>
+                            <input type="text" id="malik" placeholder="Malik adı soyadı">
                         </div>
                     </div>
 
@@ -500,86 +557,30 @@
                 <div class="tab-content" id="tab-yapi">
                     <h2>Yapı Bilgileri ve Hesaplama</h2>
                     
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="yapiNo">Yapı No *</label>
-                            <input type="text" id="yapiNo" placeholder="Yapı numarası" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="yapiAdi">Yapı Adı *</label>
-                            <input type="text" id="yapiAdi" placeholder="Yapı adı" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="yapiMaliki">Yapı Maliki *</label>
-                            <input type="text" id="yapiMaliki" placeholder="Malik adı soyadı" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="yapiYasi">Yapı Yaşı *</label>
-                            <input type="number" id="yapiYasi" placeholder="Yıl olarak" required>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="yapiSinifi">Yapı Sınıfı *</label>
-                            <select id="yapiSinifi" required>
-                                <option value="">Seçiniz...</option>
-                                <option value="1">1. Sınıf</option>
-                                <option value="2">2. Sınıf</option>
-                                <option value="3">3. Sınıf</option>
-                                <option value="4">4. Sınıf</option>
-                                <option value="5">5. Sınıf</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="yapiGrubu">Yapı Grubu *</label>
-                            <select id="yapiGrubu" required disabled>
-                                <option value="">Önce yapı sınıfı seçin...</option>
-                            </select>
-                        </div>
+                    <!-- Yapı Listesi Container -->
+                    <div id="yapiListesiContainer">
+                        <!-- Yapılar buraya dinamik olarak eklenecek -->
                     </div>
                     
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="yapimTeknigi">Yapım Tekniği *</label>
-                            <select id="yapimTeknigi" required>
-                                <option value="">Seçiniz...</option>
-                                <option value="Betonarme Karkas">Betonarme Karkas</option>
-                                <option value="Yığma Kagir">Yığma Kagir</option>
-                                <option value="Çelik Konstrüksiyon">Çelik Konstrüksiyon</option>
-                                <option value="Ahşap">Ahşap</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label for="birimFiyat">Birim Fiyat (TL/m²) *</label>
-                            <input type="number" step="0.01" id="birimFiyat" placeholder="Otomatik doldurulacak" required>
-                        </div>
+                    <!-- Yapı Ekle Butonu -->
+                    <div style="margin: 20px 0; text-align: center;">
+                        <button type="button" id="yapiEkleBtn" style="padding: 12px 24px; background: linear-gradient(135deg, #28a745 0%, #218838 100%); color: white; border: none; border-radius: 8px; font-size: 15px; font-weight: 600; cursor: pointer; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); transition: all 0.3s;">
+                            ➕ Yeni Yapı Ekle
+                        </button>
                     </div>
+                    
+                    <!-- Eski tek yapı alanları kaldırıldı -->
 
+                    <!-- Asgari Levazım Hesaplama Seçeneği -->
                     <div class="form-row">
                         <div class="form-group">
-                            <label for="yapiAlani">Yapı Alanı (m²) *</label>
-                            <input type="number" step="0.01" id="yapiAlani" placeholder="Örn: 120.50" required>
-                        </div>
-                        <div class="form-group">
-                            <label for="yipranmaPay">Yıpranma Payı (%)</label>
-                            <input type="number" step="0.01" id="yipranmaPay" placeholder="Otomatik hesaplanacak" readonly>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="eksikImalatOrani">Eksik İmalat Oranı (%) *</label>
-                            <input type="number" step="0.01" id="eksikImalatOrani" placeholder="Örn: 10" required>
-                        </div>
-                        <div class="form-group">
-                            <label style="display: flex; align-items: center; margin-top: 30px; cursor: pointer;">
+                            <label style="display: flex; align-items: center; cursor: pointer;">
                                 <input type="checkbox" id="asgariLevazimHesapla" checked style="width: auto; margin-right: 10px;">
                                 <span>Asgari Levazım Bedeli Hesapla</span>
                             </label>
+                        </div>
+                        <div class="form-group">
+                            <!-- Boş alan -->
                         </div>
                     </div>
 

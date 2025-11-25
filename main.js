@@ -17,6 +17,7 @@ function migrateDatabase() {
         if (!err && columns && columns.length > 0) {
             const yapiGrubuVar = columns.some(col => col.name === 'yapiGrubu');
             const asgariLevazimHesaplaVar = columns.some(col => col.name === 'asgariLevazimHesapla');
+            const yapilarJSONVar = columns.some(col => col.name === 'yapilarJSON');
             
             if (!yapiGrubuVar) {
                 console.log('⚠️ raporlar tablosuna yapiGrubu kolonu ekleniyor...');
@@ -36,6 +37,17 @@ function migrateDatabase() {
                         console.error('asgariLevazimHesapla kolonu eklenirken hata:', err);
                     } else {
                         console.log('✅ raporlar tablosuna asgariLevazimHesapla kolonu eklendi.');
+                    }
+                });
+            }
+            
+            if (!yapilarJSONVar) {
+                console.log('⚠️ raporlar tablosuna yapilarJSON kolonu ekleniyor...');
+                db.run(`ALTER TABLE raporlar ADD COLUMN yapilarJSON TEXT`, (err) => {
+                    if (err) {
+                        console.error('yapilarJSON kolonu eklenirken hata:', err);
+                    } else {
+                        console.log('✅ raporlar tablosuna yapilarJSON kolonu eklendi.');
                     }
                 });
             }
@@ -123,7 +135,6 @@ function createDatabase() {
     db.run(`CREATE TABLE IF NOT EXISTS raporlar (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         raporTarihi TEXT,
-        raporNo TEXT,
         resmiYaziTarihi TEXT,
         resmiYaziSayisi TEXT,
         ilgiliKurum TEXT,
@@ -151,7 +162,8 @@ function createDatabase() {
         resmiGazeteSayili TEXT,
         raportorAdi TEXT,
         raportorUnvani TEXT,
-        asgariLevazimHesapla INTEGER DEFAULT 1
+        asgariLevazimHesapla INTEGER DEFAULT 1,
+        yapilarJSON TEXT
     )`, (err) => {
         if (err) {
             console.error(err.message);
@@ -367,6 +379,7 @@ function createWindow() {
         width: 1400,
         height: 900,
         title: 'Proje A - Proje Geliştirme Platformu',
+        icon: path.join(__dirname, 'assets', 'icon.png'),
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -398,55 +411,67 @@ app.on('activate', () => {
     }
 });
 
-// Yapı Bedeli Modülü - Ana Pencere
+// TEK PENCERE NAVİGASYON SİSTEMİ
+// Artık yeni pencere açmak yerine ana pencerede içerik değişimi yapılacak
+
+// Yapı Bedeli Modülü
 ipcMain.on('open-yapi-bedeli', (event) => {
+    console.log('Yapı Bedeli modülü açılıyor');
     const yapiBedeliWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
-        title: 'Proje A - Yapı Bedeli Modülü',
+        width: 1400,
+        height: 900,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
             enableRemoteModule: true
         }
     });
-
     remoteMain.enable(yapiBedeliWindow.webContents);
     yapiBedeliWindow.loadFile('modules/yapi-bedeli/views/index.html');
 });
 
-// Yapı Bedeli - Raporlar Penceresi
+// Yapı Bedeli - Raporlar Sayfası
 ipcMain.on('show-reports', (event) => {
-    const reportsWindow = new BrowserWindow({
-        width: 1000,
-        height: 700,
-        title: 'Yapı Bedeli - Raporlar',
+    console.log('Raporlar sayfası açılıyor');
+    const raporlarWindow = new BrowserWindow({
+        width: 1200,
+        height: 800,
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
             enableRemoteModule: true
         }
     });
-
-    remoteMain.enable(reportsWindow.webContents);
-    reportsWindow.loadFile('modules/yapi-bedeli/views/raporlar.html');
+    remoteMain.enable(raporlarWindow.webContents);
+    raporlarWindow.loadFile('modules/yapi-bedeli/views/raporlar.html');
+    
+    // DevTools'u aç - debug için
+    raporlarWindow.webContents.openDevTools();
 });
 
 // Yapı Bedeli - Yönetim Paneli
 ipcMain.on('show-admin', (event) => {
+    console.log('Yönetim paneli açılıyor');
     const adminWindow = new BrowserWindow({
         width: 1200,
         height: 800,
-        title: 'Yapı Bedeli - Yönetim Paneli',
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
             enableRemoteModule: true
         }
     });
-
     remoteMain.enable(adminWindow.webContents);
     adminWindow.loadFile('modules/yapi-bedeli/views/admin.html');
+});
+
+// Anasayfaya dön - pencereyi kapat
+ipcMain.on('navigate-home', (event) => {
+    console.log('Pencere kapatılıyor');
+    const window = BrowserWindow.fromWebContents(event.sender);
+    if (window) {
+        window.close();
+    }
 });
 
 // Proje Bedeli Modülü (Henüz geliştirilmedi)

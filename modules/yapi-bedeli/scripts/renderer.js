@@ -3,7 +3,9 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
 
-let db = new sqlite3.Database(path.join(__dirname, 'raporlar.db'));
+// Veritabanı ana dizinde (3 seviye yukarı: scripts -> yapi-bedeli -> modules -> projeA)
+const dbPath = path.join(__dirname, '..', '..', '..', 'raporlar.db');
+let db = new sqlite3.Database(dbPath);
 
 // Birim fiyat verileri cache (veritabanından yüklenecek)
 let birimFiyatCache = {};
@@ -36,6 +38,10 @@ const samsunIlceleri = [
 window.onload = () => {
     console.log('🚀 Sayfa yükleniyor...');
     
+    // Rapor tarihini bugünün tarihi olarak ayarla
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('raporTarihi').value = today;
+    
     // Hesap dönemlerini yükle
     populateHesapDonemleri();
     
@@ -63,21 +69,31 @@ window.onload = () => {
     });
     
     // Event listener'ları ekle
-    const yapimTeknigiElement = document.getElementById('yapimTeknigi');
-    const yapiYasiElement = document.getElementById('yapiYasi');
-    const hesapYiliElement = document.getElementById('hesapYili');
-    const yapiSinifiElement = document.getElementById('yapiSinifi');
-    const yapiGrubuElement = document.getElementById('yapiGrubu');
     const raportorSayisiElement = document.getElementById('raportorSayisi');
     const fotograflarElement = document.getElementById('fotograflar');
     
-    if (yapimTeknigiElement) yapimTeknigiElement.addEventListener('change', updateYipranmaPay);
-    if (yapiYasiElement) yapiYasiElement.addEventListener('input', updateYipranmaPay);
-    if (hesapYiliElement) hesapYiliElement.addEventListener('change', () => { populateYapiGruplari(); });
-    if (yapiSinifiElement) yapiSinifiElement.addEventListener('change', () => { populateYapiGruplari(); });
-    if (yapiGrubuElement) yapiGrubuElement.addEventListener('change', () => { updateBirimFiyat(); });
     if (raportorSayisiElement) raportorSayisiElement.addEventListener('change', updateRaportorAlanlari);
     if (fotograflarElement) fotograflarElement.addEventListener('change', handleFotografSecimi);
+    
+    // Navigasyon butonları
+    const homeButton = document.getElementById('homeButton');
+    const reportsNavButton = document.getElementById('reportsNavButton');
+    
+    if (homeButton) {
+        homeButton.addEventListener('click', () => {
+            console.log('Pencere kapatılıyor...');
+            // Pencereyi kapat
+            ipcRenderer.send('navigate-home');
+        });
+    }
+    
+    if (reportsNavButton) {
+        reportsNavButton.addEventListener('click', () => {
+            console.log('Raporlar sayfasına gidiliyor...');
+            // Raporlar sayfasını aç
+            ipcRenderer.send('show-reports');
+        });
+    }
     
     console.log('✅ Sayfa yüklendi ve event listener\'lar eklendi');
 };
@@ -629,12 +645,17 @@ function handleFormSubmit() {
     console.log('Form submit edildi');
 
     const raporTarihi = document.getElementById('raporTarihi').value;
-    const raporNo = document.getElementById('raporNo').value;
 
-    // Rapor tarihi ve rapor no kontrolü
-    if (!raporTarihi || !raporNo) {
-        alert("Rapor Tarihi ve Rapor No alanları zorunludur.");
-        return; // Eğer bu alanlar boşsa işlemi durdur
+    // Rapor tarihi kontrolü
+    if (!raporTarihi) {
+        alert("Rapor Tarihi alanı zorunludur.");
+        return;
+    }
+    
+    // Yapı kontrolü
+    if (yapilar.length === 0) {
+        alert("En az bir yapı eklemelisiniz!");
+        return;
     }
     
     console.log('Rapor kaydediliyor...');
@@ -643,13 +664,12 @@ function handleFormSubmit() {
     const resmiYaziTarihi = document.getElementById('resmiYaziTarihi').value;
     const resmiYaziSayisi = document.getElementById('resmiYaziSayisi').value;
     const ilgiliKurum = document.getElementById('ilgiliKurum').value;
-    const birimFiyatId = document.getElementById('hesapYili').value; // artık bu birimFiyatId
+    const birimFiyatId = document.getElementById('hesapYili').value;
     
     // Raportör bilgilerini topla
     const raportorSayisi = parseInt(document.getElementById('raportorSayisi').value) || 1;
     let raportorListesi = [];
     for (let i = 1; i <= raportorSayisi; i++) {
-        // Yeni sistem: raportorSecimi dropdown'ından seçilen raportörün adını al
         const raportorSecimiElement = document.getElementById(`raportorSecimi${i}`);
         const unvanElement = document.getElementById(`raportorUnvani${i}`);
         
@@ -657,12 +677,10 @@ function handleFormSubmit() {
         let unvani = '';
         
         if (raportorSecimiElement && raportorSecimiElement.value) {
-            // Dropdown'dan seçilen raportörün adını al
             const selectedOption = raportorSecimiElement.options[raportorSecimiElement.selectedIndex];
             adi = selectedOption.textContent || '';
             unvani = unvanElement ? unvanElement.value : '';
         } else {
-            // Eski sistem için fallback (eğer dropdown yerine input varsa)
             const adiElement = document.getElementById(`raportorAdi${i}`);
             if (adiElement) {
                 adi = adiElement.value;
@@ -676,55 +694,58 @@ function handleFormSubmit() {
     }
     const raportorAdi = raportorListesi.map(r => r.adi).join(', ');
     const raportorUnvani = raportorListesi.map(r => r.unvani).join(', ');
-    const ili = 'Samsun'; // Sabit değer
+    
+    // Arsa bilgileri
+    const ili = 'Samsun';
     const ilce = document.getElementById('ilce').value;
     const mahalle = document.getElementById('mahalle').value;
     const ada = document.getElementById('ada').value;
     const parsel = document.getElementById('parsel').value;
-    const yuzolcumu = document.getElementById('yuzolcumu').value;
-    const malik = document.getElementById('malik').value;
-    const yapiNo = document.getElementById('yapiNo').value;
-    const yapiAdi = document.getElementById('yapiAdi').value;
-    const yapiMaliki = document.getElementById('yapiMaliki').value;
-    const yapiYasi = document.getElementById('yapiYasi').value;
-    const yapiSinifi = document.getElementById('yapiSinifi').value;
-    const yapiGrubu = document.getElementById('yapiGrubu').value;
-    const yapimTeknigi = document.getElementById('yapimTeknigi').value;
-    const yapiAlani = document.getElementById('yapiAlani').value;
-    const birimFiyat = document.getElementById('birimFiyat').value;
-    const eksikImalatOrani = document.getElementById('eksikImalatOrani').value;
-    const yipranmaPay = document.getElementById('yipranmaPay').value;
+    const yuzolcumu = document.getElementById('yuzolcumu').value || '';
+    const malik = document.getElementById('malik').value || '';
+    
     const asgariLevazimHesapla = document.getElementById('asgariLevazimHesapla').checked;
     
-    // Yapı bedelini hesapla
-    const yapiBedeli = parseFloat(yapiAlani) * parseFloat(birimFiyat) * 
-                       (1 - parseFloat(yipranmaPay) / 100) * 
-                       (1 - parseFloat(eksikImalatOrani) / 100);
-
-    // Fotoğrafları kaydet - ŞİMDİLİK ATLA (daha sonra eklenecek)
-    // TODO: Fotoğraf kaydetme özelliği implement edilecek
-    let fotografYollari = [];
-    /* Fotoğraf kaydetme kısmı şimdilik devre dışı
-    if (fotograflar && fotograflar.length > 0) {
-        const raporKlasor = path.join(__dirname, 'raporlar_cikti', `Rapor_${raporNo}_${Date.now()}`);
-        if (!fs.existsSync(raporKlasor)) {
-            fs.mkdirSync(raporKlasor, { recursive: true });
-        }
+    // Yapı bilgilerini topla
+    let yapilarData = [];
+    let toplamYapiBedeli = 0;
+    
+    yapilar.forEach(yapi => {
+        const yapiNo = document.getElementById(`yapiNo_${yapi.id}`).value;
+        const yapiAdi = document.getElementById(`yapiAdi_${yapi.id}`).value;
+        const yapiYasi = document.getElementById(`yapiYasi_${yapi.id}`).value;
+        const yapiSinifi = document.getElementById(`yapiSinifi_${yapi.id}`).value;
+        const yapiGrubu = document.getElementById(`yapiGrubu_${yapi.id}`).value;
+        const yapimTeknigi = document.getElementById(`yapimTeknigi_${yapi.id}`).value;
+        const yapiAlani = document.getElementById(`yapiAlani_${yapi.id}`).value;
+        const birimFiyat = document.getElementById(`birimFiyat_${yapi.id}`).value;
+        const eksikImalatOrani = document.getElementById(`eksikImalatOrani_${yapi.id}`).value;
+        const yipranmaPay = document.getElementById(`yipranmaPay_${yapi.id}`).value;
         
-        fotograflar.forEach((file, index) => {
-            try {
-                if (file.path) {
-                    const hedefYol = path.join(raporKlasor, `fotograf_${index + 1}${path.extname(file.name)}`);
-                    fs.copyFileSync(file.path, hedefYol);
-                    fotografYollari.push(hedefYol);
-                }
-            } catch (err) {
-                console.error('Fotoğraf kopyalama hatası:', err);
-            }
+        // Yapı bedelini hesapla
+        const yapiBedeli = parseFloat(yapiAlani) * parseFloat(birimFiyat) * 
+                           (1 - parseFloat(yipranmaPay) / 100) * 
+                           (1 - parseFloat(eksikImalatOrani) / 100);
+        
+        toplamYapiBedeli += yapiBedeli;
+        
+        yapilarData.push({
+            yapiNo,
+            yapiAdi,
+            yapiYasi,
+            yapiSinifi,
+            yapiGrubu,
+            yapimTeknigi,
+            yapiAlani,
+            birimFiyat,
+            eksikImalatOrani,
+            yipranmaPay,
+            yapiBedeli: yapiBedeli.toFixed(2)
         });
-    }
-    */
-    const fotograflarJSON = JSON.stringify(fotografYollari);
+    });
+    
+    // Yapıları JSON olarak sakla
+    const yapilarJSON = JSON.stringify(yapilarData);
 
     // Resmi Gazete bilgilerini birimFiyatId'den çek
     db.get(`SELECT resmiGazeteTarih, resmiGazeteSayili, yil FROM birimFiyatlar WHERE id = ?`, [birimFiyatId], (err, rgRow) => {
@@ -732,10 +753,10 @@ function handleFormSubmit() {
         const resmiGazeteSayili = rgRow ? rgRow.resmiGazeteSayili : '';
         const hesapYili = rgRow ? rgRow.yil : '';
 
-        // Verileri veritabanına kaydet
+        // Veritabanına kaydet - eski tek yapı alanları yerine yapilarJSON kullan
         console.log('Veritabanına kayıt yapılıyor...');
-        db.run(`INSERT INTO raporlar (raporTarihi, raporNo, resmiYaziTarihi, resmiYaziSayisi, ilgiliKurum, hesapYili, ili, ilce, mahalle, ada, parsel, yuzolcumu, malik, yapiNo, yapiAdi, yapiMaliki, yapiYasi, yapiSinifi, yapiGrubu, yapimTeknigi, yapiAlani, birimFiyat, eksikImalatOrani, yipranmaPay, yapiBedeli, resmiGazeteTarih, resmiGazeteSayili, raportorAdi, raportorUnvani, asgariLevazimHesapla) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
-        [raporTarihi, raporNo, resmiYaziTarihi, resmiYaziSayisi, ilgiliKurum, hesapYili, ili, ilce, mahalle, ada, parsel, yuzolcumu, malik, yapiNo, yapiAdi, yapiMaliki, yapiYasi, yapiSinifi, yapiGrubu, yapimTeknigi, yapiAlani, birimFiyat, eksikImalatOrani, yipranmaPay, yapiBedeli.toFixed(2), resmiGazeteTarih, resmiGazeteSayili, raportorAdi, raportorUnvani, asgariLevazimHesapla ? 1 : 0], 
+        db.run(`INSERT INTO raporlar (raporTarihi, resmiYaziTarihi, resmiYaziSayisi, ilgiliKurum, hesapYili, ili, ilce, mahalle, ada, parsel, yuzolcumu, malik, yapiBedeli, resmiGazeteTarih, resmiGazeteSayili, raportorAdi, raportorUnvani, asgariLevazimHesapla, yapilarJSON) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, 
+        [raporTarihi, resmiYaziTarihi, resmiYaziSayisi, ilgiliKurum, hesapYili, ili, ilce, mahalle, ada, parsel, yuzolcumu, malik, toplamYapiBedeli.toFixed(2), resmiGazeteTarih, resmiGazeteSayili, raportorAdi, raportorUnvani, asgariLevazimHesapla ? 1 : 0, yapilarJSON], 
         function(err) {
             if (err) {
                 console.error('Veritabanı hatası:', err.message);
@@ -743,59 +764,78 @@ function handleFormSubmit() {
                 return;
             }
             console.log(`Rapor kaydedildi, ID: ${this.lastID}`);
-            alert(`✅ Rapor başarıyla kaydedildi!\n\nRapor No: ${raporNo}\nRapor ID: ${this.lastID}`);
+            alert(`✅ Rapor başarıyla kaydedildi!\n\nRapor ID: ${this.lastID}`);
             
-            // Sayfayı yenile - bu sayede form temizlenir ve beyaz sayfa sorunu olmaz
+            // Sayfayı yenile
             console.log('Sayfa yenileniyor...');
             window.location.reload();
         });
     });
 }
 
-// Hesapla butonu - Yapı bedelini hesapla
+// Hesapla butonu - Tüm yapıların bedelini hesapla
 const hesaplaButton = document.querySelector('.hesapla-button');
 hesaplaButton.addEventListener('click', (e) => {
-    e.preventDefault(); // Form submit'i engelle
+    e.preventDefault();
     e.stopPropagation();
     
-    const yapiAlani = parseFloat(document.getElementById('yapiAlani').value);
-    const birimFiyat = parseFloat(document.getElementById('birimFiyat').value);
-    const yipranmaPay = parseFloat(document.getElementById('yipranmaPay').value) || 0;
-    const eksikImalatOrani = parseFloat(document.getElementById('eksikImalatOrani').value) || 0;
-    
-    // Kontrol: Gerekli alanlar dolu mu?
-    if (!yapiAlani || !birimFiyat) {
-        alert('Lütfen önce Yapı Alanı ve Birim Fiyat alanlarını doldurun!');
+    if (yapilar.length === 0) {
+        alert('Lütfen en az bir yapı ekleyin!');
         return;
     }
     
-    // Yapı bedelini hesapla
-    const yapiBedeli = yapiAlani * birimFiyat * 
-                       (1 - yipranmaPay / 100) * 
-                       (1 - eksikImalatOrani / 100);
+    let toplamYapiBedeli = 0;
+    let hesaplamaDetaylari = '';
+    
+    // Her yapı için hesaplama yap
+    yapilar.forEach(yapi => {
+        const yapiAlani = parseFloat(document.getElementById(`yapiAlani_${yapi.id}`).value);
+        const birimFiyat = parseFloat(document.getElementById(`birimFiyat_${yapi.id}`).value);
+        const yipranmaPay = parseFloat(document.getElementById(`yipranmaPay_${yapi.id}`).value) || 0;
+        const eksikImalatOrani = parseFloat(document.getElementById(`eksikImalatOrani_${yapi.id}`).value) || 0;
+        const yapiAdi = document.getElementById(`yapiAdi_${yapi.id}`).value || `Yapı ${yapi.yapiNo}`;
+        
+        if (!yapiAlani || !birimFiyat) {
+            alert(`Yapı ${yapi.yapiNo} için Yapı Alanı ve Birim Fiyat alanlarını doldurun!`);
+            return;
+        }
+        
+        // Yapı bedelini hesapla
+        const yapiBedeli = yapiAlani * birimFiyat * 
+                           (1 - yipranmaPay / 100) * 
+                           (1 - eksikImalatOrani / 100);
+        
+        toplamYapiBedeli += yapiBedeli;
+        
+        // Sonucu ilgili yapının alanına yaz
+        document.getElementById(`yapiBedeliHesaplanan_${yapi.id}`).value = 
+            yapiBedeli.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' TL';
+        
+        hesaplamaDetaylari += `${yapiAdi}: ${yapiBedeli.toFixed(2)} TL\n`;
+    });
     
     // Levazım bedelini hesapla
-    const levazimBedeli = yapiBedeli * 0.7 * 0.75;
+    const levazimBedeli = toplamYapiBedeli * 0.7 * 0.75;
     
-    // Sonuçları göster
-    document.getElementById('yapiBedeliHesaplanan').value = yapiBedeli.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' TL';
-    document.getElementById('levazimBedeliHesaplanan').value = levazimBedeli.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' TL';
-    
-    alert(`Hesaplama Tamamlandı!\n\nYapı Bedeli: ${yapiBedeli.toFixed(2)} TL\nAsgari Levazım Bedeli: ${levazimBedeli.toFixed(2)} TL`);
+    alert(`Hesaplama Tamamlandı!\n\n${hesaplamaDetaylari}\nToplam Yapı Bedeli: ${toplamYapiBedeli.toFixed(2)} TL\nAsgari Levazım Bedeli: ${levazimBedeli.toFixed(2)} TL`);
 });
 
 // Formu temizle
 const clearButton = document.querySelector('.clear-button');
 clearButton.addEventListener('click', (e) => {
-    e.preventDefault(); // Form submit'i engelle
+    e.preventDefault();
     e.stopPropagation();
     
     if (confirm('Formdaki tüm veriler silinecek. Emin misiniz?')) {
-        // Manuel temizleme
-        document.querySelectorAll('input[type="text"], input[type="date"], input[type="number"], select').forEach(input => {
+        // Genel bilgiler ve arsa bilgileri temizle
+        document.querySelectorAll('#tab-genel input[type="text"], #tab-genel input[type="date"], #tab-genel select').forEach(input => {
             if (!input.readOnly && input.id !== 'raportorSayisi') {
                 input.value = '';
             }
+        });
+        
+        document.querySelectorAll('#tab-arsa input[type="text"], #tab-arsa select').forEach(input => {
+            input.value = '';
         });
         
         // Varsayılan değerler
@@ -806,16 +846,14 @@ clearButton.addEventListener('click', (e) => {
         document.getElementById('fotograflar').value = '';
         document.getElementById('fotografOnizleme').innerHTML = '';
         
-        // Hesaplanan alanlar
-        document.getElementById('yapiBedeliHesaplanan').value = '';
-        document.getElementById('levazimBedeliHesaplanan').value = '';
-        
-        // Yapı grubu reset
-        document.getElementById('yapiGrubu').disabled = true;
-        document.getElementById('yapiGrubu').innerHTML = '<option value="">Önce yapı sınıfı seçin...</option>';
-        
         // Raportör alanları
         updateRaportorAlanlari();
+        
+        // Yapıları temizle ve ilk yapıyı ekle
+        yapilar = [];
+        yapiSayaci = 0;
+        document.getElementById('yapiListesiContainer').innerHTML = '';
+        yeniYapiEkle();
         
         // İlk tab'a dön
         showTab('genel');
@@ -832,4 +870,388 @@ showReportsButton.addEventListener('click', () => {
 const showAdminButton = document.querySelector('.show-admin-button');
 showAdminButton.addEventListener('click', () => {
     ipcRenderer.send('show-admin'); // Ana sürece mesaj gönder
+});
+
+// ============ ÇOKLU YAPI YÖNETİMİ ============
+let yapilar = []; // Tüm yapıları saklar
+let yapiSayaci = 0; // Yapı ID'si için sayaç
+
+// Yeni yapı ekle
+function yeniYapiEkle() {
+    yapiSayaci++;
+    const yapiId = yapiSayaci;
+    
+    const yapi = {
+        id: yapiId,
+        yapiNo: yapiSayaci, // Default olarak 1'den başlayarak artan
+        yapiAdi: '',
+        yapiYasi: '',
+        yapiSinifi: '',
+        yapiGrubu: '',
+        yapimTeknigi: '',
+        birimFiyat: '',
+        yapiAlani: '',
+        yipranmaPay: '',
+        eksikImalatOrani: ''
+    };
+    
+    yapilar.push(yapi);
+    yapiFormOlustur(yapi);
+}
+
+// Yapı formu oluştur
+function yapiFormOlustur(yapi) {
+    const container = document.getElementById('yapiListesiContainer');
+    
+    const yapiDiv = document.createElement('div');
+    yapiDiv.id = `yapi-${yapi.id}`;
+    yapiDiv.className = 'yapi-form-container';
+    yapiDiv.style.cssText = 'border: 2px solid #667eea; border-radius: 8px; padding: 20px; margin-bottom: 20px; background: #f8f9fa;';
+    
+    yapiDiv.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h3 style="color: #667eea; margin: 0;">🏗️ Yapı ${yapi.yapiNo}</h3>
+            ${yapilar.length > 1 ? `<button type="button" onclick="yapiSil(${yapi.id})" style="padding: 8px 16px; background: linear-gradient(135deg, #dc3545 0%, #c82333 100%); color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">🗑️ Sil</button>` : ''}
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Yapı No *</label>
+                <input type="number" id="yapiNo_${yapi.id}" value="${yapi.yapiNo}" required>
+            </div>
+            <div class="form-group">
+                <label>Yapı Adı *</label>
+                <input type="text" id="yapiAdi_${yapi.id}" placeholder="Yapı adı" required>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Yapı Yaşı *</label>
+                <input type="number" id="yapiYasi_${yapi.id}" placeholder="Yıl olarak" required onchange="updateYipranmaPayYapi(${yapi.id})">
+            </div>
+            <div class="form-group">
+                <label>Yapı Sınıfı *</label>
+                <select id="yapiSinifi_${yapi.id}" required onchange="populateYapiGruplariYapi(${yapi.id})">
+                    <option value="">Seçiniz...</option>
+                    <option value="1">1. Sınıf</option>
+                    <option value="2">2. Sınıf</option>
+                    <option value="3">3. Sınıf</option>
+                    <option value="4">4. Sınıf</option>
+                    <option value="5">5. Sınıf</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Yapı Grubu *</label>
+                <select id="yapiGrubu_${yapi.id}" required disabled onchange="updateBirimFiyatYapi(${yapi.id})">
+                    <option value="">Önce yapı sınıfı seçin...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Yapım Tekniği *</label>
+                <select id="yapimTeknigi_${yapi.id}" required onchange="updateYipranmaPayYapi(${yapi.id})">
+                    <option value="">Seçiniz...</option>
+                    <option value="Betonarme Karkas">Betonarme Karkas</option>
+                    <option value="Yığma Kagir">Yığma Kagir</option>
+                    <option value="Çelik Konstrüksiyon">Çelik Konstrüksiyon</option>
+                    <option value="Ahşap">Ahşap</option>
+                </select>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Birim Fiyat (TL/m²) *</label>
+                <input type="number" step="0.01" id="birimFiyat_${yapi.id}" placeholder="Otomatik doldurulacak" required>
+            </div>
+            <div class="form-group">
+                <label>Yapı Alanı (m²) *</label>
+                <input type="number" step="0.01" id="yapiAlani_${yapi.id}" placeholder="Örn: 120.50" required>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Yıpranma Payı (%)</label>
+                <input type="number" step="0.01" id="yipranmaPay_${yapi.id}" placeholder="Otomatik hesaplanacak" readonly>
+            </div>
+            <div class="form-group">
+                <label>Eksik İmalat Oranı (%) *</label>
+                <input type="number" step="0.01" id="eksikImalatOrani_${yapi.id}" placeholder="Örn: 10" required>
+            </div>
+        </div>
+        
+        <div class="form-row">
+            <div class="form-group">
+                <label>Hesaplanan Yapı Bedeli (TL)</label>
+                <input type="text" id="yapiBedeliHesaplanan_${yapi.id}" placeholder="Hesapla butonuna tıklayın" readonly>
+            </div>
+            <div class="form-group">
+                <!-- Boş alan -->
+            </div>
+        </div>
+    `;
+    
+    container.appendChild(yapiDiv);
+}
+
+// Yapı sil
+function yapiSil(yapiId) {
+    if (yapilar.length <= 1) {
+        alert('En az bir yapı olmalıdır!');
+        return;
+    }
+    
+    if (confirm('Bu yapıyı silmek istediğinizden emin misiniz?')) {
+        yapilar = yapilar.filter(y => y.id !== yapiId);
+        const yapiDiv = document.getElementById(`yapi-${yapiId}`);
+        if (yapiDiv) {
+            yapiDiv.remove();
+        }
+        
+        // Yapı numaralarını yeniden düzenle
+        yapilar.forEach((yapi, index) => {
+            yapi.yapiNo = index + 1;
+            const yapiNoInput = document.getElementById(`yapiNo_${yapi.id}`);
+            if (yapiNoInput) {
+                yapiNoInput.value = yapi.yapiNo;
+            }
+            // Başlığı güncelle
+            const yapiDiv = document.getElementById(`yapi-${yapi.id}`);
+            if (yapiDiv) {
+                const baslik = yapiDiv.querySelector('h3');
+                if (baslik) {
+                    baslik.textContent = `🏗️ Yapı ${yapi.yapiNo}`;
+                }
+            }
+        });
+    }
+}
+
+// Yapıya özel yapı grubu doldur
+function populateYapiGruplariYapi(yapiId) {
+    const birimFiyatId = document.getElementById('hesapYili').value;
+    const yapiSinifi = document.getElementById(`yapiSinifi_${yapiId}`).value;
+    const yapiGrubuSelect = document.getElementById(`yapiGrubu_${yapiId}`);
+    
+    yapiGrubuSelect.innerHTML = '<option value="">Seçiniz...</option>';
+    yapiGrubuSelect.disabled = true;
+    document.getElementById(`birimFiyat_${yapiId}`).value = '';
+    
+    if (!birimFiyatId || !yapiSinifi) {
+        yapiGrubuSelect.innerHTML = '<option value="">Önce dönem ve sınıf seçin...</option>';
+        return;
+    }
+    
+    loadYapiGruplari(birimFiyatId, yapiSinifi, (err, gruplar) => {
+        if (err || !gruplar || gruplar.length === 0) {
+            yapiGrubuSelect.innerHTML = '<option value="">Bu sınıf için grup bulunamadı</option>';
+            return;
+        }
+        
+        yapiGrubuSelect.disabled = false;
+        gruplar.forEach(grup => {
+            const option = document.createElement('option');
+            option.value = grup.yapiGrubu;
+            option.textContent = `${grup.yapiGrubu} Grubu (${formatFiyat(grup.birimFiyat)} TL/m²)`;
+            option.dataset.fiyat = grup.birimFiyat;
+            yapiGrubuSelect.appendChild(option);
+        });
+    });
+}
+
+// Yapıya özel birim fiyat güncelle
+function updateBirimFiyatYapi(yapiId) {
+    const yapiGrubuSelect = document.getElementById(`yapiGrubu_${yapiId}`);
+    const birimFiyatInput = document.getElementById(`birimFiyat_${yapiId}`);
+    
+    const selectedOption = yapiGrubuSelect.options[yapiGrubuSelect.selectedIndex];
+    
+    if (selectedOption && selectedOption.dataset.fiyat) {
+        const fiyat = parseFloat(selectedOption.dataset.fiyat);
+        birimFiyatInput.value = fiyat;
+    } else {
+        birimFiyatInput.value = '';
+    }
+}
+
+// FORM VERİSİ KAYDETME VE YÜKLEME SİSTEMİ
+// Form verilerini sessionStorage'a kaydet
+function saveFormData() {
+    console.log('Form verileri kaydediliyor...');
+    
+    try {
+        const formData = {
+            // Genel Bilgiler
+            raporTarihi: document.getElementById('raporTarihi')?.value || '',
+            resmiYaziTarihi: document.getElementById('resmiYaziTarihi')?.value || '',
+            resmiYaziSayisi: document.getElementById('resmiYaziSayisi')?.value || '',
+            ilgiliKurum: document.getElementById('ilgiliKurum')?.value || '',
+            hesapYili: document.getElementById('hesapYili')?.value || '',
+            
+            // Raportör bilgileri
+            raportorSayisi: document.getElementById('raportorSayisi')?.value || '1',
+            
+            // Arsa Bilgileri
+            ilce: document.getElementById('ilce')?.value || '',
+            mahalle: document.getElementById('mahalle')?.value || '',
+            ada: document.getElementById('ada')?.value || '',
+            parsel: document.getElementById('parsel')?.value || '',
+            yuzolcumu: document.getElementById('yuzolcumu')?.value || '',
+            malik: document.getElementById('malik')?.value || '',
+            
+            // Asgari levazım
+            asgariLevazimHesapla: document.getElementById('asgariLevazimHesapla')?.checked || false,
+            
+            // Yapı bilgileri - çoklu yapı desteği
+            yapilar: []
+        };
+        
+        // Raportör bilgilerini kaydet
+        const raportorSayisi = parseInt(formData.raportorSayisi);
+        formData.raportor = [];
+        for (let i = 1; i <= raportorSayisi; i++) {
+            const raportorSecimi = document.getElementById(`raportorSecimi${i}`)?.value || '';
+            const raportorUnvani = document.getElementById(`raportorUnvani${i}`)?.value || '';
+            if (raportorSecimi || raportorUnvani) {
+                formData.raportor.push({ secim: raportorSecimi, unvan: raportorUnvani });
+            }
+        }
+        
+        // Yapı bilgilerini kaydet
+        const yapiListesi = document.querySelectorAll('.yapi-form-card');
+        yapiListesi.forEach((yapiCard) => {
+            const yapiId = yapiCard.dataset.yapiId;
+            const yapiData = {
+                yapiNo: document.getElementById(`yapiNo_${yapiId}`)?.value || '',
+                yapiAdi: document.getElementById(`yapiAdi_${yapiId}`)?.value || '',
+                yapiYasi: document.getElementById(`yapiYasi_${yapiId}`)?.value || '',
+                yapiSinifi: document.getElementById(`yapiSinifi_${yapiId}`)?.value || '',
+                yapiGrubu: document.getElementById(`yapiGrubu_${yapiId}`)?.value || '',
+                yapimTeknigi: document.getElementById(`yapimTeknigi_${yapiId}`)?.value || '',
+                yapiAlani: document.getElementById(`yapiAlani_${yapiId}`)?.value || '',
+                birimFiyat: document.getElementById(`birimFiyat_${yapiId}`)?.value || '',
+                yipranmaPay: document.getElementById(`yipranmaPay_${yapiId}`)?.value || '',
+                eksikImalatOrani: document.getElementById(`eksikImalatOrani_${yapiId}`)?.value || ''
+            };
+            formData.yapilar.push(yapiData);
+        });
+        
+        sessionStorage.setItem('yapiBedeliFormData', JSON.stringify(formData));
+        console.log('✅ Form verileri kaydedildi');
+    } catch (error) {
+        console.error('Form verileri kaydedilemedi:', error);
+    }
+}
+
+// Form verilerini sessionStorage'dan yükle
+function loadFormData() {
+    console.log('Form verileri yükleniyor...');
+    
+    try {
+        const savedData = sessionStorage.getItem('yapiBedeliFormData');
+        if (!savedData) {
+            console.log('Kaydedilmiş form verisi bulunamadı');
+            return;
+        }
+        
+        const formData = JSON.parse(savedData);
+        
+        // Genel Bilgiler
+        if (formData.raporTarihi) document.getElementById('raporTarihi').value = formData.raporTarihi;
+        if (formData.resmiYaziTarihi) document.getElementById('resmiYaziTarihi').value = formData.resmiYaziTarihi;
+        if (formData.resmiYaziSayisi) document.getElementById('resmiYaziSayisi').value = formData.resmiYaziSayisi;
+        if (formData.ilgiliKurum) document.getElementById('ilgiliKurum').value = formData.ilgiliKurum;
+        if (formData.hesapYili) document.getElementById('hesapYili').value = formData.hesapYili;
+        
+        // Raportör sayısı
+        if (formData.raportorSayisi) {
+            document.getElementById('raportorSayisi').value = formData.raportorSayisi;
+            updateRaportorAlanlari();
+            
+            // Raportör bilgilerini yükle
+            setTimeout(() => {
+                if (formData.raportor) {
+                    formData.raportor.forEach((raportor, index) => {
+                        const i = index + 1;
+                        if (raportor.secim) document.getElementById(`raportorSecimi${i}`).value = raportor.secim;
+                        if (raportor.unvan) document.getElementById(`raportorUnvani${i}`).value = raportor.unvan;
+                    });
+                }
+            }, 500);
+        }
+        
+        // Arsa Bilgileri
+        if (formData.ilce) document.getElementById('ilce').value = formData.ilce;
+        if (formData.mahalle) document.getElementById('mahalle').value = formData.mahalle;
+        if (formData.ada) document.getElementById('ada').value = formData.ada;
+        if (formData.parsel) document.getElementById('parsel').value = formData.parsel;
+        if (formData.yuzolcumu) document.getElementById('yuzolcumu').value = formData.yuzolcumu;
+        if (formData.malik) document.getElementById('malik').value = formData.malik;
+        
+        // Asgari levazım
+        if (formData.asgariLevazimHesapla !== undefined) {
+            document.getElementById('asgariLevazimHesapla').checked = formData.asgariLevazimHesapla;
+        }
+        
+        // Yapı bilgilerini yükle - çoklu yapı desteği
+        if (formData.yapilar && formData.yapilar.length > 0) {
+            // Önce mevcut yapıları temizle
+            const yapiListContainer = document.getElementById('yapiListesi');
+            yapiListContainer.innerHTML = '';
+            yapilar = [];
+            
+            // Kaydedilmiş yapıları ekle
+            formData.yapilar.forEach((yapiData, index) => {
+                const yapiId = Date.now() + index;
+                yapilar.push(yapiId);
+                
+                const yapiCard = yapiFormOlustur(yapiId, index + 1);
+                yapiListContainer.appendChild(yapiCard);
+                
+                // Yapı verilerini doldur
+                setTimeout(() => {
+                    if (yapiData.yapiNo) document.getElementById(`yapiNo_${yapiId}`).value = yapiData.yapiNo;
+                    if (yapiData.yapiAdi) document.getElementById(`yapiAdi_${yapiId}`).value = yapiData.yapiAdi;
+                    if (yapiData.yapiYasi) document.getElementById(`yapiYasi_${yapiId}`).value = yapiData.yapiYasi;
+                    if (yapiData.yapiSinifi) document.getElementById(`yapiSinifi_${yapiId}`).value = yapiData.yapiSinifi;
+                    if (yapiData.yapiGrubu) document.getElementById(`yapiGrubu_${yapiId}`).value = yapiData.yapiGrubu;
+                    if (yapiData.yapimTeknigi) document.getElementById(`yapimTeknigi_${yapiId}`).value = yapiData.yapimTeknigi;
+                    if (yapiData.yapiAlani) document.getElementById(`yapiAlani_${yapiId}`).value = yapiData.yapiAlani;
+                    if (yapiData.birimFiyat) document.getElementById(`birimFiyat_${yapiId}`).value = yapiData.birimFiyat;
+                    if (yapiData.yipranmaPay) document.getElementById(`yipranmaPay_${yapiId}`).value = yapiData.yipranmaPay;
+                    if (yapiData.eksikImalatOrani) document.getElementById(`eksikImalatOrani_${yapiId}`).value = yapiData.eksikImalatOrani;
+                }, 300);
+            });
+        }
+        
+        console.log('✅ Form verileri yüklendi');
+    } catch (error) {
+        console.error('Form verileri yüklenemedi:', error);
+    }
+}
+
+// Yapıya özel yıpranma payı güncelle
+function updateYipranmaPayYapi(yapiId) {
+    const yapimTeknigi = document.getElementById(`yapimTeknigi_${yapiId}`).value;
+    const yapiYasi = document.getElementById(`yapiYasi_${yapiId}`).value;
+    
+    if (yapimTeknigi && yapiYasi) {
+        const yipranmaPay = hesaplaYipranmaPay(yapimTeknigi, yapiYasi);
+        document.getElementById(`yipranmaPay_${yapiId}`).value = yipranmaPay;
+    }
+}
+
+// Yapı ekle butonuna event listener
+document.addEventListener('DOMContentLoaded', () => {
+    const yapiEkleBtn = document.getElementById('yapiEkleBtn');
+    if (yapiEkleBtn) {
+        yapiEkleBtn.addEventListener('click', yeniYapiEkle);
+    }
+    
+    // İlk yapıyı otomatik ekle
+    yeniYapiEkle();
 });

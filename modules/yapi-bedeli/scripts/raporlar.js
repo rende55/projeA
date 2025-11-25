@@ -1,16 +1,82 @@
+console.log('=== RAPORLAR.JS BAŞLADI ===');
+
 const { ipcRenderer } = require('electron');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
-const { generateReport } = require('./reportGenerator');
-const { dialog } = require('electron').remote || require('@electron/remote');
 
-let db = new sqlite3.Database(path.join(__dirname, 'raporlar.db'));
+console.log('Modüller yüklendi');
 
-db.all(`SELECT id, raporTarihi, ilce, mahalle, ada, parsel FROM raporlar`, [], (err, rows) => {
+// Veritabanı yolu - basit ve direkt
+const dbPath = path.join(process.cwd(), 'raporlar.db');
+console.log('Veritabanı yolu:', dbPath);
+
+let db = new sqlite3.Database(dbPath, (err) => {
     if (err) {
+        console.error('❌ Veritabanı bağlantı hatası:', err);
+        alert('Veritabanı hatası: ' + err.message);
+    } else {
+        console.log('✅ Veritabanına bağlanıldı');
+    }
+});
+
+// reportGenerator'ı sadece ihtiyaç olduğunda yükle
+let generateReport = null;
+
+// Sayfa yüklendiğinde çalışacak
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('DOM yüklendi, raporlar yükleniyor...');
+    
+    // Navigasyon butonları
+    const homeButton = document.getElementById('homeButton');
+    const formButton = document.getElementById('formButton');
+    
+    if (homeButton) {
+        homeButton.addEventListener('click', () => {
+            console.log('Pencere kapatılıyor...');
+            ipcRenderer.send('navigate-home');
+        });
+    }
+    
+    if (formButton) {
+        formButton.addEventListener('click', () => {
+            console.log('Form açılıyor...');
+            ipcRenderer.send('open-yapi-bedeli');
+        });
+    }
+    
+    // Raporları yükle
+    loadRaporlar();
+});
+
+function loadRaporlar() {
+    console.log('Raporlar yükleniyor...');
+    db.all(`SELECT id, raporTarihi, ilce, mahalle, ada, parsel FROM raporlar ORDER BY id DESC`, [], (err, rows) => {
+    if (err) {
+        console.error('Raporlar yüklenirken hata:', err);
+        alert('❌ Veritabanı hatası: ' + err.message);
         throw err;
     }
+    console.log(`✅ ${rows.length} adet rapor bulundu`);
     const tableBody = document.querySelector('#raporlarTable tbody');
+    
+    if (!tableBody) {
+        console.error('tbody elementi bulunamadı!');
+        alert('❌ Tablo elementi bulunamadı!');
+        return;
+    }
+    
+    if (rows.length === 0) {
+        console.log('Hiç rapor yok');
+        const tr = document.createElement('tr');
+        const td = document.createElement('td');
+        td.colSpan = 7;
+        td.textContent = 'Henüz kayıtlı rapor bulunmamaktadır.';
+        td.style.textAlign = 'center';
+        td.style.padding = '20px';
+        tr.appendChild(td);
+        tableBody.appendChild(tr);
+        return;
+    }
     rows.forEach(row => {
         const tr = document.createElement('tr');
         const tdId = document.createElement('td');
@@ -63,56 +129,12 @@ db.all(`SELECT id, raporTarihi, ilce, mahalle, ada, parsel FROM raporlar`, [], (
             console.log(`Revize Et: ${row.id}`);
         };
 
-        // Hesapla butonu (Rapor Oluştur)
+        // Hesapla butonu (Rapor Oluştur) - ŞİMDİLİK DEVRE DIŞI
         const btnHesapla = document.createElement('button');
         btnHesapla.textContent = 'Rapor Oluştur';
         btnHesapla.className = 'btn hesapla-button';
         btnHesapla.onclick = () => {
-            // Tam rapor verilerini veritabanından al
-            db.get(`SELECT * FROM raporlar WHERE id = ?`, row.id, (err, raporData) => {
-                if (err) {
-                    alert('Rapor verileri alınırken hata oluştu: ' + err.message);
-                    return;
-                }
-                
-                if (!raporData) {
-                    alert('Rapor bulunamadı!');
-                    return;
-                }
-                
-                // Rapor dosyasının kaydedileceği yolu belirle
-                const tarih = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-                const dosyaAdi = `Rapor_${raporData.raporNo || row.id}_${tarih}.docx`;
-                const outputPath = path.join(__dirname, 'raporlar_cikti', dosyaAdi);
-                
-                // raporlar_cikti klasörünü oluştur (yoksa)
-                const fs = require('fs');
-                const outputDir = path.join(__dirname, 'raporlar_cikti');
-                if (!fs.existsSync(outputDir)) {
-                    fs.mkdirSync(outputDir);
-                }
-                
-                // Rapor oluştur (async)
-                console.log('Rapor oluşturuluyor...');
-                generateReport(raporData, outputPath)
-                    .then(result => {
-                        console.log('Rapor oluşturma sonucu:', result);
-                        
-                        if (result.success) {
-                            alert(`✅ Rapor başarıyla oluşturuldu!\n\nDosya: ${dosyaAdi}\n\nKonum: ${outputDir}`);
-                            
-                            // Dosyayı aç
-                            const { shell } = require('electron');
-                            shell.openPath(result.path || outputPath);
-                        } else {
-                            alert('❌ Rapor oluşturulurken hata oluştu: ' + result.error);
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Rapor oluşturma hatası:', error);
-                        alert('❌ Rapor oluşturulurken beklenmeyen hata: ' + error.message);
-                    });
-            });
+            alert('Rapor oluşturma özelliği yakında eklenecek');
         };
 
         tdIslemler.appendChild(btnSil);
@@ -122,10 +144,15 @@ db.all(`SELECT id, raporTarihi, ilce, mahalle, ada, parsel FROM raporlar`, [], (
 
         tableBody.appendChild(tr);
     });
-});
+    });
+}
 
 // Sayfayı kapatma butonuna tıklama olayı
-const closeButton = document.getElementById('closeButton');
-closeButton.addEventListener('click', () => {
-    window.close(); // Pencereyi kapat
+document.addEventListener('DOMContentLoaded', () => {
+    const closeButton = document.getElementById('closeButton');
+    if (closeButton) {
+        closeButton.addEventListener('click', () => {
+            window.close(); // Pencereyi kapat
+        });
+    }
 });

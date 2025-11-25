@@ -1,8 +1,11 @@
 const { ipcRenderer } = require('electron');
 
+// Navigasyon state'i
+let currentView = 'dashboard'; // 'dashboard', 'yapi-bedeli', 'yapi-bedeli-raporlar', 'yapi-bedeli-admin'
+
 // Sayfa yüklendiğinde
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Dashboard yüklendi');
+    console.log('Dashboard yüklendi - Tek Pencere Sistemi');
     
     // Tüm modül kartlarını seç
     const moduleCards = document.querySelectorAll('.module-card');
@@ -44,7 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// Modül açma fonksiyonu
+// Modül açma fonksiyonu - YENİ PENCERE SİSTEMİ
 function openModule(moduleId) {
     console.log(`Modül açılıyor: ${moduleId}`);
     
@@ -55,19 +58,19 @@ function openModule(moduleId) {
     setTimeout(() => {
         card.style.transform = '';
         
-        // IPC ile modülü aç
+        // IPC ile modülü aç (yeni pencere)
         switch(moduleId) {
             case 'yapi-bedeli':
                 ipcRenderer.send('open-yapi-bedeli');
                 break;
             case 'proje-bedeli':
-                ipcRenderer.send('open-proje-bedeli');
+                showNotification('Proje Bedeli modülü henüz geliştirilme aşamasında.');
                 break;
             case 'mevzuat':
-                ipcRenderer.send('open-mevzuat');
+                showNotification('Mevzuat modülü henüz geliştirilme aşamasında.');
                 break;
             case 'hesaplama':
-                ipcRenderer.send('open-hesaplama');
+                showNotification('Hesaplama modülü henüz geliştirilme aşamasında.');
                 break;
             default:
                 console.error('Bilinmeyen modül:', moduleId);

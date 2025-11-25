@@ -1,7 +1,9 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-let db = new sqlite3.Database(path.join(__dirname, 'raporlar.db'));
+// Veritabanı ana dizinde (3 seviye yukarı: scripts -> yapi-bedeli -> modules -> projeA)
+const dbPath = path.join(__dirname, '..', '..', '..', 'raporlar.db');
+let db = new sqlite3.Database(dbPath);
 
 // Global değişkenler
 let seciliDonemId = null;
