@@ -1,0 +1,211 @@
+<style>
+    .pb-raporlar-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    .pb-raporlar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 30px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #E2E8F0;
+    }
+
+    .pb-raporlar-header h1 {
+        color: #1E3A5F;
+        font-size: 28px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .pb-raporlar-back-btn {
+        background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
+        color: #FFFFFF;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pb-raporlar-back-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .pb-raporlar-table-container {
+        background: #FFFFFF;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+    }
+
+    .pb-raporlar-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .pb-raporlar-table thead {
+        background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%);
+    }
+
+    .pb-raporlar-table thead th {
+        color: #FFFFFF;
+        font-weight: 600;
+        font-size: 13px;
+        padding: 16px 12px;
+        text-align: left;
+    }
+
+    .pb-raporlar-table tbody tr {
+        transition: all 0.2s ease;
+        border-bottom: 1px solid #E2E8F0;
+    }
+
+    .pb-raporlar-table tbody tr:hover {
+        background: #F7FAFC;
+    }
+
+    .pb-raporlar-table tbody td {
+        padding: 14px 12px;
+        font-size: 14px;
+        color: #2D3748;
+    }
+
+    .pb-raporlar-table tbody td.rapor-no {
+        font-weight: 600;
+        color: #1E3A5F;
+    }
+
+    .pb-raporlar-table tbody td.bedel {
+        font-weight: 700;
+        color: #059669;
+    }
+
+    .pb-raporlar-actions {
+        display: flex;
+        gap: 8px;
+    }
+
+    .pb-raporlar-btn {
+        padding: 8px 14px;
+        border: none;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .pb-raporlar-btn.view {
+        background: #3B82F6;
+        color: #FFFFFF;
+    }
+
+    .pb-raporlar-btn.view:hover {
+        background: #2563EB;
+    }
+
+    .pb-raporlar-btn.export {
+        background: #10B981;
+        color: #FFFFFF;
+    }
+
+    .pb-raporlar-btn.export:hover {
+        background: #059669;
+    }
+
+    .pb-raporlar-btn.delete {
+        background: #EF4444;
+        color: #FFFFFF;
+    }
+
+    .pb-raporlar-btn.delete:hover {
+        background: #DC2626;
+    }
+
+    .pb-raporlar-empty {
+        text-align: center;
+        padding: 60px 20px;
+        color: #718096;
+    }
+
+    .pb-raporlar-empty-icon {
+        font-size: 64px;
+        margin-bottom: 20px;
+    }
+
+    .pb-raporlar-empty h3 {
+        font-size: 20px;
+        color: #4A5568;
+        margin-bottom: 10px;
+    }
+
+    .pb-raporlar-empty p {
+        font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .pb-raporlar-header {
+            flex-direction: column;
+            gap: 15px;
+            text-align: center;
+        }
+
+        .pb-raporlar-table-container {
+            overflow-x: auto;
+        }
+
+        .pb-raporlar-table {
+            min-width: 800px;
+        }
+    }
+</style>
+
+<div class="pb-raporlar-container">
+    <header class="pb-raporlar-header">
+        <h1>📋 Proje Bedeli - Kayıtlı Raporlar</h1>
+        <button class="pb-raporlar-back-btn" id="pbr-backButton">
+            ◀ Forma Dön
+        </button>
+    </header>
+
+    <div class="pb-raporlar-table-container">
+        <table class="pb-raporlar-table" id="pbr-table">
+            <thead>
+                <tr>
+                    <th>Rapor No</th>
+                    <th>İşin Adı</th>
+                    <th>Hesap Yılı</th>
+                    <th>Toplam Maliyet</th>
+                    <th>Toplam Hizmet Bedeli</th>
+                    <th>Kayıt Tarihi</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody id="pbr-tableBody">
+                <!-- Raporlar buraya yüklenecek -->
+            </tbody>
+        </table>
+
+        <div class="pb-raporlar-empty" id="pbr-emptyMessage" style="display: none;">
+            <div class="pb-raporlar-empty-icon">📭</div>
+            <h3>Henüz kayıtlı rapor yok</h3>
+            <p>Proje Bedeli formunu doldurarak yeni bir rapor oluşturabilirsiniz.</p>
+        </div>
+    </div>
+</div>

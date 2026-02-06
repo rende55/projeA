@@ -1,5 +1,752 @@
 # CHANGELOG
 
+## [07.02.2026 - 00:07] - Yapı Bedeli - Resmi Yazı Sayısı 4 Parçalı Giriş
+
+### ✨ Yeni Özellikler
+- **Resmi Yazı Sayısı alanı 4 parçalı yapıya dönüştürüldü**
+  - 1. Kutu: Belge türü seçimi (E: Elektronik, Z: Zorunlu Hal, O: Olağanüstü Durum) - Default: E
+  - 2. Kutu: T.C. Devlet Teşkilat Numarası (max 9 hane)
+  - 3. Kutu: Standart Dosya Planı Kodu (max 9 hane, Örn: 755.99)
+  - 4. Kutu: Belge Kayıt Numarası (max 9 hane)
+  - Rapora dökülürken kutucuklar tire (-) ile birleştirilerek tek değer olarak gösterilir
+  - Boş kutucuklar yok sayılır (Örn: E-681103562-823.01-13589)
+
+### 🔄 Güncellenen Dosyalar
+- `modules/yapi-bedeli/views/yapi-bedeli-content.html` - 4 parçalı input yapısı
+- `modules/yapi-bedeli/views/index.html` - 4 parçalı input yapısı (eski form)
+- `modules/yapi-bedeli/scripts/yapi-bedeli-page.js` - collectFormData birleştirme mantığı
+- `modules/yapi-bedeli/scripts/renderer.js` - handleFormSubmit, saveFormData, loadFormData güncellendi
+
+---
+
+## [04.02.2026 - 23:31] - Yönetici Paneli - Birim Fiyat Grupları Düzenleme Özelliği
+
+### 🐛 Hata Düzeltmesi
+- **Birim fiyat dönemi eklendikten sonra içeriğine erişilememe sorunu giderildi**
+  - Dönem listesinde "Grupları Düzenle" butonu eksikti
+  - Grup düzenleme bölümü HTML'de tanımlı değildi
+  - İlgili fonksiyonlar `admin-page.js`'e eklenmemişti
+
+### ✨ Eklenen Özellikler
+- **Grupları Düzenle butonu** dönem listesine eklendi
+- **Grup düzenleme bölümü** eklendi (5 sınıf için A-E grupları)
+- **Grup ekleme/silme/kaydetme** fonksiyonları eklendi
+
+### 🔄 Güncellenen Dosyalar
+- `modules/yapi-bedeli/views/admin-content.html` - Grup düzenleme bölümü eklendi
+- `modules/yapi-bedeli/scripts/admin-page.js` - gruplariDuzenle, grupEkle, grupSil, gruplariKaydet, grupDuzenlemeyiKapat fonksiyonları eklendi
+
+---
+
+## [20.01.2026 - 16:55] - Proje Bedeli Modülü - Proje Tipi Seçimi (Asıl/Rölöve)
+
+### ✨ Yeni Özellikler
+- **Her branşa Proje Tipi seçimi eklendi**
+  - Asıl Proje: %100 çarpan
+  - Rölöve Projesi: %10 çarpan
+  - Her ikisi de seçilebilir (%110 toplam çarpan)
+  - En az biri seçili olmalı
+
+### 🔄 Güncellenen Dosyalar
+- `modules/proje-bedeli/views/proje-bedeli-content.html` - Proje tipi checkbox'ları ve CSS
+- `modules/proje-bedeli/scripts/proje-bedeli-page.js` - projeTipiToggle fonksiyonu, bransHesapla güncellendi
+
+---
+
+## [20.01.2026 - 15:50] - Proje Bedeli Modülü - Hizmet Bölümleri Oranları Güncellendi
+
+### 🔄 Güncellenen Özellikler
+- **Branşlara göre Hizmet Bölümleri Oranları revize edildi**
+
+  **Mimarlık:** Ön Proje %15, Kesin Proje %20, Uygulama Projesi %30, Detaylar %20, Orjinal Teslimi %5, İhale Dosyası %10
+
+  **İnşaat:** Öneri Raporu %10, Ön Proje %20, Uygulama Projesi %35, Detaylar %20, Orjinal Teslimi %5, İhale Dosyası %10
+
+  **Mekanik:** Öneri Raporu %7, Ön Proje %18, Uygulama Projesi %50, Detaylar %10, Orjinal Teslimi %5, İhale Dosyası %10
+
+  **Elektrik:** Öneri Raporu %7, Ön Proje %20, Uygulama Projesi %50, Detaylar %8, Orjinal Teslimi %5, İhale Dosyası %10
+
+### 🔄 Güncellenen Dosyalar
+- `modules/proje-bedeli/views/proje-bedeli-content.html` - Tüm branşların hizmet bölümleri oranları
+
+---
+
+## [19.01.2026 - 03:30] - Proje Bedeli Modülü - İmzacı Seçimi (DB Entegrasyonu)
+
+### ✨ Yeni Özellikler
+- **Genel Bilgiler sekmesine İmzacı bölümü eklendi**
+  - 1-4 arası imzacı seçilebilir
+  - İmzacılar `raportorleri` tablosundan dropdown ile seçilir (Yapı Bedeli ile aynı kaynak)
+  - Seçim yapıldığında ünvan otomatik doldurulur
+  - İmzacı sayısı değiştiğinde branşlardaki seçenekler otomatik güncellenir
+
+- **Her branş için imzacı seçimi eklendi**
+  - Mimarlık, İnşaat, Mekanik, Elektrik branşlarında checkbox'lar
+  - Hangi imzacıların o branşın raporuna ekleneceği seçilebilir
+  - İmzacı seçimi değiştiğinde tüm branşlardaki label'lar güncellenir
+
+### 🔄 Güncellenen Dosyalar
+- `modules/proje-bedeli/views/proje-bedeli-content.html` - İmzacı dropdown ve CSS
+- `modules/proje-bedeli/scripts/proje-bedeli-page.js` - loadRaportorleri, loadRaportorSelect, imzaciSayisiDegisti, imzaciSecimGuncelle fonksiyonları
+
+---
+
+## [19.01.2026 - 03:15] - Proje Bedeli Modülü - Word Rapor Oluşturma (Sayfa 1)
+
+### ✨ Yeni Özellikler
+- **Word Raporu Oluştur butonu eklendi**
+  - Mor renkli "📄 Word Raporu Oluştur" butonu
+  - Tıklandığında Word belgesi oluşturur ve açar
+
+- **Rapor formatı (1. Sayfa - Genel Bilgiler):**
+  - Başlık: İşin Adı (CAPITAL, Bold, Ortalı)
+  - Alt Başlık: PROJE BEDEL HESABI
+  - 1. Genel Bilgiler tablosu (İşin Adı, Yapı Sınıfı/Grubu, Birim Maliyet, Alan, Toplam Maliyet)
+  - 2. Proje Bedel İcmali tablosu (4 branş + toplam)
+  - 3. İmzacılar tablosu (kenarlıksız)
+
+- **Yazı stili:** Times New Roman, 12pt
+
+### 🔄 Eklenen/Güncellenen Dosyalar
+- `modules/proje-bedeli/scripts/pb-reportGenerator.js` (yeni)
+- `modules/proje-bedeli/scripts/proje-bedeli-page.js` - raporOlustur fonksiyonu
+- `modules/proje-bedeli/views/proje-bedeli-content.html` - Rapor Oluştur butonu
+
+---
+
+## [19.01.2026 - 01:30] - Raporlar Tablosu Modül Ayrımı
+
+### 🐛 Hata Düzeltmesi
+- **Raporlar tablosuna `modul` alanı eklendi**
+  - Her rapor artık hangi modüle ait olduğunu belirtiyor
+  - Yapı Bedeli raporları: `modul = 'yapi-bedeli'`
+  - Proje Bedeli raporları: `projeBedeliRaporlari` tablosunda (ayrı tablo)
+  - Mevcut raporlar otomatik olarak `yapi-bedeli` olarak işaretleniyor
+
+- **Yapı Bedeli raporlar sayfası düzeltildi**
+  - Artık sadece `yapi-bedeli` modülüne ait raporları gösteriyor
+  - Kıymet Takdiri raporları artık karışmıyor
+
+### 🔄 Güncellenen Dosyalar
+- `main.js` - Migration ve CREATE TABLE güncellendi
+- `modules/yapi-bedeli/scripts/yapi-bedeli-page.js` - INSERT sorgusuna modul eklendi
+- `modules/yapi-bedeli/scripts/raporlar-page.js` - SELECT sorgusuna modul filtresi eklendi
+
+---
+
+## [18.01.2026 - 19:15] - Proje Bedeli Modülü - Kayıtlı Raporlar Sayfası
+
+### ✨ Yeni Özellikler
+- **Kayıtlı Raporlar sayfası eklendi**
+  - Kaydedilen tüm Proje Bedeli raporlarını listeler
+  - Rapor No, İşin Adı, Hesap Yılı, Toplam Maliyet, Toplam Hizmet Bedeli, Kayıt Tarihi sütunları
+  - Görüntüle ve Sil butonları
+  - "Forma Dön" butonu ile geri dönüş
+
+- **Navigation entegrasyonu yapıldı**
+  - "Kayıtlı Raporlar" butonu artık çalışıyor
+  - Header'daki "Raporlar" butonu da çalışıyor
+
+### 🔄 Güncellenen/Eklenen Dosyalar
+- `modules/proje-bedeli/views/pb-raporlar-content.html` (yeni)
+- `modules/proje-bedeli/scripts/pb-raporlar-page.js` (yeni)
+- `shared/scripts/navigation.js` - pb-raporlar sayfası eklendi
+- `modules/proje-bedeli/scripts/proje-bedeli-page.js` - Raporlar butonları güncellendi
+
+---
+
+## [18.01.2026 - 19:10] - Proje Bedeli Modülü - Hesaplama Sekmesi Özet Tablosu
+
+### ✨ Yeni Özellikler
+- **Hesaplama sekmesine branş özet tablosu eklendi**
+  - 4 branş satır halinde listeleniyor (Mimarlık, İnşaat, Mekanik, Elektrik)
+  - Sütunlar: Branş, Hizmet Dalı Katsayısı, Hizmet Sınıfı, PID Oranı, Hizmet Bölümü Oranı, Seçili Hizmet Bedeli
+  - En altta Toplam Hizmet Bedeli gösteriliyor
+  - Toplam Yapı Maliyeti kartı eklendi
+
+- **"Tüm Branşları Hesapla" butonu eklendi**
+  - Tek tıkla tüm branşların hesaplamasını yapar
+  - Özet tablosunu otomatik günceller
+
+### 🔄 Güncellenen Dosyalar
+- `modules/proje-bedeli/views/proje-bedeli-content.html` - Hesaplama sekmesi HTML/CSS
+- `modules/proje-bedeli/scripts/proje-bedeli-page.js` - tumBranslariHesapla fonksiyonu
+
+---
+
+## [11.01.2026 - 02:35] - Proje Bedeli Modülü - Türkçe Sayı Formatı Düzeltmesi
+
+### 🐛 Hata Düzeltmesi
+- **Toplam maliyet branşlara taşınırken sıfırların kaybolması sorunu düzeltildi**
+  - Türkçe sayı formatı (6.000.000,00 TL) düzgün parse edilmiyor, 6.000 olarak algılanıyordu
+  - Çözüm: Önce binlik ayracı noktalar kaldırılıyor, sonra ondalık virgül noktaya çevriliyor
+  - `bransHesapla()` ve `raporKaydet()` fonksiyonları güncellendi
+
+### 🔄 Güncellenen Dosyalar
+- `modules/proje-bedeli/scripts/proje-bedeli-page.js` - Türkçe sayı formatı parse düzeltmesi
+
+---
+
+## [11.01.2026 - 02:20] - Proje Bedeli Modülü - Rapor Kaydetme
+
+### ✨ Yeni Özellikler
+- **Rapor kaydetme özelliği aktif edildi**
+  - Tüm genel bilgiler ve branş verileri kaydedilir
+  - Otomatik rapor numarası oluşturulur (PB-YYYYMMDD-HHMMSS formatında)
+  - Her branş için: sınıf, PID oranı, proje bedeli, hizmet oranı, hizmet bedeli, seçili hizmet bölümleri
+  - Genel toplam bedel hesaplanır
+
+### 🔄 Güncellenen Dosyalar
+- `main.js` - projeBedeliRaporlari tablosu eklendi
+- `modules/proje-bedeli/scripts/proje-bedeli-page.js` - raporKaydet fonksiyonu eklendi
+
+---
+
+## [11.01.2026 - 02:15] - Proje Bedeli Modülü - Branş Kartları
+
+### ✨ Yeni Özellikler
+- **Her branş için renkli kart sistemi eklendi**
+  - Mimarlık (Mor), İnşaat (Turuncu), Mekanik (Yeşil), Elektrik (Mavi)
+  
+- **Kart içerikleri:**
+  - Toplam Maliyet: Genel Bilgiler'den otomatik aktarılır
+  - Hizmet Dalı Katsayısı: MIM %100, INS %75, MEK %50, ELK %38,5
+  - Hizmet Sınıfı: 1-5 arası seçilebilir listbox
+  - PID Oranı: m² ve sınıfa göre veritabanından otomatik getirilir (enterpolasyon destekli)
+  
+- **Hizmet Bölümleri sistemi:**
+  - 6 bölüm: Ön Proje (%20), Kesin Proje (%40), Uygulama Projesi (%10), Detay Projesi (%10), Mahal Listesi (%10), Metraj (%10)
+  - Checkbox ile seçim, toplam %100
+  - Seçili oranlar dinamik olarak güncellenir
+
+- **Hesaplama:**
+  - Proje Bedeli = Toplam Maliyet × Hizmet Dalı Katsayısı × PID Oranı
+  - Seçili Hizmet Bedeli = Proje Bedeli × Seçili Hizmet Oranı
+
+### 🔄 Güncellenen Dosyalar
+- `modules/proje-bedeli/views/proje-bedeli-content.html` - Branş kartları HTML/CSS
+- `modules/proje-bedeli/scripts/proje-bedeli-page.js` - Hesaplama fonksiyonları
+
+---
+
+## [10.01.2026 - 23:56] - Yönetici Paneli - PID Oranları Tablosu
+
+### ✨ Yeni Özellikler
+- **Yönetici paneline PID Oranları tabı eklendi**
+  - m² satırları: 500, 1000, 2500, 5000, 7500, 10000... 80000, +80000
+  - Sütunlar: 1-5 Hizmet Sınıfları
+  - Manuel veri girişi için input alanları
+  - Kaydet ve Yenile butonları
+
+### 🔄 Güncellenen Dosyalar
+- `modules/yapi-bedeli/views/admin-content.html` - PID Oranları tabı eklendi
+- `modules/yapi-bedeli/scripts/admin-page.js` - PID yükleme/kaydetme fonksiyonları
+
+---
+
+## [10.01.2026 - 23:37] - Proje Bedeli Modülü - Veritabanı Yapısı
+
+### ✨ Yeni Özellikler
+- **PID Oranları tablosu oluşturuldu** (`pidOranlari`)
+  - Alan aralıkları (m²) ve hizmet sınıflarına (1-5) göre katsayılar
+  - Enterpolasyon için min/max alan değerleri
+
+- **Hizmet Dalı Katsayıları tablosu oluşturuldu** (`hizmetDaliKatsayilari`)
+  - Mimarlık (MIM): 1.00
+  - İnşaat (INS): 0.75
+  - Mekanik (MEK): 0.50
+  - Elektrik (ELK): 0.385
+
+### 📊 Proje Bedeli Hesaplama Formülü
+```
+Proje Bedeli = Toplam Maliyet × Hizmet Dalı Katsayısı × PID Oranı
+```
+- PID oranı: Alan iki hücre arasındaysa enterpolasyon yapılır
+
+### 🔄 Güncellenen Dosyalar
+- `main.js` - PID oranları ve hizmet dalı katsayıları tabloları eklendi
+
+---
+
+## [10.01.2026 - 20:58] - Proje Bedeli Modülü - Genel Bilgiler Tabı
+
+### ✨ Yeni Özellikler
+- **Genel Bilgiler tabı form alanları eklendi**
+  - İşin Adı
+  - Toplam İnşaat Alanı (m²)
+  - Hesap Yılı (Yapı Bedeli modülüyle ortak veritabanı)
+  - Yapı Sınıfı ve Grubu seçimi
+  - Birim Maliyet (otomatik)
+  - Toplam Yapı Maliyeti (hesaplanan)
+
+- **Yapı maliyeti hesaplama özelliği**
+  - Formül: Toplam Maliyet = Birim Maliyet × Toplam İnşaat Alanı
+  - Sıfır yapı olarak hesaplanır (eskime payı ve eksik imalat yok)
+  - Yapı Bedeli modülündeki birim fiyat verileri kullanılır
+
+### 🔄 Güncellenen Dosyalar
+- `modules/proje-bedeli/views/proje-bedeli-content.html` - Genel Bilgiler form alanları
+- `modules/proje-bedeli/scripts/proje-bedeli-page.js` - Veritabanı entegrasyonu ve hesaplama mantığı
+
+---
+
+## [07.01.2026 - 12:46] - Proje Bedeli Modülü Tab Yapısı
+
+### ✨ Yeni Özellikler
+- **Proje Bedeli modülü temel yapısı oluşturuldu**
+  - 3 ana tab: Genel Bilgiler, Branş, Hesaplama
+  - Branş tabında 4 alt sekme: Mimarlık, İnşaat, Mekanik, Elektrik
+  - Tab ve alt tab navigasyonu çalışır durumda
+  - Placeholder içerikler (daha sonra doldurulacak)
+
+### 📁 Yeni Dosyalar
+- `modules/proje-bedeli/views/proje-bedeli-content.html` - Modül HTML şablonu
+- `modules/proje-bedeli/scripts/proje-bedeli-page.js` - Modül script dosyası
+
+### 🔄 Güncellenen Dosyalar
+- `shared/scripts/navigation.js` - Proje Bedeli sayfası navigasyona eklendi
+- `dashboard.html` - Proje Bedeli kartı aktif hale getirildi
+- `dashboard.js` - Proje Bedeli navigasyon case'i eklendi
+
+---
+
+## [07.01.2026 - 12:32] - Yönetici Paneli Erişim Düzenlemesi
+
+### 🔄 Değişiklik
+- **Yönetici Paneli kartı ana sayfaya eklendi**
+  - Diğer modül kartlarıyla uyumlu tasarım
+  - Aktif durum göstergesi ile
+
+### 🗑️ Kaldırılan Özellikler
+- Yapı Bedeli modülü buton panelinden "Yönetici Paneli" butonu kaldırıldı
+- `index.html` ve `yapi-bedeli-content.html` dosyalarından yönetici paneli butonları ve CSS stilleri temizlendi
+
+### 📁 Güncellenen Dosyalar
+- `dashboard.html` - Yönetici Paneli kartı eklendi
+- `dashboard.js` - Admin modülü için navigasyon case'i eklendi
+- `modules/yapi-bedeli/views/index.html` - Yönetici paneli butonu ve CSS kaldırıldı
+- `modules/yapi-bedeli/views/yapi-bedeli-content.html` - Yönetici paneli butonu ve CSS kaldırıldı
+
+---
+
+## [15.12.2025 - 21:30] - Word Export Fotoğraf Sorunu Düzeltmesi
+
+### 🐛 Hata Düzeltmesi
+- **Fotoğraflar Word raporuna eklenmiyor sorunu**
+  - `ImageRun` için `type` parametresi eklendi (docx v9+ gereksinimi)
+  - Resim tipi (jpg, png, gif, bmp) otomatik algılanıyor
+  - Debug logları eklendi (fotoğraf sayısı, boyut, tip bilgisi)
+
+### 📁 Güncellenen Dosyalar
+- `modules/yapi-bedeli/scripts/reportGenerator.js` - ImageRun type parametresi
+- `modules/yapi-bedeli/scripts/editor-page.js` - Debug logları
+- `main.js` - export-word handler debug logları
+
+---
+
+## [15.12.2025 - 21:15] - Rapor Sistemi Yeniden Tasarımı (Tek Elden Yönetim)
+
+### 🚀 Büyük Değişiklik
+- **Tek Elden Rapor Yönetimi**: Rapor editörü artık tüm rapor işlemlerinin merkezi
+
+### ✨ Yeni Özellikler
+1. **Editörde Tam Düzenleme Desteği**
+   - Taşınmaz bilgileri (il, ilçe, mahalle, ada, parsel) düzenlenebilir
+   - Yapı bilgileri (alan, birim fiyat, yıpranma, eksik imalat) düzenlenebilir
+   - Yeni yapı ekleme butonu
+   - "Yeniden Hesapla" butonu ile anlık hesaplama
+   - Hesaplanan değerler yeşil arka planla vurgulanıyor
+
+2. **Editörde Fotoğraf Yönetimi**
+   - Veritabanından fotoğraflar otomatik yükleniyor
+   - Yeni fotoğraf ekleme
+   - Fotoğraf silme
+   - Fotoğraf açıklaması düzenleme
+   - Fotoğraf sayısı göstergesi
+
+3. **Gerçek Kaydetme İşlevi**
+   - Editördeki tüm değişiklikler veritabanına kaydediliyor
+   - Yapı bilgileri, fotoğraflar ve hesaplanan değerler senkronize
+
+4. **Word Export Sadece Editörden**
+   - Form sayfasından "Word Rapor Oluştur" butonu kaldırıldı
+   - Word indirme sadece editör üzerinden yapılıyor
+   - Kaydetme sonrası güncel verilerle export
+
+### 🗑️ Kaldırılan Özellikler
+- Form sayfasındaki "Word Rapor Oluştur" butonu kaldırıldı
+- `export-word-with-photos` IPC handler artık kullanılmıyor (form sayfasından)
+
+### 🔧 Teknik Değişiklikler
+- **editor-page.js**: Tamamen yeniden yazıldı
+  - `collectEditorData()`: Editörden veri toplama
+  - `kaydet()`: Veritabanına gerçek kaydetme
+  - `fotografEkle()`, `fotografSil()`, `fotografAciklamaGuncelle()`: Fotoğraf yönetimi
+  - `yeniYapiEkle()`: Yeni yapı satırı ekleme
+  - `hesaplaSatir()`, `yenidenHesapla()`: Yapı bedeli hesaplama
+  - `guncelleToplamlar()`: Toplam ve levazım bedeli güncelleme
+  - `sayiyiYaziyaCevir()`: Tam sayıyı yazıya çevirme
+
+- **editor-content.html**: Yeni CSS stilleri
+  - `.ed-inline-edit`: Satır içi düzenlenebilir alanlar
+  - `.ed-numeric`: Sayısal hücreler (sağa hizalı)
+  - `.ed-calculated`: Hesaplanan hücreler (yeşil arka plan)
+  - `.ed-photos-section`: Fotoğraf bölümü
+  - `.ed-photo-card`: Fotoğraf kartları
+  - `.ed-add-btn`, `.ed-calc-btn`: Aksiyon butonları
+
+- **yapi-bedeli-content.html**: Word Rapor Oluştur butonu kaldırıldı
+- **yapi-bedeli-page.js**: Word export event listener kaldırıldı
+
+### 📋 Yeni İş Akışı
+```
+Form Doldur → Kaydet → Raporlar → Düzenle (Editör) → Word İndir
+                                      ↓
+                              Fotoğraf Ekle/Sil
+                              Yapı Bilgisi Düzenle
+                              Yeniden Hesapla
+                              Kaydet
+```
+
+### 🎯 Kullanıcı Deneyimi
+- Tüm rapor düzenleme işlemleri tek yerden yapılıyor
+- Fotoğraflar form ve editör arasında senkronize
+- Hesaplanan alanlar düzenlenebilir ve yeniden hesaplanabilir
+- Word export her zaman güncel verilerle yapılıyor
+
+### 📁 Güncellenen Dosyalar
+- `modules/yapi-bedeli/scripts/editor-page.js` - Tamamen yeniden yazıldı
+- `modules/yapi-bedeli/views/editor-content.html` - Yeni CSS stilleri
+- `modules/yapi-bedeli/views/yapi-bedeli-content.html` - Word butonu kaldırıldı
+- `modules/yapi-bedeli/scripts/yapi-bedeli-page.js` - Word export listener kaldırıldı
+
+---
+
+## [15.12.2025 - 01:10] - Fotoğraf ve Yapı Bedeli Kaydetme Düzeltmeleri
+
+### 🐛 Hata Düzeltmeleri
+- **Fotoğraflar artık veritabanına kaydediliyor**
+  - `raporlar` tablosuna `fotograflarJSON` sütunu eklendi (migration)
+  - `kaydet()` fonksiyonu fotoğrafları JSON olarak kaydediyor
+  - Kayıtlı raporlardan Word export yaparken fotoğraflar da ekleniyor
+
+- **Toplam yapı bedeli artık doğru kaydediliyor**
+  - `raporlar` tablosuna `toplamYapiBedeli` sütunu eklendi (migration)
+  - `kaydet()` fonksiyonu hesaplama sonrası yapı bedelini kaydediyor
+  - Word export'ta yapı bedeli doğru gösteriliyor
+
+- **Kayıtlı raporlardan Word export düzeltildi**
+  - `export-word` handler'ı artık fotoğrafları ve yapı bedelini destekliyor
+  - Veritabanından fotoğraflar çekilip rapora ekleniyor
+
+### 📁 Güncellenen Dosyalar
+- `main.js` - Migration ve export-word handler güncellemesi
+- `modules/yapi-bedeli/scripts/yapi-bedeli-page.js` - kaydet() fonksiyonu güncellendi
+- `modules/yapi-bedeli/scripts/reportGenerator.js` - Debug logları eklendi
+
+---
+
+## [14.12.2025 - 21:25] - Yönetici Paneli Tam İşlevsellik
+
+### ✨ Yeni Özellikler
+- **Birim Fiyat Dönemleri Yönetimi**
+  - Yeni dönem ekleme formu
+  - Dönem aktif/pasif yapma
+  - Dönem silme (detaylarıyla birlikte)
+
+- **Raportör Yönetimi**
+  - Yeni raportör ekleme formu (Ad, Soyad, Unvan)
+  - Raportör silme (soft delete)
+  - Pasif raportörü aktif yapma
+
+- **Kurum Yönetimi**
+  - Yeni kurum ekleme formu (Kurum Adı, Alt Birim)
+  - Kurum silme (soft delete)
+  - Pasif kurumu aktif yapma
+  - Alt birim sütunu tabloya eklendi
+
+### 📁 Güncellenen Dosyalar
+- `modules/yapi-bedeli/scripts/admin-page.js` - Tam CRUD fonksiyonları
+- `modules/yapi-bedeli/views/admin-content.html` - Ekleme formları ve tablo güncellemeleri
+
+---
+
+## [14.12.2025 - 21:05] - İlgili Kurum Alt Birim Gösterimi
+
+### 🐛 Hata Düzeltmesi
+- **İlgili Kurum dropdown'ında alt birimler artık görünüyor**
+  - Kurumlar "Kurum Adı (Alt Birim)" formatında gösteriliyor
+  - Örnek: "Samsun Valiliği (Defterdarlık)"
+
+### 📁 Güncellenen Dosyalar
+- `modules/yapi-bedeli/scripts/yapi-bedeli-page.js` - `kurumlariDoldur` fonksiyonu
+
+---
+
+## [14.12.2025 - 20:55] - Fotoğraf Ekleme ve Word Rapor Oluşturma
+
+### ✨ Yeni Özellikler
+- **Fotoğraf Ekleme Sistemi**
+  - Yapı Bilgileri sekmesinde fotoğraf seçme ve önizleme
+  - Yatay/Dikey fotoğraf otomatik algılama
+  - Her fotoğrafa açıklama ekleme imkanı
+  - Fotoğraf silme ve düzenleme
+
+- **Word Rapor Oluşturma (Fotoğraflı)**
+  - "📄 Word Rapor Oluştur" butonu eklendi
+  - Fotoğraflar 2x2 tablo formatında rapora ekleniyor
+  - Her sayfada 4 fotoğraf (rapor sayfasından sonra)
+  - Fotoğraf boyutlandırma:
+    - Yatay (landscape): max genişlik 7.5 cm
+    - Dikey (portrait): max yükseklik 10 cm
+  - En-boy oranı korunuyor
+  - Fotoğraf açıklamaları italik olarak altına ekleniyor
+
+### 📁 Güncellenen Dosyalar
+- `modules/yapi-bedeli/scripts/yapi-bedeli-page.js` - Fotoğraf işleme fonksiyonları
+- `modules/yapi-bedeli/scripts/reportGenerator.js` - Fotoğraf sayfaları oluşturma
+- `modules/yapi-bedeli/views/yapi-bedeli-content.html` - Word Rapor Oluştur butonu
+- `main.js` - `export-word-with-photos` IPC handler
+
+---
+
+## [14.12.2025 - 20:25] - Raportörler Tablosu Hata Düzeltmesi
+
+### 🐛 Hata Düzeltmesi
+- **Raportörler tablosu bulunamadı hatası düzeltildi**
+  - `yapi-bedeli-page.js` ve `admin-page.js` dosyalarında yanlış tablo adı (`raportorler`) kullanılıyordu
+  - Doğru tablo adı `raportorleri` olarak düzeltildi
+  - Sütun adları da düzeltildi: `ad` → `adi`, `soyad` → `soyadi`, `unvan` → `unvani`
+
+### 📁 Güncellenen Dosyalar
+- `modules/yapi-bedeli/scripts/yapi-bedeli-page.js`
+- `modules/yapi-bedeli/scripts/admin-page.js`
+
+---
+
+## [10.12.2025 - 16:10] - Tek Pencere Navigasyon Sistemi (Tam Refaktör)
+
+### 🚀 Büyük Değişiklik
+- **Tek Pencere Sistemi**: Artık tüm sayfalar tek pencerede açılıyor
+- **Navigasyon Stack**: Geri/İleri navigasyon desteği
+- **Breadcrumb**: Sayfa geçmişi görsel olarak gösteriliyor
+
+### ✨ Yeni Özellikler
+1. **Navigasyon Bar**: Her sayfada üstte görünen navigasyon çubuğu
+   - Geri butonu (ESC ile de çalışır)
+   - Ana Sayfa butonu (Alt+Home)
+   - Breadcrumb (sayfa geçmişi)
+
+2. **Sayfa Modülleri**: Her sayfa bağımsız modül olarak çalışıyor
+   - `onLoad()` - Sayfa yüklendiğinde
+   - `onUnload()` - Sayfa kapatılırken
+   - `hasUnsavedChanges()` - Kaydedilmemiş değişiklik kontrolü
+
+3. **Klavye Kısayolları**:
+   - `ESC` - Geri git
+   - `Alt+←` - Geri git
+   - `Alt+Home` - Ana sayfaya git
+
+### 🔧 Teknik Değişiklikler
+- **Yeni Dosyalar**:
+  - `shared/scripts/navigation.js` - Navigasyon yöneticisi
+  - `modules/yapi-bedeli/views/yapi-bedeli-content.html` - Yapı Bedeli içerik
+  - `modules/yapi-bedeli/views/raporlar-content.html` - Raporlar içerik
+  - `modules/yapi-bedeli/views/editor-content.html` - Editör içerik
+  - `modules/yapi-bedeli/views/admin-content.html` - Admin içerik
+  - `modules/yapi-bedeli/scripts/yapi-bedeli-page.js` - Yapı Bedeli modülü
+  - `modules/yapi-bedeli/scripts/raporlar-page.js` - Raporlar modülü
+  - `modules/yapi-bedeli/scripts/editor-page.js` - Editör modülü
+  - `modules/yapi-bedeli/scripts/admin-page.js` - Admin modülü
+
+- **Güncellenen Dosyalar**:
+  - `dashboard.html` - Navigasyon bar ve page container eklendi
+  - `dashboard.js` - Navigasyon sistemi entegrasyonu
+  - `main.js` - Eski IPC handler'ları kaldırıldı
+
+### 📋 Navigasyon Akışı
+```
+Dashboard → Yapı Bedeli → Kayıtlı Raporlar → Editör
+     ↑           ↑              ↑              ↑
+     └───────────┴──────────────┴──────────────┘
+                    Geri Tuşu / ESC
+```
+
+### 🎯 Kullanıcı Deneyimi
+- Artık pencereler üst üste açılmıyor
+- Tek pencerede tüm işlemler yapılabiliyor
+- Geri tuşu ile önceki sayfaya dönülebiliyor
+- Breadcrumb ile sayfa geçmişi görülebiliyor
+- Kaydedilmemiş değişiklik uyarısı
+
+### ⚠️ Notlar
+- Ön izleme penceresi hâlâ ayrı pencere olarak açılıyor (modal)
+- Word export işlemi aynı şekilde çalışıyor
+- Eski bağımsız HTML dosyaları (index.html, raporlar.html vb.) hâlâ mevcut (geriye dönük uyumluluk)
+
+---
+
+## [10.12.2025 - 13:38] - Rapor Editörü ve Word Export Senkronizasyonu
+
+### 🔄 Senkronizasyon
+- **Editör ve Word Generator Uyumu**: Rapor editörü ile Word export çıktısı artık tamamen senkron
+
+### ✨ İyileştirmeler
+1. **Paragraf Boşlukları Azaltıldı**: Word çıktısında gereksiz boşluklar kaldırıldı
+   - `spacing.after`: 400 → 200
+   - `spacing.before/after`: 200 → 120
+   - Boş paragraflar minimize edildi
+
+2. **Yapı Sınıfı + Grup Birleştirildi**: 
+   - YAPI SINIFI sütununda artık sınıf ve grup birlikte gösteriliyor
+   - Örnek: "5" yerine "5 A" formatında
+
+3. **İmzacılar Font Boyutu**: 9pt → 11pt (size: 18 → 22 half-points)
+
+4. **Para Formatı Türkçe Standartına Uyarlandı**:
+   - Basamak ayracı: Nokta (.)
+   - Kuruş ayracı: Virgül (,)
+   - Örnek: `24,221,400.00` → `24.221.400,00 TL`
+   - Birim fiyat ve yapı bedeli alanlarına "TL" eklendi
+
+### 🔧 Teknik Değişiklikler
+- **reportGenerator.js**:
+  - `formatParaTR()` fonksiyonu eklendi
+  - Yapı sınıfı + grup birleştirme mantığı eklendi
+  - Tüm para değerleri Türkçe formata çevrildi
+  - İmzacı tablosu font boyutu güncellendi
+
+- **editor.js**:
+  - `formatPara()` fonksiyonu Türkçe formata güncellendi
+  - Gerekçe metni Word formatına uyarlandı
+  - Taşınmaz bilgileri tablosu yatay formata çevrildi
+  - Yapı tablosu sütun sırası Word ile senkronize edildi
+  - Son paragraf Word formatına uyarlandı
+
+### 📋 Editör-Word Uyumu
+| Bölüm | Durum |
+|-------|-------|
+| Gerekçe Metni | ✅ Senkron |
+| Taşınmaz Bilgileri | ✅ Senkron (Yatay tablo) |
+| Yapı Bilgileri | ✅ Senkron (Sınıf+Grup birleşik) |
+| Toplam Bedel | ✅ Senkron (Türkçe format) |
+| Levazım Bedeli | ✅ Senkron |
+| Son Paragraf | ✅ Senkron |
+| İmzacılar | ✅ Senkron (11pt) |
+
+---
+
+## [05.12.2025 - 00:05] - Rapor Editörü Eklendi
+
+### ✨ Yeni Özellikler
+1. **Rapor Editörü**: Kayıtlı raporları düzenleyebileceğiniz yeni bir editör penceresi eklendi
+   - Metin ekleme, silme, değiştirme
+   - Geri Al / Yinele (Ctrl+Z / Ctrl+Y)
+   - Kes / Kopyala / Yapıştır
+   - Tümünü Seç
+   - Değişiklik takibi (kaydedilmemiş değişiklik uyarısı)
+
+2. **Ön İzleme Penceresi**: Raporu A4 formatında ön izleyebileceğiniz bağımsız pencere
+   - Gerçek zamanlı A4 görünümü
+   - Zoom kontrolü (büyüt/küçült/sıfırla)
+   - Yazdırma desteği
+   - Word export desteği
+
+3. **Word Export**: Raporları Word (.docx) formatında indirebilme
+   - Editörden direkt export
+   - Ön izlemeden export
+   - Dosya kaydetme dialogu
+
+### 🔧 Teknik Değişiklikler
+- **Yeni Dosyalar**:
+  - `modules/yapi-bedeli/views/editor.html` - Editör arayüzü
+  - `modules/yapi-bedeli/scripts/editor.js` - Editör mantığı
+  - `modules/yapi-bedeli/views/preview.html` - Ön izleme arayüzü
+  - `modules/yapi-bedeli/scripts/preview.js` - Ön izleme mantığı
+
+- `main.js`:
+  - `open-editor` IPC handler eklendi
+  - `open-preview` IPC handler eklendi
+  - `export-word` IPC handler eklendi
+  - `export-word-from-preview` IPC handler eklendi
+
+- `raporlar.js`:
+  - "Düzenle" butonu eklendi (mavi renk, 📝 ikonu)
+
+### 📋 Kullanım
+1. **Kayıtlı Raporlar** sayfasına gidin
+2. Düzenlemek istediğiniz raporun yanındaki **"📝 Düzenle"** butonuna tıklayın
+3. Editör penceresinde raporu düzenleyin
+4. **"👁️ Ön İzleme"** butonu ile ayrı pencerede ön izleme yapın
+5. **"📥 Word İndir"** butonu ile Word dosyası olarak kaydedin
+6. **"💾 Kaydet"** butonu ile değişiklikleri veritabanına kaydedin
+
+### ⌨️ Klavye Kısayolları
+- `Ctrl+S` - Kaydet
+- `Ctrl+Z` - Geri Al
+- `Ctrl+Y` - Yinele
+- `Ctrl+P` - Ön İzleme
+
+---
+
+## [04.12.2025 - 23:25] - Yıpranma Payları Yönetim Sistemi Eklendi
+
+### ✨ Yeni Özellikler
+1. **Yıpranma Payları Tablosu**: Yönetim panelinde yıpranma paylarını düzenleyebileceğiniz yeni bir tablo eklendi
+   - 8 farklı yapım tekniği destekleniyor:
+     - Çelik
+     - Betonarme Karkas
+     - Yığma Kagir
+     - Yığma Yarı Kagir
+     - Ahşap
+     - Taş Duvarlı (Çamur Harçlı)
+     - Kerpiç
+     - Diğer Basit Binalar
+   - Her yapım tekniği için yaş aralıklarına göre yıpranma oranları tanımlanabilir
+   - Tablo düzenlenebilir ve değişiklikler veritabanına kaydedilebilir
+
+2. **Veritabanı Desteği**: `yipranmaPaylari` tablosu eklendi
+   - Yapım tekniği, yaş aralığı ve yıpranma oranı bilgilerini saklar
+   - Varsayılan değerler otomatik olarak yüklenir
+
+3. **Yönetim Paneli Fonksiyonları**:
+   - Yıpranma paylarını görüntüleme ve düzenleme
+   - Değişiklikleri kaydetme
+   - Varsayılana sıfırlama
+   - Yeni yaş aralığı ekleme
+   - Yaş aralığı silme
+
+### 🔧 Teknik Değişiklikler
+- `main.js`:
+  - `yipranmaPaylari` tablosu oluşturma kodu eklendi
+  - Varsayılan yıpranma payı verileri eklendi (8 yapım tekniği x 8 yaş aralığı = 64 kayıt)
+
+- `admin.html`:
+  - Yıpranma Payı Yönetimi sekmesi güncellendi
+  - Düzenlenebilir tablo arayüzü eklendi
+  - Yeni yaş aralığı ekleme formu eklendi
+
+- `admin.js`:
+  - `yipranmaPaylariniYukle()` fonksiyonu eklendi
+  - `yipranmaPaylariniKaydet()` fonksiyonu eklendi
+  - `varsayilanYipranmaPaylariniYukle()` fonksiyonu eklendi
+  - `yeniYasAraligiEkle()` fonksiyonu eklendi
+  - `yasAraligiSil()` fonksiyonu eklendi
+
+- `renderer.js`:
+  - Yapım teknikleri listesi 8 adede güncellendi
+  - `loadYipranmaPaylari()` fonksiyonu eklendi (veritabanından yükleme)
+  - `hesaplaYipranmaPay()` fonksiyonu veritabanından çalışacak şekilde güncellendi
+  - Yapı formundaki yapım tekniği seçenekleri güncellendi
+
+### 📋 Kullanım
+1. Yönetim Paneli'ni açın
+2. "Yıpranma Payı Yönetimi" sekmesine tıklayın
+3. Tablodaki değerleri düzenleyin
+4. "Değişiklikleri Kaydet" butonuna tıklayın
+
+---
+
 ## [25.11.2025 - 00:50] - Raporlar Görünmeme Sorunu Düzeltildi
 
 ### 🐛 Düzeltilen Sorunlar

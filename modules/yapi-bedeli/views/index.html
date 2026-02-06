@@ -358,16 +358,6 @@
             box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
         }
 
-        .show-admin-button {
-            background: #4B7FA3;
-        }
-
-        .show-admin-button:hover {
-            transform: translateY(-2px);
-            background: #3C6B99;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.12);
-        }
-
         /* Responsive */
         @media (max-width: 1200px) {
             .main-container {
@@ -467,8 +457,20 @@
                             <input type="date" id="resmiYaziTarihi" required>
                         </div>
                         <div class="form-group">
-                            <label for="resmiYaziSayisi">Resmi Yazı Sayısı *</label>
-                            <input type="text" id="resmiYaziSayisi" placeholder="Örn: E.12345" required>
+                            <label>Resmi Yazı Sayısı *</label>
+                            <div style="display: flex; align-items: center; gap: 4px;">
+                                <select id="resmiYaziSayisi1" style="width: 60px; padding: 8px 4px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; text-align: center;" title="Belge Türü (E: Elektronik, Z: Zorunlu Hal, O: Olağanüstü Durum)">
+                                    <option value="E" selected>E</option>
+                                    <option value="Z">Z</option>
+                                    <option value="O">O</option>
+                                </select>
+                                <span style="font-weight: bold; color: #666;">-</span>
+                                <input type="text" id="resmiYaziSayisi2" maxlength="9" placeholder="T.C. Teşkilat No" style="width: 110px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; text-align: center;" title="T.C. Devlet Teşkilat Numarası (8-9 hane)">
+                                <span style="font-weight: bold; color: #666;">-</span>
+                                <input type="text" id="resmiYaziSayisi3" maxlength="9" placeholder="Dosya Planı" style="width: 110px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; text-align: center;" title="Standart Dosya Planı Kodu (Örn: 755.99)">
+                                <span style="font-weight: bold; color: #666;">-</span>
+                                <input type="text" id="resmiYaziSayisi4" maxlength="9" placeholder="Kayıt No" style="width: 110px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; text-align: center;" title="Belge Kayıt Numarası">
+                            </div>
                         </div>
                     </div>
 
@@ -626,7 +628,6 @@
                 <button type="submit" class="save-button">💾 Raporu Kaydet</button>
                 <button type="button" class="clear-button">🗑️ Formu Temizle</button>
                 <button type="button" class="show-reports-button">📁 Kayıtlı Raporlar</button>
-                <button type="button" class="show-admin-button">⚙️ Yönetici Paneli</button>
             </div>
         </div>
     </div>

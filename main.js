@@ -51,6 +51,49 @@ function migrateDatabase() {
                     }
                 });
             }
+            
+            // fotograflarJSON kolonu var mı kontrol et
+            const fotograflarJSONVar = columns.some(col => col.name === 'fotograflarJSON');
+            if (!fotograflarJSONVar) {
+                console.log('⚠️ raporlar tablosuna fotograflarJSON kolonu ekleniyor...');
+                db.run(`ALTER TABLE raporlar ADD COLUMN fotograflarJSON TEXT`, (err) => {
+                    if (err) {
+                        console.error('fotograflarJSON kolonu eklenirken hata:', err);
+                    } else {
+                        console.log('✅ raporlar tablosuna fotograflarJSON kolonu eklendi.');
+                    }
+                });
+            }
+            
+            // toplamYapiBedeli kolonu var mı kontrol et
+            const toplamYapiBedeliVar = columns.some(col => col.name === 'toplamYapiBedeli');
+            if (!toplamYapiBedeliVar) {
+                console.log('⚠️ raporlar tablosuna toplamYapiBedeli kolonu ekleniyor...');
+                db.run(`ALTER TABLE raporlar ADD COLUMN toplamYapiBedeli REAL`, (err) => {
+                    if (err) {
+                        console.error('Kolon ekleme hatası:', err);
+                    } else {
+                        console.log('✅ raporlar tablosuna toplamYapiBedeli kolonu eklendi.');
+                    }
+                });
+            }
+            
+            // modul kolonu var mı kontrol et
+            const modulKolonuVar = columns.some(col => col.name === 'modul');
+            if (!modulKolonuVar) {
+                console.log('⚠️ raporlar tablosuna modul kolonu ekleniyor...');
+                db.run(`ALTER TABLE raporlar ADD COLUMN modul TEXT DEFAULT 'yapi-bedeli'`, (err) => {
+                    if (err) {
+                        console.error('Kolon ekleme hatası:', err);
+                    } else {
+                        console.log('✅ raporlar tablosuna modul kolonu eklendi.');
+                        // Mevcut kayıtları yapi-bedeli olarak işaretle
+                        db.run(`UPDATE raporlar SET modul = 'yapi-bedeli' WHERE modul IS NULL`, (err) => {
+                            if (!err) console.log('✅ Mevcut raporlar yapi-bedeli olarak işaretlendi.');
+                        });
+                    }
+                });
+            }
         }
     });
     
@@ -163,7 +206,8 @@ function createDatabase() {
         raportorAdi TEXT,
         raportorUnvani TEXT,
         asgariLevazimHesapla INTEGER DEFAULT 1,
-        yapilarJSON TEXT
+        yapilarJSON TEXT,
+        modul TEXT DEFAULT 'yapi-bedeli'
     )`, (err) => {
         if (err) {
             console.error(err.message);
@@ -372,6 +416,256 @@ function createDatabase() {
             });
         }
     });
+
+    // Yıpranma Payları tablosu
+    db.run(`CREATE TABLE IF NOT EXISTS yipranmaPaylari (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        yapimTeknigi TEXT NOT NULL,
+        yasAraligi TEXT NOT NULL,
+        minYas INTEGER NOT NULL,
+        maxYas INTEGER NOT NULL,
+        yipranmaOrani REAL NOT NULL,
+        aktif INTEGER DEFAULT 1,
+        olusturmaTarihi TEXT DEFAULT (datetime('now','localtime')),
+        guncellemeTarihi TEXT DEFAULT (datetime('now','localtime')),
+        UNIQUE(yapimTeknigi, minYas, maxYas)
+    )`, (err) => {
+        if (err) {
+            console.error(err.message);
+        } else {
+            console.log('Yıpranma payları tablosu oluşturuldu.');
+            
+            // Örnek yıpranma payı verisi ekle (eğer tablo boşsa)
+            db.get('SELECT COUNT(*) as count FROM yipranmaPaylari', [], (err, row) => {
+                if (!err && row.count === 0) {
+                    console.log('Örnek yıpranma payı verileri ekleniyor...');
+                    
+                    // Yapım teknikleri ve yıpranma oranları
+                    const yipranmaVerileri = [
+                        // Çelik
+                        ['Çelik', '0-5', 0, 5, 4],
+                        ['Çelik', '6-10', 6, 10, 8],
+                        ['Çelik', '11-15', 11, 15, 12],
+                        ['Çelik', '16-20', 16, 20, 16],
+                        ['Çelik', '21-30', 21, 30, 22],
+                        ['Çelik', '31-40', 31, 40, 28],
+                        ['Çelik', '41-50', 41, 50, 35],
+                        ['Çelik', '51+', 51, 999, 40],
+                        
+                        // Betonarme Karkas
+                        ['Betonarme Karkas', '0-5', 0, 5, 5],
+                        ['Betonarme Karkas', '6-10', 6, 10, 10],
+                        ['Betonarme Karkas', '11-15', 11, 15, 15],
+                        ['Betonarme Karkas', '16-20', 16, 20, 20],
+                        ['Betonarme Karkas', '21-30', 21, 30, 28],
+                        ['Betonarme Karkas', '31-40', 31, 40, 36],
+                        ['Betonarme Karkas', '41-50', 41, 50, 45],
+                        ['Betonarme Karkas', '51+', 51, 999, 55],
+                        
+                        // Yığma Kagir
+                        ['Yığma Kagir', '0-5', 0, 5, 8],
+                        ['Yığma Kagir', '6-10', 6, 10, 15],
+                        ['Yığma Kagir', '11-15', 11, 15, 22],
+                        ['Yığma Kagir', '16-20', 16, 20, 28],
+                        ['Yığma Kagir', '21-30', 21, 30, 38],
+                        ['Yığma Kagir', '31-40', 31, 40, 48],
+                        ['Yığma Kagir', '41-50', 41, 50, 58],
+                        ['Yığma Kagir', '51+', 51, 999, 68],
+                        
+                        // Yığma Yarı Kagir
+                        ['Yığma Yarı Kagir', '0-5', 0, 5, 10],
+                        ['Yığma Yarı Kagir', '6-10', 6, 10, 18],
+                        ['Yığma Yarı Kagir', '11-15', 11, 15, 26],
+                        ['Yığma Yarı Kagir', '16-20', 16, 20, 34],
+                        ['Yığma Yarı Kagir', '21-30', 21, 30, 45],
+                        ['Yığma Yarı Kagir', '31-40', 31, 40, 55],
+                        ['Yığma Yarı Kagir', '41-50', 41, 50, 65],
+                        ['Yığma Yarı Kagir', '51+', 51, 999, 75],
+                        
+                        // Ahşap
+                        ['Ahşap', '0-5', 0, 5, 12],
+                        ['Ahşap', '6-10', 6, 10, 22],
+                        ['Ahşap', '11-15', 11, 15, 32],
+                        ['Ahşap', '16-20', 16, 20, 42],
+                        ['Ahşap', '21-30', 21, 30, 55],
+                        ['Ahşap', '31-40', 31, 40, 68],
+                        ['Ahşap', '41-50', 41, 50, 78],
+                        ['Ahşap', '51+', 51, 999, 85],
+                        
+                        // Taş Duvarlı (Çamur Harçlı)
+                        ['Taş Duvarlı (Çamur Harçlı)', '0-5', 0, 5, 15],
+                        ['Taş Duvarlı (Çamur Harçlı)', '6-10', 6, 10, 25],
+                        ['Taş Duvarlı (Çamur Harçlı)', '11-15', 11, 15, 35],
+                        ['Taş Duvarlı (Çamur Harçlı)', '16-20', 16, 20, 45],
+                        ['Taş Duvarlı (Çamur Harçlı)', '21-30', 21, 30, 58],
+                        ['Taş Duvarlı (Çamur Harçlı)', '31-40', 31, 40, 70],
+                        ['Taş Duvarlı (Çamur Harçlı)', '41-50', 41, 50, 80],
+                        ['Taş Duvarlı (Çamur Harçlı)', '51+', 51, 999, 88],
+                        
+                        // Kerpiç
+                        ['Kerpiç', '0-5', 0, 5, 18],
+                        ['Kerpiç', '6-10', 6, 10, 30],
+                        ['Kerpiç', '11-15', 11, 15, 42],
+                        ['Kerpiç', '16-20', 16, 20, 52],
+                        ['Kerpiç', '21-30', 21, 30, 65],
+                        ['Kerpiç', '31-40', 31, 40, 78],
+                        ['Kerpiç', '41-50', 41, 50, 88],
+                        ['Kerpiç', '51+', 51, 999, 95],
+                        
+                        // Diğer Basit Binalar
+                        ['Diğer Basit Binalar', '0-5', 0, 5, 20],
+                        ['Diğer Basit Binalar', '6-10', 6, 10, 35],
+                        ['Diğer Basit Binalar', '11-15', 11, 15, 48],
+                        ['Diğer Basit Binalar', '16-20', 16, 20, 60],
+                        ['Diğer Basit Binalar', '21-30', 21, 30, 72],
+                        ['Diğer Basit Binalar', '31-40', 31, 40, 82],
+                        ['Diğer Basit Binalar', '41-50', 41, 50, 90],
+                        ['Diğer Basit Binalar', '51+', 51, 999, 95]
+                    ];
+                    
+                    yipranmaVerileri.forEach(([yapimTeknigi, yasAraligi, minYas, maxYas, yipranmaOrani]) => {
+                        db.run(`INSERT INTO yipranmaPaylari (yapimTeknigi, yasAraligi, minYas, maxYas, yipranmaOrani) VALUES (?, ?, ?, ?, ?)`,
+                            [yapimTeknigi, yasAraligi, minYas, maxYas, yipranmaOrani], (err) => {
+                                if (err) {
+                                    console.error('Örnek yıpranma payı ekleme hatası:', err);
+                                }
+                            });
+                    });
+                    
+                    console.log('✅ Örnek yıpranma payı verileri eklendi');
+                }
+            });
+        }
+    });
+
+    // PID Oranları tablosu (Proje Bedeli için)
+    // Alan aralıkları ve hizmet sınıflarına göre katsayılar
+    db.run(`CREATE TABLE IF NOT EXISTS pidOranlari (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        minAlan REAL NOT NULL,
+        maxAlan REAL NOT NULL,
+        hizmetSinifi INTEGER NOT NULL,
+        pidOrani REAL NOT NULL,
+        aktif INTEGER DEFAULT 1,
+        olusturmaTarihi TEXT DEFAULT (datetime('now','localtime')),
+        guncellemeTarihi TEXT DEFAULT (datetime('now','localtime')),
+        UNIQUE(minAlan, maxAlan, hizmetSinifi)
+    )`, (err) => {
+        if (err) {
+            console.error(err.message);
+        } else {
+            console.log('PID oranları tablosu oluşturuldu.');
+            
+            // PID oranları tablosu oluşturuldu - veriler yönetici panelinden manuel girilecek
+            console.log('✅ PID oranları tablosu hazır (veriler yönetici panelinden girilecek)');
+        }
+    });
+
+    // Hizmet Dalı Katsayıları tablosu (Proje Bedeli için)
+    // Her branş için farklı katsayılar
+    db.run(`CREATE TABLE IF NOT EXISTS hizmetDaliKatsayilari (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        bransAdi TEXT NOT NULL,
+        bransKodu TEXT NOT NULL,
+        katsayi REAL NOT NULL,
+        aciklama TEXT,
+        aktif INTEGER DEFAULT 1,
+        olusturmaTarihi TEXT DEFAULT (datetime('now','localtime')),
+        guncellemeTarihi TEXT DEFAULT (datetime('now','localtime')),
+        UNIQUE(bransKodu)
+    )`, (err) => {
+        if (err) {
+            console.error(err.message);
+        } else {
+            console.log('Hizmet dalı katsayıları tablosu oluşturuldu.');
+            
+            // Örnek hizmet dalı katsayısı verisi ekle (eğer tablo boşsa)
+            db.get('SELECT COUNT(*) as count FROM hizmetDaliKatsayilari', [], (err, row) => {
+                if (!err && row.count === 0) {
+                    console.log('Örnek hizmet dalı katsayısı verileri ekleniyor...');
+                    
+                    // Branşlar ve katsayıları
+                    const hizmetDaliVerileri = [
+                        ['Mimarlık', 'MIM', 1.00, 'Mimari proje hizmetleri'],
+                        ['İnşaat', 'INS', 0.75, 'Statik proje hizmetleri'],
+                        ['Mekanik', 'MEK', 0.50, 'Mekanik tesisat proje hizmetleri'],
+                        ['Elektrik', 'ELK', 0.385, 'Elektrik tesisat proje hizmetleri']
+                    ];
+                    
+                    hizmetDaliVerileri.forEach(([bransAdi, bransKodu, katsayi, aciklama]) => {
+                        db.run(`INSERT INTO hizmetDaliKatsayilari (bransAdi, bransKodu, katsayi, aciklama) VALUES (?, ?, ?, ?)`,
+                            [bransAdi, bransKodu, katsayi, aciklama], (err) => {
+                                if (err) {
+                                    console.error('Örnek hizmet dalı katsayısı ekleme hatası:', err);
+                                }
+                            });
+                    });
+                    
+                    console.log('✅ Örnek hizmet dalı katsayısı verileri eklendi');
+                }
+            });
+        }
+    });
+
+    // Proje Bedeli Raporları tablosu
+    db.run(`CREATE TABLE IF NOT EXISTS projeBedeliRaporlari (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        raporNo TEXT,
+        isAdi TEXT NOT NULL,
+        toplamInsaatAlani REAL,
+        hesapYili TEXT,
+        yapiSinifi TEXT,
+        yapiGrubu TEXT,
+        birimMaliyet REAL,
+        toplamMaliyet REAL,
+        
+        -- Mimarlık Branşı
+        mimSinif INTEGER,
+        mimPidOrani REAL,
+        mimProjeBedeli REAL,
+        mimHizmetOrani REAL,
+        mimHizmetBedeli REAL,
+        mimHizmetBolumleri TEXT,
+        
+        -- İnşaat Branşı
+        insSinif INTEGER,
+        insPidOrani REAL,
+        insProjeBedeli REAL,
+        insHizmetOrani REAL,
+        insHizmetBedeli REAL,
+        insHizmetBolumleri TEXT,
+        
+        -- Mekanik Branşı
+        mekSinif INTEGER,
+        mekPidOrani REAL,
+        mekProjeBedeli REAL,
+        mekHizmetOrani REAL,
+        mekHizmetBedeli REAL,
+        mekHizmetBolumleri TEXT,
+        
+        -- Elektrik Branşı
+        elkSinif INTEGER,
+        elkPidOrani REAL,
+        elkProjeBedeli REAL,
+        elkHizmetOrani REAL,
+        elkHizmetBedeli REAL,
+        elkHizmetBolumleri TEXT,
+        
+        -- Toplam
+        genelToplamBedel REAL,
+        
+        -- Meta
+        aciklama TEXT,
+        aktif INTEGER DEFAULT 1,
+        olusturmaTarihi TEXT DEFAULT (datetime('now','localtime')),
+        guncellemeTarihi TEXT DEFAULT (datetime('now','localtime'))
+    )`, (err) => {
+        if (err) {
+            console.error(err.message);
+        } else {
+            console.log('Proje Bedeli raporları tablosu oluşturuldu.');
+        }
+    });
 }
 
 function createWindow() {
@@ -392,6 +686,9 @@ function createWindow() {
     remoteMain.enable(mainWindow.webContents);
     // Ana modül seçim ekranı (Dashboard)
     mainWindow.loadFile('dashboard.html');
+    
+    // DevTools aç - debug için
+    mainWindow.webContents.openDevTools();
 }
 
 app.whenReady().then(() => {
@@ -412,67 +709,11 @@ app.on('activate', () => {
 });
 
 // TEK PENCERE NAVİGASYON SİSTEMİ
-// Artık yeni pencere açmak yerine ana pencerede içerik değişimi yapılacak
+// Artık tüm sayfalar ana pencerede açılıyor, yeni pencere açılmıyor
+// Navigasyon dashboard.js ve navigation.js tarafından yönetiliyor
 
-// Yapı Bedeli Modülü
-ipcMain.on('open-yapi-bedeli', (event) => {
-    console.log('Yapı Bedeli modülü açılıyor');
-    const yapiBedeliWindow = new BrowserWindow({
-        width: 1400,
-        height: 900,
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-            enableRemoteModule: true
-        }
-    });
-    remoteMain.enable(yapiBedeliWindow.webContents);
-    yapiBedeliWindow.loadFile('modules/yapi-bedeli/views/index.html');
-});
-
-// Yapı Bedeli - Raporlar Sayfası
-ipcMain.on('show-reports', (event) => {
-    console.log('Raporlar sayfası açılıyor');
-    const raporlarWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-            enableRemoteModule: true
-        }
-    });
-    remoteMain.enable(raporlarWindow.webContents);
-    raporlarWindow.loadFile('modules/yapi-bedeli/views/raporlar.html');
-    
-    // DevTools'u aç - debug için
-    raporlarWindow.webContents.openDevTools();
-});
-
-// Yapı Bedeli - Yönetim Paneli
-ipcMain.on('show-admin', (event) => {
-    console.log('Yönetim paneli açılıyor');
-    const adminWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-            enableRemoteModule: true
-        }
-    });
-    remoteMain.enable(adminWindow.webContents);
-    adminWindow.loadFile('modules/yapi-bedeli/views/admin.html');
-});
-
-// Anasayfaya dön - pencereyi kapat
-ipcMain.on('navigate-home', (event) => {
-    console.log('Pencere kapatılıyor');
-    const window = BrowserWindow.fromWebContents(event.sender);
-    if (window) {
-        window.close();
-    }
-});
+// Eski IPC handler'ları kaldırıldı - artık navigasyon client-side yapılıyor
+// open-yapi-bedeli, show-reports, show-admin, navigate-home artık kullanılmıyor
 
 // Proje Bedeli Modülü (Henüz geliştirilmedi)
 ipcMain.on('open-proje-bedeli', (event) => {
@@ -487,4 +728,225 @@ ipcMain.on('open-mevzuat', (event) => {
 // Hesaplama Modülü (Henüz geliştirilmedi)
 ipcMain.on('open-hesaplama', (event) => {
     console.log('Hesaplama modülü henüz geliştirilmedi');
+});
+
+// ======================
+// RAPOR EDİTÖRÜ
+// ======================
+
+let previewWindow = null;
+
+// Rapor Editörü Aç
+ipcMain.on('open-editor', (event, data) => {
+    console.log('📝 Rapor editörü açılıyor, ID:', data.raporId);
+    
+    const editorWindow = new BrowserWindow({
+        width: 1200,
+        height: 900,
+        title: 'Rapor Editörü',
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+            enableRemoteModule: true
+        }
+    });
+    
+    remoteMain.enable(editorWindow.webContents);
+    
+    const editorPath = path.join(__dirname, 'modules', 'yapi-bedeli', 'views', 'editor.html');
+    console.log('📂 Editör dosya yolu:', editorPath);
+    
+    editorWindow.loadFile(editorPath, {
+        query: { id: String(data.raporId) }
+    }).then(() => {
+        console.log('✅ Editör penceresi yüklendi');
+    }).catch((err) => {
+        console.error('❌ Editör yükleme hatası:', err);
+    });
+    
+    // DevTools aç - debug için
+    editorWindow.webContents.openDevTools();
+});
+
+// Ön İzleme Penceresi Aç
+ipcMain.on('open-preview', (event, data) => {
+    console.log('👁️ Ön izleme penceresi açılıyor');
+    
+    // Eğer zaten açık bir ön izleme varsa, onu güncelle
+    if (previewWindow && !previewWindow.isDestroyed()) {
+        previewWindow.webContents.send('preview-content', data);
+        previewWindow.focus();
+        return;
+    }
+    
+    previewWindow = new BrowserWindow({
+        width: 900,
+        height: 1000,
+        title: 'Ön İzleme',
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false,
+            enableRemoteModule: true
+        }
+    });
+    
+    remoteMain.enable(previewWindow.webContents);
+    previewWindow.loadFile('modules/yapi-bedeli/views/preview.html', {
+        query: { id: data.raporId }
+    });
+    
+    // Sayfa yüklendikten sonra içeriği gönder
+    previewWindow.webContents.on('did-finish-load', () => {
+        previewWindow.webContents.send('preview-content', data);
+    });
+    
+    previewWindow.on('closed', () => {
+        previewWindow = null;
+    });
+});
+
+// Word Export - Editörden (kayıtlı raporlardan)
+ipcMain.on('export-word', (event, data) => {
+    console.log('📥 Word export başlatılıyor');
+    console.log('📷 Gelen raporData anahtarları:', Object.keys(data.raporData || {}));
+    
+    const { dialog } = require('electron');
+    const reportGenerator = require('./modules/yapi-bedeli/scripts/reportGenerator');
+    
+    // Fotoğrafları veritabanından çek
+    let fotograflar = [];
+    if (data.raporData && data.raporData.fotograflarJSON) {
+        try {
+            // fotograflarJSON string ise parse et, değilse direkt kullan
+            if (typeof data.raporData.fotograflarJSON === 'string') {
+                fotograflar = JSON.parse(data.raporData.fotograflarJSON);
+            } else if (Array.isArray(data.raporData.fotograflarJSON)) {
+                fotograflar = data.raporData.fotograflarJSON;
+            }
+            console.log(`📷 Veritabanından ${fotograflar.length} fotoğraf yüklendi`);
+            if (fotograflar.length > 0) {
+                console.log('📷 İlk fotoğraf bilgisi:', {
+                    name: fotograflar[0].name,
+                    hasData: !!fotograflar[0].data,
+                    dataLength: fotograflar[0].data?.length || 0,
+                    width: fotograflar[0].width,
+                    height: fotograflar[0].height
+                });
+            }
+        } catch (e) {
+            console.error('Fotoğraf JSON parse hatası:', e);
+        }
+    } else {
+        console.log('⚠️ fotograflarJSON bulunamadı veya boş');
+    }
+    
+    // yapiBedeli kontrolü - toplamYapiBedeli varsa onu kullan
+    if (data.raporData && !data.raporData.yapiBedeli && data.raporData.toplamYapiBedeli) {
+        data.raporData.yapiBedeli = data.raporData.toplamYapiBedeli;
+    }
+    
+    dialog.showSaveDialog({
+        title: 'Word Dosyası Kaydet',
+        defaultPath: `Rapor_${data.raporId}.docx`,
+        filters: [
+            { name: 'Word Dosyası', extensions: ['docx'] }
+        ]
+    }).then(async result => {
+        if (!result.canceled && result.filePath) {
+            try {
+                const sonuc = await reportGenerator.generateReport(data.raporData, result.filePath, fotograflar);
+                if (sonuc.success) {
+                    event.sender.send('word-export-success', sonuc.path);
+                } else {
+                    event.sender.send('word-export-error', sonuc.error);
+                }
+            } catch (error) {
+                console.error('Word export hatası:', error);
+                event.sender.send('word-export-error', error.message);
+            }
+        }
+    });
+});
+
+// Word Export - Fotoğraflarla birlikte (yapi-bedeli-page.js'den)
+ipcMain.on('export-word-with-photos', (event, data) => {
+    console.log('📥 Fotoğraflı Word export başlatılıyor');
+    console.log(`📷 ${data.fotograflar?.length || 0} fotoğraf ekleniyor`);
+    
+    const { dialog } = require('electron');
+    const reportGenerator = require('./modules/yapi-bedeli/scripts/reportGenerator');
+    
+    // Dosya adı için tarih ve konum bilgisi
+    const tarih = data.raporData.raporTarihi || new Date().toISOString().split('T')[0];
+    const konum = `${data.raporData.ilce || ''}_${data.raporData.mahalle || ''}_${data.raporData.ada || ''}_${data.raporData.parsel || ''}`.replace(/\s+/g, '_');
+    const defaultFileName = `KT_Raporu_${konum}_${tarih}.docx`;
+    
+    dialog.showSaveDialog({
+        title: 'Word Dosyası Kaydet',
+        defaultPath: defaultFileName,
+        filters: [
+            { name: 'Word Dosyası', extensions: ['docx'] }
+        ]
+    }).then(async result => {
+        if (!result.canceled && result.filePath) {
+            try {
+                const sonuc = await reportGenerator.generateReport(
+                    data.raporData, 
+                    result.filePath, 
+                    data.fotograflar || []
+                );
+                
+                if (sonuc.success) {
+                    event.sender.send('word-export-success', sonuc.path);
+                    console.log('✅ Word raporu oluşturuldu:', sonuc.path);
+                } else {
+                    event.sender.send('word-export-error', sonuc.error);
+                    console.error('❌ Word export hatası:', sonuc.error);
+                }
+            } catch (error) {
+                console.error('Word export hatası:', error);
+                event.sender.send('word-export-error', error.message);
+            }
+        }
+    });
+});
+
+// Word Export - Ön İzlemeden
+ipcMain.on('export-word-from-preview', (event, data) => {
+    console.log('📥 Ön izlemeden Word export başlatılıyor');
+    
+    const { dialog } = require('electron');
+    const sqlite3 = require('sqlite3').verbose();
+    const reportGenerator = require('./modules/yapi-bedeli/scripts/reportGenerator');
+    
+    // Veritabanından rapor verisini çek
+    const dbPath = path.join(__dirname, 'raporlar.db');
+    const tempDb = new sqlite3.Database(dbPath);
+    
+    tempDb.get(`SELECT * FROM raporlar WHERE id = ?`, [data.raporId], (err, row) => {
+        if (err || !row) {
+            event.sender.send('word-export-error', 'Rapor bulunamadı');
+            tempDb.close();
+            return;
+        }
+        
+        dialog.showSaveDialog({
+            title: 'Word Dosyası Kaydet',
+            defaultPath: `Rapor_${data.raporId}.docx`,
+            filters: [
+                { name: 'Word Dosyası', extensions: ['docx'] }
+            ]
+        }).then(result => {
+            if (!result.canceled && result.filePath) {
+                try {
+                    reportGenerator.generateReport(row, result.filePath);
+                    event.sender.send('word-export-success', result.filePath);
+                } catch (error) {
+                    console.error('Word export hatası:', error);
+                    event.sender.send('word-export-error', error.message);
+                }
+            }
+            tempDb.close();
+        });
+    });
 });

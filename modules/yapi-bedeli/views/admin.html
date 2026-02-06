@@ -628,10 +628,62 @@
             <h2>Yıpranma Payı Yönetimi</h2>
             
             <div class="alert alert-info">
-                🚧 Bu bölüm şu anda yapım aşamasındadır. Yıpranma payı tabloları burada yönetilebilecek.
+                📉 Yapıların yaşlarına ve yapım tekniklerine göre yıpranma payı oranlarını bu tablodan yönetebilirsiniz. 
+                Tablodaki değerler yapı bedeli hesaplamalarında otomatik olarak kullanılır.
             </div>
 
-            <!-- TODO: Yıpranma payı formları buraya eklenecek -->
+            <!-- Yıpranma Payı Tablosu -->
+            <div class="table-container" id="yipranmaPayiTabloContainer" style="margin-top: 20px;">
+                <table id="yipranmaPayiTablosu" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr>
+                            <th rowspan="2" style="vertical-align: middle; text-align: center; min-width: 100px;">YAPILARIN<br>YAŞLARI</th>
+                            <th colspan="8" style="text-align: center;">YAPIM TEKNİKLERİ</th>
+                        </tr>
+                        <tr>
+                            <th style="text-align: center; min-width: 80px;">Çelik</th>
+                            <th style="text-align: center; min-width: 100px;">Betonarme<br>Karkas</th>
+                            <th style="text-align: center; min-width: 80px;">Yığma<br>Kagir</th>
+                            <th style="text-align: center; min-width: 80px;">Yığma<br>Yarı Kagir</th>
+                            <th style="text-align: center; min-width: 80px;">Ahşap</th>
+                            <th style="text-align: center; min-width: 100px;">Taş Duvarlı<br>(Çamur Harçlı)</th>
+                            <th style="text-align: center; min-width: 80px;">Kerpiç</th>
+                            <th style="text-align: center; min-width: 100px;">Diğer Basit<br>Binalar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="yipranmaPayiTbody">
+                        <!-- Dinamik içerik -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="action-buttons" style="margin-top: 20px;">
+                <button type="button" class="btn btn-success" onclick="yipranmaPaylariniKaydet()">💾 Değişiklikleri Kaydet</button>
+                <button type="button" class="btn btn-secondary" onclick="yipranmaPaylariniYukle()">🔄 Tabloyu Yenile</button>
+                <button type="button" class="btn btn-warning" onclick="varsayilanYipranmaPaylariniYukle()">⚡ Varsayılana Sıfırla</button>
+            </div>
+
+            <!-- Yeni Yaş Aralığı Ekleme -->
+            <div style="margin-top: 40px; padding: 20px; border: 2px solid #D3DAE3; border-radius: 8px; background-color: #f8f9fa;">
+                <h3 style="color: #2A4C6E; margin-bottom: 15px;">➕ Yeni Yaş Aralığı Ekle</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Minimum Yaş <span class="required">*</span></label>
+                        <input type="number" id="yeniMinYas" min="0" max="999" placeholder="Örn: 51" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>Maksimum Yaş <span class="required">*</span></label>
+                        <input type="number" id="yeniMaxYas" min="0" max="999" placeholder="Örn: 60 (veya 999 sınırsız için)" autocomplete="off">
+                    </div>
+                    <div class="form-group">
+                        <label>Yaş Aralığı Etiketi <span class="required">*</span></label>
+                        <input type="text" id="yeniYasAraligi" placeholder="Örn: 51-60 veya 51+" autocomplete="off">
+                    </div>
+                </div>
+                <div class="action-buttons" style="margin-top: 15px;">
+                    <button type="button" class="btn btn-primary" onclick="yeniYasAraligiEkle()">➕ Yaş Aralığı Ekle</button>
+                </div>
+            </div>
         </div>
 
         <!-- Eksik İmalat Tab -->

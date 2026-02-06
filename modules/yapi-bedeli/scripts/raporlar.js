@@ -121,6 +121,17 @@ function loadRaporlar() {
             }
         };
 
+        // Düzenle butonu (Editör)
+        const btnDuzenle = document.createElement('button');
+        btnDuzenle.textContent = '📝 Düzenle';
+        btnDuzenle.className = 'btn duzenle-button';
+        btnDuzenle.style.backgroundColor = '#17a2b8';
+        btnDuzenle.style.color = 'white';
+        btnDuzenle.onclick = () => {
+            console.log(`Editör açılıyor, ID: ${row.id}`);
+            ipcRenderer.send('open-editor', { raporId: row.id });
+        };
+
         // Revize et butonu
         const btnRevize = document.createElement('button');
         btnRevize.textContent = 'Revize Et';
@@ -137,6 +148,7 @@ function loadRaporlar() {
             alert('Rapor oluşturma özelliği yakında eklenecek');
         };
 
+        tdIslemler.appendChild(btnDuzenle);
         tdIslemler.appendChild(btnSil);
         tdIslemler.appendChild(btnRevize);
         tdIslemler.appendChild(btnHesapla);

@@ -45,6 +45,13 @@ window.onload = () => {
     // Hesap dönemlerini yükle
     populateHesapDonemleri();
     
+    // Yıpranma paylarını yükle
+    loadYipranmaPaylari((err, data) => {
+        if (err) {
+            console.error('Yıpranma payları yüklenemedi:', err);
+        }
+    });
+    
     // Kurumları biraz gecikmeyle yükle
     setTimeout(() => {
         kurumlariDoldur();
@@ -367,44 +374,20 @@ function handleFotografSecimi() {
     });
 }
 
-// Yıpranma payı hesaplama tablosu (Resmi Gazete'ye göre)
-const yipranmaPayiTablosu = {
-    'Betonarme Karkas': [
-        { maxYas: 5, oran: 5 },
-        { maxYas: 10, oran: 10 },
-        { maxYas: 20, oran: 20 },
-        { maxYas: 30, oran: 30 },
-        { maxYas: 40, oran: 40 },
-        { maxYas: 50, oran: 50 },
-        { maxYas: Infinity, oran: 60 }
-    ],
-    'Yığma Kagir': [
-        { maxYas: 5, oran: 10 },
-        { maxYas: 10, oran: 20 },
-        { maxYas: 20, oran: 30 },
-        { maxYas: 30, oran: 40 },
-        { maxYas: 40, oran: 50 },
-        { maxYas: 50, oran: 60 },
-        { maxYas: Infinity, oran: 70 }
-    ],
-    'Çelik Konstrüksiyon': [
-        { maxYas: 5, oran: 5 },
-        { maxYas: 10, oran: 10 },
-        { maxYas: 20, oran: 20 },
-        { maxYas: 30, oran: 30 },
-        { maxYas: 40, oran: 40 },
-        { maxYas: 50, oran: 50 },
-        { maxYas: Infinity, oran: 60 }
-    ],
-    'Ahşap': [
-        { maxYas: 5, oran: 10 },
-        { maxYas: 10, oran: 20 },
-        { maxYas: 20, oran: 40 },
-        { maxYas: 30, oran: 60 },
-        { maxYas: 40, oran: 70 },
-        { maxYas: Infinity, oran: 80 }
-    ]
-};
+// Yapım teknikleri listesi (güncellenmiş - 8 adet)
+const YAPIM_TEKNIKLERI = [
+    'Çelik',
+    'Betonarme Karkas',
+    'Yığma Kagir',
+    'Yığma Yarı Kagir',
+    'Ahşap',
+    'Taş Duvarlı (Çamur Harçlı)',
+    'Kerpiç',
+    'Diğer Basit Binalar'
+];
+
+// Yıpranma payları cache (veritabanından yüklenecek)
+let yipranmaPayiCache = {};
 
 // Yapı sınıfı için mevcut grupları yükle
 function loadYapiGruplari(birimFiyatId, yapiSinifi, callback) {
@@ -525,18 +508,55 @@ function updateResmiGazeteBilgileri() {
     );
 }
 
-// Yıpranma payını hesapla
+// Yıpranma paylarını veritabanından yükle
+function loadYipranmaPaylari(callback) {
+    db.all(`SELECT * FROM yipranmaPaylari WHERE aktif = 1`, [], (err, rows) => {
+        if (err) {
+            console.error('Yıpranma payları yüklenemedi:', err);
+            callback(err, null);
+            return;
+        }
+        
+        // Cache'e al
+        yipranmaPayiCache = {};
+        rows.forEach(row => {
+            if (!yipranmaPayiCache[row.yapimTeknigi]) {
+                yipranmaPayiCache[row.yapimTeknigi] = [];
+            }
+            yipranmaPayiCache[row.yapimTeknigi].push({
+                minYas: row.minYas,
+                maxYas: row.maxYas,
+                oran: row.yipranmaOrani
+            });
+        });
+        
+        // Her teknik için yaş aralıklarını sırala
+        Object.keys(yipranmaPayiCache).forEach(teknik => {
+            yipranmaPayiCache[teknik].sort((a, b) => a.minYas - b.minYas);
+        });
+        
+        console.log('✅ Yıpranma payları yüklendi:', Object.keys(yipranmaPayiCache).length, 'yapım tekniği');
+        callback(null, yipranmaPayiCache);
+    });
+}
+
+// Yıpranma payını hesapla (veritabanından)
 function hesaplaYipranmaPay(yapimTeknigi, yapiYasi) {
-    const tablo = yipranmaPayiTablosu[yapimTeknigi];
-    if (!tablo) return 0;
+    const tablo = yipranmaPayiCache[yapimTeknigi];
+    if (!tablo || tablo.length === 0) {
+        console.warn(`⚠️ ${yapimTeknigi} için yıpranma payı tablosu bulunamadı`);
+        return 0;
+    }
     
     const yas = parseInt(yapiYasi);
     for (let i = 0; i < tablo.length; i++) {
-        if (yas <= tablo[i].maxYas) {
+        if (yas >= tablo[i].minYas && yas <= tablo[i].maxYas) {
             return tablo[i].oran;
         }
     }
-    return 0;
+    
+    // Eğer yaş aralığı bulunamazsa, en son aralığın oranını döndür
+    return tablo[tablo.length - 1].oran;
 }
 
 // Yapı yaşı veya yapım tekniği değiştiğinde yıpranma payını otomatik hesapla
@@ -662,7 +682,12 @@ function handleFormSubmit() {
 
     // Diğer verileri al
     const resmiYaziTarihi = document.getElementById('resmiYaziTarihi').value;
-    const resmiYaziSayisi = document.getElementById('resmiYaziSayisi').value;
+    const resmiYaziSayisi = [
+        document.getElementById('resmiYaziSayisi1')?.value || '',
+        document.getElementById('resmiYaziSayisi2')?.value || '',
+        document.getElementById('resmiYaziSayisi3')?.value || '',
+        document.getElementById('resmiYaziSayisi4')?.value || ''
+    ].filter(v => v.trim() !== '').join('-');
     const ilgiliKurum = document.getElementById('ilgiliKurum').value;
     const birimFiyatId = document.getElementById('hesapYili').value;
     
@@ -954,10 +979,14 @@ function yapiFormOlustur(yapi) {
                 <label>Yapım Tekniği *</label>
                 <select id="yapimTeknigi_${yapi.id}" required onchange="updateYipranmaPayYapi(${yapi.id})">
                     <option value="">Seçiniz...</option>
+                    <option value="Çelik">Çelik</option>
                     <option value="Betonarme Karkas">Betonarme Karkas</option>
                     <option value="Yığma Kagir">Yığma Kagir</option>
-                    <option value="Çelik Konstrüksiyon">Çelik Konstrüksiyon</option>
+                    <option value="Yığma Yarı Kagir">Yığma Yarı Kagir</option>
                     <option value="Ahşap">Ahşap</option>
+                    <option value="Taş Duvarlı (Çamur Harçlı)">Taş Duvarlı (Çamur Harçlı)</option>
+                    <option value="Kerpiç">Kerpiç</option>
+                    <option value="Diğer Basit Binalar">Diğer Basit Binalar</option>
                 </select>
             </div>
         </div>
@@ -1088,7 +1117,10 @@ function saveFormData() {
             // Genel Bilgiler
             raporTarihi: document.getElementById('raporTarihi')?.value || '',
             resmiYaziTarihi: document.getElementById('resmiYaziTarihi')?.value || '',
-            resmiYaziSayisi: document.getElementById('resmiYaziSayisi')?.value || '',
+            resmiYaziSayisi1: document.getElementById('resmiYaziSayisi1')?.value || 'E',
+            resmiYaziSayisi2: document.getElementById('resmiYaziSayisi2')?.value || '',
+            resmiYaziSayisi3: document.getElementById('resmiYaziSayisi3')?.value || '',
+            resmiYaziSayisi4: document.getElementById('resmiYaziSayisi4')?.value || '',
             ilgiliKurum: document.getElementById('ilgiliKurum')?.value || '',
             hesapYili: document.getElementById('hesapYili')?.value || '',
             
@@ -1163,7 +1195,10 @@ function loadFormData() {
         // Genel Bilgiler
         if (formData.raporTarihi) document.getElementById('raporTarihi').value = formData.raporTarihi;
         if (formData.resmiYaziTarihi) document.getElementById('resmiYaziTarihi').value = formData.resmiYaziTarihi;
-        if (formData.resmiYaziSayisi) document.getElementById('resmiYaziSayisi').value = formData.resmiYaziSayisi;
+        if (formData.resmiYaziSayisi1) document.getElementById('resmiYaziSayisi1').value = formData.resmiYaziSayisi1;
+        if (formData.resmiYaziSayisi2) document.getElementById('resmiYaziSayisi2').value = formData.resmiYaziSayisi2;
+        if (formData.resmiYaziSayisi3) document.getElementById('resmiYaziSayisi3').value = formData.resmiYaziSayisi3;
+        if (formData.resmiYaziSayisi4) document.getElementById('resmiYaziSayisi4').value = formData.resmiYaziSayisi4;
         if (formData.ilgiliKurum) document.getElementById('ilgiliKurum').value = formData.ilgiliKurum;
         if (formData.hesapYili) document.getElementById('hesapYili').value = formData.hesapYili;
         

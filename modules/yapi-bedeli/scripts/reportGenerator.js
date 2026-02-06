@@ -1,6 +1,52 @@
-const { Document, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, Packer, BorderStyle, VerticalAlign } = require('docx');
+const { Document, Paragraph, TextRun, Table, TableRow, TableCell, AlignmentType, WidthType, Packer, BorderStyle, VerticalAlign, ImageRun, PageBreak } = require('docx');
 const fs = require('fs');
 const path = require('path');
+
+// Fotoğraf boyutlarını hesapla (piksel cinsinden, en-boy oranını koruyarak)
+// Landscape: max genişlik 280 piksel (yaklaşık 7.5 cm @ 96 DPI)
+// Portrait: max yükseklik 380 piksel (yaklaşık 10 cm @ 96 DPI)
+function hesaplaFotografBoyutu(width, height, isLandscape) {
+    // docx kütüphanesi piksel değerleri bekliyor
+    // 96 DPI'da: 1 cm ≈ 37.8 piksel
+    const maxGenislikPx = 280; // ~7.5 cm
+    const maxYukseklikPx = 380; // ~10 cm
+    
+    let yeniGenislik, yeniYukseklik;
+    const oran = width / height;
+    
+    if (isLandscape) {
+        // Yatay fotoğraf: max genişlik 280px
+        yeniGenislik = maxGenislikPx;
+        yeniYukseklik = maxGenislikPx / oran;
+        
+        // Yükseklik max'ı geçerse, yüksekliğe göre ayarla
+        if (yeniYukseklik > maxYukseklikPx) {
+            yeniYukseklik = maxYukseklikPx;
+            yeniGenislik = maxYukseklikPx * oran;
+        }
+    } else {
+        // Dikey fotoğraf: max yükseklik 380px
+        yeniYukseklik = maxYukseklikPx;
+        yeniGenislik = maxYukseklikPx * oran;
+        
+        // Genişlik max'ı geçerse, genişliğe göre ayarla
+        if (yeniGenislik > maxGenislikPx) {
+            yeniGenislik = maxGenislikPx;
+            yeniYukseklik = maxGenislikPx / oran;
+        }
+    }
+    
+    return {
+        width: Math.round(yeniGenislik),
+        height: Math.round(yeniYukseklik)
+    };
+}
+
+// Base64 data URL'den buffer'a çevir
+function base64ToBuffer(dataUrl) {
+    const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '');
+    return Buffer.from(base64Data, 'base64');
+}
 
 // Sayıyı yazıya çevirme fonksiyonu (Türkçe)
 function sayiyiYaziyaCevir(sayi) {
@@ -75,8 +121,146 @@ function formatTarih(tarih) {
     return `${gun}.${ay}.${yil}`;
 }
 
+// Para formatla - Türkçe format (nokta basamak ayracı, virgül kuruş ayracı)
+function formatParaTR(deger) {
+    const sayi = parseFloat(deger) || 0;
+    // Önce sayıyı 2 ondalık basamakla formatla
+    const parts = sayi.toFixed(2).split('.');
+    // Tam kısmı nokta ile ayır
+    const tamKisim = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    // Kuruş kısmını virgül ile ekle
+    return tamKisim + ',' + parts[1];
+}
+
+// Fotoğraf sayfaları oluştur (2x2 tablo formatında)
+function olusturFotografSayfalari(fotograflar) {
+    console.log('📷 olusturFotografSayfalari çağrıldı, fotoğraf sayısı:', fotograflar?.length || 0);
+    
+    if (!fotograflar || fotograflar.length === 0) {
+        console.log('⚠️ Fotoğraf yok, boş dizi döndürülüyor');
+        return [];
+    }
+    
+    const sections = [];
+    const fotografPerSayfa = 4; // Her sayfada 4 fotoğraf (2x2)
+    
+    // Fotoğrafları 4'erli gruplara böl
+    for (let i = 0; i < fotograflar.length; i += fotografPerSayfa) {
+        const sayfaFotograflari = fotograflar.slice(i, i + fotografPerSayfa);
+        
+        // 2x2 tablo için satırları oluştur
+        const tableRows = [];
+        
+        for (let row = 0; row < 2; row++) {
+            const cellsForRow = [];
+            
+            for (let col = 0; col < 2; col++) {
+                const fotoIndex = row * 2 + col;
+                const foto = sayfaFotograflari[fotoIndex];
+                
+                if (foto && foto.data) {
+                    try {
+                        const boyut = hesaplaFotografBoyutu(foto.width, foto.height, foto.isLandscape);
+                        const imageBuffer = base64ToBuffer(foto.data);
+                        
+                        console.log(`📷 Fotoğraf işleniyor: ${foto.name}, boyut: ${boyut.width}x${boyut.height}, buffer: ${imageBuffer.length} bytes`);
+                        
+                        const cellChildren = [
+                            new Paragraph({
+                                alignment: AlignmentType.CENTER,
+                                children: [
+                                    new ImageRun({
+                                        data: imageBuffer,
+                                        transformation: {
+                                            width: boyut.width,
+                                            height: boyut.height
+                                        }
+                                    })
+                                ]
+                            })
+                        ];
+                        
+                        // Açıklama varsa ekle
+                        if (foto.aciklama) {
+                            cellChildren.push(
+                                new Paragraph({
+                                    alignment: AlignmentType.CENTER,
+                                    spacing: { before: 60 },
+                                    children: [
+                                        new TextRun({ 
+                                            text: foto.aciklama, 
+                                            size: 20,
+                                            italics: true
+                                        })
+                                    ]
+                                })
+                            );
+                        }
+                        
+                        cellsForRow.push(
+                            new TableCell({
+                                children: cellChildren,
+                                verticalAlign: VerticalAlign.CENTER,
+                                width: { size: 50, type: WidthType.PERCENTAGE }
+                            })
+                        );
+                    } catch (imgError) {
+                        console.error('Fotoğraf işleme hatası:', imgError);
+                        // Hata durumunda boş hücre
+                        cellsForRow.push(
+                            new TableCell({
+                                children: [new Paragraph({ text: '' })],
+                                width: { size: 50, type: WidthType.PERCENTAGE }
+                            })
+                        );
+                    }
+                } else {
+                    // Boş hücre
+                    cellsForRow.push(
+                        new TableCell({
+                            children: [new Paragraph({ text: '' })],
+                            width: { size: 50, type: WidthType.PERCENTAGE }
+                        })
+                    );
+                }
+            }
+            
+            tableRows.push(new TableRow({ children: cellsForRow }));
+        }
+        
+        // Sayfa numarası hesapla
+        const sayfaNo = Math.floor(i / fotografPerSayfa) + 1;
+        const toplamSayfa = Math.ceil(fotograflar.length / fotografPerSayfa);
+        
+        sections.push({
+            children: [
+                // Sayfa başlığı
+                new Paragraph({
+                    alignment: AlignmentType.CENTER,
+                    spacing: { after: 200 },
+                    children: [
+                        new TextRun({ 
+                            text: `FOTOĞRAFLAR (${sayfaNo}/${toplamSayfa})`, 
+                            bold: true, 
+                            size: 28 
+                        })
+                    ]
+                }),
+                
+                // 2x2 Fotoğraf tablosu
+                new Table({
+                    width: { size: 100, type: WidthType.PERCENTAGE },
+                    rows: tableRows
+                })
+            ]
+        });
+    }
+    
+    return sections;
+}
+
 // Rapor oluştur - KT_Sablon_1.docx formatında
-function generateReport(raporData, outputPath) {
+function generateReport(raporData, outputPath, fotograflar = []) {
     try {
         // Yapı verilerini parse et
         let yapilarData = [];
@@ -112,13 +296,18 @@ function generateReport(raporData, outputPath) {
         const raportorUnvanlari = (raporData.raportorUnvani || '').split(',').map(s => s.trim()).filter(s => s);
         const raportorSayisi = Math.min(raportorAdlari.length, raportorUnvanlari.length, 4); // Max 4 raportör
         
+        // Fotoğraf sayfalarını oluştur
+        console.log('📷 generateReport - Gelen fotoğraf sayısı:', fotograflar?.length || 0);
+        const fotografSayfalari = olusturFotografSayfalari(fotograflar);
+        console.log('📷 Oluşturulan fotoğraf sayfası sayısı:', fotografSayfalari.length);
+        
         const doc = new Document({
             sections: [{
                 children: [
                     // Başlık - Ortalanmış, Bold, 14pt (28 half-points)
                     new Paragraph({
                         alignment: AlignmentType.CENTER,
-                        spacing: { after: 400 },
+                        spacing: { after: 120 },
                         children: [
                             new TextRun({
                                 text: "KIYMET TAKDİR RAPORU",
@@ -128,26 +317,18 @@ function generateReport(raporData, outputPath) {
                         ]
                     }),
                     
-                    // Boş satırlar
-                    new Paragraph({ text: "" }),
-                    new Paragraph({ text: "" }),
-                    
                     // Gerekçe Başlık - Bold, 12pt (24 half-points)
                     new Paragraph({
-                        spacing: { before: 200, after: 200 },
+                        spacing: { before: 120, after: 120 },
                         children: [
                             new TextRun({ text: "Gerekçe:", bold: true, size: 24 })
                         ]
                     }),
                     
-                    // Boş satırlar
-                    new Paragraph({ text: "" }),
-                    new Paragraph({ text: "" }),
-                    
                     // Gerekçe paragrafı - 12pt (24 half-points) - İki yana yasla
                     new Paragraph({
                         alignment: AlignmentType.JUSTIFIED,
-                        spacing: { after: 400 },
+                        spacing: { after: 120 },
                         children: [
                             new TextRun({
                                 text: `Bu rapor, ${raporData.ilgiliKurum || ''} ${formatTarih(raporData.resmiYaziTarihi)} tarih ${raporData.resmiYaziSayisi || ''} sayılı yazısına istinaden hazırlanmıştır.`,
@@ -156,14 +337,10 @@ function generateReport(raporData, outputPath) {
                         ]
                     }),
                     
-                    // Boş satırlar
-                    new Paragraph({ text: "" }),
-                    new Paragraph({ text: "" }),
-                    
                     // Açıklama paragrafı - 12pt (24 half-points) - İki yana yasla
                     new Paragraph({
                         alignment: AlignmentType.JUSTIFIED,
-                        spacing: { after: 400 },
+                        spacing: { after: 120 },
                         children: [
                             new TextRun({
                                 text: asgariLevazimHesapla 
@@ -174,13 +351,9 @@ function generateReport(raporData, outputPath) {
                         ]
                     }),
                     
-                    // Boş satırlar
-                    new Paragraph({ text: "" }),
-                    new Paragraph({ text: "" }),
-                    
                     // Taşınmaz Bilgileri Başlık - Bold, 12pt (24 half-points)
                     new Paragraph({
-                        spacing: { before: 200, after: 200 },
+                        spacing: { before: 120, after: 120 },
                         children: [
                             new TextRun({ text: "Taşınmaz Bilgileri:", bold: true, size: 24 })
                         ]
@@ -261,14 +434,9 @@ function generateReport(raporData, outputPath) {
                         ]
                     }),
                     
-                    // Boş satırlar
-                    new Paragraph({ text: "" }),
-                    new Paragraph({ text: "" }),
-                    new Paragraph({ text: "" }),
-                    
                     // Yapı Bilgileri Başlık - Bold, 12pt (24 half-points)
                     new Paragraph({
-                        spacing: { before: 200, after: 200 },
+                        spacing: { before: 120, after: 120 },
                         children: [
                             new TextRun({ text: "Yapı Bilgileri ve Hesaplamalar:", bold: true, size: 24 })
                         ]
@@ -294,39 +462,40 @@ function generateReport(raporData, outputPath) {
                                 ]
                             }),
                             // Her yapı için satır
-                            ...yapilarData.map(yapi => new TableRow({
-                                children: [
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapiNo || '', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapiAdi || '', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapiSinifi || '', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: parseFloat(yapi.birimFiyat || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","), size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: parseFloat(yapi.yapiAlani || 0).toFixed(2), size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (yapi.yapiYasi || '') + '', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapimTeknigi || '', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (yapi.yipranmaPay || '0') + '%', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (yapi.eksikImalatOrani || '0') + '%', size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: parseFloat(yapi.yapiBedeli || 0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ","), size: 18 })] })] })
-                                ]
-                            }))
+                            ...yapilarData.map(yapi => {
+                                // Yapı sınıfı + grup birleştir (örn: "5 A")
+                                const yapiSinifiGrup = [yapi.yapiSinifi, yapi.yapiGrubu].filter(s => s).join(' ');
+                                return new TableRow({
+                                    children: [
+                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapiNo || '', size: 18 })] })] }),
+                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapiAdi || '', size: 18 })] })] }),
+                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapiSinifiGrup, size: 18 })] })] }),
+                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formatParaTR(yapi.birimFiyat) + ' TL', size: 18 })] })] }),
+                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: parseFloat(yapi.yapiAlani || 0).toFixed(2), size: 18 })] })] }),
+                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (yapi.yapiYasi || '') + '', size: 18 })] })] }),
+                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapimTeknigi || '', size: 18 })] })] }),
+                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (yapi.yipranmaPay || '0') + '%', size: 18 })] })] }),
+                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (yapi.eksikImalatOrani || '0') + '%', size: 18 })] })] }),
+                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formatParaTR(yapi.yapiBedeli) + ' TL', size: 18 })] })] })
+                                    ]
+                                });
+                            })
                         ]
                     }),
                     
-                    // Boş satırlar
-                    new Paragraph({ text: "" }),
-                    
                     // Toplam Yapı Bedeli - Bold, 12pt (24 half-points)
                     new Paragraph({
-                        spacing: { after: 200 },
+                        spacing: { before: 120, after: 120 },
                         children: [
                             new TextRun({ text: "TOPLAM YAPI BEDELİ: ", bold: true, size: 24 }),
-                            new TextRun({ text: toplamYapiBedeli.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' TL', size: 24 })
+                            new TextRun({ text: formatParaTR(toplamYapiBedeli) + ' TL', size: 24 })
                         ]
                     }),
                     
                     // Yapı Bedeli Yazıyla - 12pt (24 half-points) - İki yana yasla
                     new Paragraph({
                         alignment: AlignmentType.JUSTIFIED,
-                        spacing: { after: 400 },
+                        spacing: { after: 120 },
                         children: [
                             new TextRun({
                                 text: `Yalnız ${sayiyiYaziyaCevir(toplamYapiBedeli)} Türk Lirasıdır.`,
@@ -337,22 +506,19 @@ function generateReport(raporData, outputPath) {
                     
                     // Boş satırlar (eğer levazım hesaplanacaksa)
                     ...(asgariLevazimHesapla ? [
-                        new Paragraph({ text: "" }),
-                        new Paragraph({ text: "" }),
-                        
                         // Levazım Bedeli - Bold, 12pt (24 half-points)
                         new Paragraph({
-                            spacing: { after: 200 },
+                            spacing: { before: 120, after: 120 },
                             children: [
                                 new TextRun({ text: "TOPLAM ASGARİ LEVAZIM BEDELİ (Toplam Bedel x 0,7 x 0,75) : ", bold: true, size: 24 }),
-                                new TextRun({ text: levazimBedeli.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' TL', size: 24 })
+                                new TextRun({ text: formatParaTR(levazimBedeli) + ' TL', size: 24 })
                             ]
                         }),
                         
                         // Levazım Bedeli Yazıyla - 12pt (24 half-points) - İki yana yasla
                         new Paragraph({
                             alignment: AlignmentType.JUSTIFIED,
-                            spacing: { after: 400 },
+                            spacing: { after: 120 },
                             children: [
                                 new TextRun({
                                     text: `Yalnız ${sayiyiYaziyaCevir(levazimBedeli)} Türk Lirasıdır.`,
@@ -362,14 +528,10 @@ function generateReport(raporData, outputPath) {
                         })
                     ] : []),
                     
-                    // Boş satırlar
-                    new Paragraph({ text: "" }),
-                    new Paragraph({ text: "" }),
-                    
                     // Son Paragraf - 12pt (24 half-points) - İki yana yasla
                     new Paragraph({
                         alignment: AlignmentType.JUSTIFIED,
-                        spacing: { after: 400 },
+                        spacing: { before: 120, after: 120 },
                         children: [
                             new TextRun({
                                 text: asgariLevazimHesapla
@@ -382,19 +544,16 @@ function generateReport(raporData, outputPath) {
                     
                     // Rapor Tarihi - 12pt (24 half-points)
                     new Paragraph({
-                        spacing: { after: 200 },
+                        spacing: { after: 120 },
                         children: [
                             new TextRun({ text: formatTarih(raporData.raporTarihi), size: 24 })
                         ]
                     }),
                     
-                    // Boş satırlar
-                    new Paragraph({ text: "" }),
-                    new Paragraph({ text: "" }),
-                    new Paragraph({ text: "" }),
+                    // Boş satır
                     new Paragraph({ text: "" }),
                     
-                    // Raportör Tablosu - Dinamik (max 4 raportör)
+                    // Raportör Tablosu - Dinamik (max 4 raportör) - 11pt (22 half-points)
                     ...(raportorSayisi > 0 ? [
                         new Table({
                             width: { size: 100, type: WidthType.PERCENTAGE },
@@ -405,7 +564,7 @@ function generateReport(raporData, outputPath) {
                                         new TableCell({
                                             children: [new Paragraph({
                                                 alignment: AlignmentType.CENTER,
-                                                children: [new TextRun({ text: raportorAdlari[i] || '', size: 18 })]
+                                                children: [new TextRun({ text: raportorAdlari[i] || '', size: 22 })]
                                             })]
                                         })
                                     )
@@ -416,7 +575,7 @@ function generateReport(raporData, outputPath) {
                                         new TableCell({
                                             children: [new Paragraph({
                                                 alignment: AlignmentType.CENTER,
-                                                children: [new TextRun({ text: raportorUnvanlari[i] || '', size: 18 })]
+                                                children: [new TextRun({ text: raportorUnvanlari[i] || '', size: 22 })]
                                             })]
                                         })
                                     )
@@ -426,21 +585,23 @@ function generateReport(raporData, outputPath) {
                     ] : [
                         // Eğer raportör yoksa eski sistemi kullan
                         new Paragraph({
-                            spacing: { after: 200 },
+                            spacing: { after: 120 },
                             children: [
-                                new TextRun({ text: raporData.raportorAdi || '', size: 24 })
+                                new TextRun({ text: raporData.raportorAdi || '', size: 22 })
                             ]
                         }),
-                        new Paragraph({ text: "" }),
                         new Paragraph({
-                            spacing: { after: 400 },
+                            spacing: { after: 120 },
                             children: [
-                                new TextRun({ text: raporData.raportorUnvani || '', size: 24 })
+                                new TextRun({ text: raporData.raportorUnvani || '', size: 22 })
                             ]
                         })
                     ])
                 ]
-            }]
+            },
+            // Fotoğraf sayfalarını ekle (varsa)
+            ...fotografSayfalari
+            ]
         });
         
         // Dosyayı oluştur ve kaydet

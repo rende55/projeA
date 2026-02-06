@@ -1,0 +1,162 @@
+<!-- Kayıtlı Raporlar - İçerik -->
+<style>
+    .rp-container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #FFFFFF;
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    }
+    
+    .rp-header {
+        background: linear-gradient(135deg, #2A4C6E 0%, #3C6B99 100%);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 8px 8px 0 0;
+        margin: -20px -20px 20px -20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+    
+    .rp-header h1 {
+        margin: 0;
+        font-size: 24px;
+        color: white;
+    }
+    
+    .rp-nav-buttons {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .rp-nav-button {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 2px solid rgba(255, 255, 255, 0.3);
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-height: 44px;
+    }
+    
+    .rp-nav-button:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateY(-2px);
+    }
+    
+    .rp-main h2 {
+        color: #333333;
+        margin-bottom: 15px;
+    }
+    
+    .rp-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .rp-table th, .rp-table td {
+        padding: 12px;
+        text-align: left;
+        border: 1px solid #D3DAE3;
+    }
+    
+    .rp-table th {
+        background-color: #2A4C6E;
+        color: white;
+        font-weight: bold;
+    }
+    
+    .rp-table tr:hover {
+        background-color: #E8ECF2;
+    }
+    
+    .rp-btn {
+        padding: 8px 12px;
+        margin-right: 5px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 14px;
+        display: inline-block;
+    }
+    
+    .rp-sil-button {
+        background-color: #E53935;
+        color: white;
+    }
+    
+    .rp-sil-button:hover {
+        background-color: #c62828;
+    }
+    
+    .rp-duzenle-button {
+        background-color: #2196F3;
+        color: white;
+    }
+    
+    .rp-duzenle-button:hover {
+        background-color: #1976D2;
+    }
+    
+    .rp-revize-button {
+        background-color: #FFC107;
+        color: #1D1D1D;
+    }
+    
+    .rp-revize-button:hover {
+        background-color: #F3C870;
+    }
+    
+    .rp-empty-message {
+        text-align: center;
+        padding: 40px;
+        color: #6F7A86;
+        font-size: 16px;
+    }
+</style>
+
+<div class="rp-container">
+    <header class="rp-header">
+        <h1>📊 Kayıtlı Raporlar</h1>
+        <div class="rp-nav-buttons">
+            <button class="rp-nav-button" id="rp-formButton" title="Forma Dön">
+                <span>📝</span>
+                <span>Forma Dön</span>
+            </button>
+        </div>
+    </header>
+    <main class="rp-main">
+        <h2>Rapor Listesi</h2>
+        <table class="rp-table" id="rp-raporlarTable">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Rapor Tarihi</th>
+                    <th>İlçe</th>
+                    <th>Mahalle</th>
+                    <th>Ada</th>
+                    <th>Parsel</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody id="rp-raporlarBody">
+                <!-- Raporlar buraya eklenecek -->
+            </tbody>
+        </table>
+        <div id="rp-emptyMessage" class="rp-empty-message" style="display: none;">
+            Henüz kayıtlı rapor bulunmamaktadır.
+        </div>
+    </main>
+</div>

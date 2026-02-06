@@ -911,7 +911,353 @@ function kurumDuzenlemeyiKapat() {
 // YIPRANMA PAYI YÖNETİMİ
 // ======================
 
-// TODO: Yıpranma payı fonksiyonları buraya eklenecek
+// Yapım teknikleri listesi (sıralı)
+const YAPIM_TEKNIKLERI = [
+    'Çelik',
+    'Betonarme Karkas',
+    'Yığma Kagir',
+    'Yığma Yarı Kagir',
+    'Ahşap',
+    'Taş Duvarlı (Çamur Harçlı)',
+    'Kerpiç',
+    'Diğer Basit Binalar'
+];
+
+// Yıpranma payları cache
+let yipranmaPayiCache = {};
+
+// Yıpranma paylarını yükle
+function yipranmaPaylariniYukle() {
+    console.log('📉 Yıpranma payları yükleniyor...');
+    
+    const tbody = document.getElementById('yipranmaPayiTbody');
+    if (!tbody) return;
+    
+    // Önce tablo var mı kontrol et
+    db.get(`SELECT name FROM sqlite_master WHERE type='table' AND name='yipranmaPaylari'`, [], (err, row) => {
+        if (err) {
+            console.error('Tablo kontrol hatası:', err);
+            tbody.innerHTML = '<tr><td colspan="9">❌ Veritabanı kontrol hatası</td></tr>';
+            return;
+        }
+
+        if (!row) {
+            tbody.innerHTML = '<tr><td colspan="9">⏳ Veritabanı hazırlanıyor... Lütfen uygulamayı yeniden başlatın.</td></tr>';
+            return;
+        }
+
+        // Tüm yıpranma paylarını çek
+        db.all(`SELECT * FROM yipranmaPaylari WHERE aktif = 1 ORDER BY minYas ASC`, [], (err, rows) => {
+            if (err) {
+                console.error('Yıpranma payları yükleme hatası:', err);
+                tbody.innerHTML = '<tr><td colspan="9">❌ Veri yüklenirken hata oluştu</td></tr>';
+                return;
+            }
+
+            if (!rows || rows.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9">📭 Henüz yıpranma payı verisi eklenmemiş. Uygulamayı yeniden başlatın.</td></tr>';
+                return;
+            }
+
+            // Verileri cache'e al ve yaş aralıklarına göre grupla
+            yipranmaPayiCache = {};
+            const yasAraliklari = new Map(); // Sıralı tutmak için Map kullan
+            
+            rows.forEach(row => {
+                const key = `${row.minYas}_${row.maxYas}`;
+                if (!yasAraliklari.has(key)) {
+                    yasAraliklari.set(key, {
+                        yasAraligi: row.yasAraligi,
+                        minYas: row.minYas,
+                        maxYas: row.maxYas,
+                        teknikler: {}
+                    });
+                }
+                yasAraliklari.get(key).teknikler[row.yapimTeknigi] = {
+                    id: row.id,
+                    oran: row.yipranmaOrani
+                };
+            });
+
+            // Tabloyu oluştur
+            tbody.innerHTML = '';
+            
+            yasAraliklari.forEach((aralik, key) => {
+                const tr = document.createElement('tr');
+                
+                // Yaş aralığı hücresi
+                let yasHucresi = `<td style="text-align: center; font-weight: bold; background-color: #E8ECF2;">
+                    ${aralik.yasAraligi}
+                    <button type="button" onclick="yasAraligiSil('${key}')" style="margin-left: 10px; padding: 2px 6px; font-size: 11px; background: #E53935; color: white; border: none; border-radius: 3px; cursor: pointer;" title="Bu yaş aralığını sil">🗑️</button>
+                </td>`;
+                
+                // Her yapım tekniği için input oluştur
+                let teknikHucreleri = '';
+                YAPIM_TEKNIKLERI.forEach(teknik => {
+                    const veri = aralik.teknikler[teknik];
+                    const oran = veri ? veri.oran : '';
+                    const id = veri ? veri.id : '';
+                    
+                    teknikHucreleri += `<td style="text-align: center;">
+                        <input type="number" 
+                               step="0.1" 
+                               min="0" 
+                               max="100" 
+                               value="${oran}" 
+                               data-id="${id}"
+                               data-teknik="${teknik}"
+                               data-min-yas="${aralik.minYas}"
+                               data-max-yas="${aralik.maxYas}"
+                               data-yas-araligi="${aralik.yasAraligi}"
+                               class="yipranma-input"
+                               style="width: 60px; text-align: center; padding: 5px; border: 1px solid #C9D1DB; border-radius: 4px;">
+                        <span style="font-size: 12px; color: #666;">%</span>
+                    </td>`;
+                });
+                
+                tr.innerHTML = yasHucresi + teknikHucreleri;
+                tbody.appendChild(tr);
+            });
+
+            console.log(`✅ ${rows.length} yıpranma payı verisi yüklendi`);
+        });
+    });
+}
+
+// Yıpranma paylarını kaydet
+function yipranmaPaylariniKaydet() {
+    const inputs = document.querySelectorAll('.yipranma-input');
+    let basariliSayac = 0;
+    let hataSayac = 0;
+    let toplamIslem = 0;
+    
+    inputs.forEach(input => {
+        const id = input.dataset.id;
+        const teknik = input.dataset.teknik;
+        const minYas = parseInt(input.dataset.minYas);
+        const maxYas = parseInt(input.dataset.maxYas);
+        const yasAraligi = input.dataset.yasAraligi;
+        const oran = parseFloat(input.value);
+        
+        if (isNaN(oran) || oran < 0 || oran > 100) {
+            return; // Geçersiz değer, atla
+        }
+        
+        toplamIslem++;
+        
+        if (id) {
+            // Güncelle
+            db.run(`UPDATE yipranmaPaylari SET yipranmaOrani = ?, guncellemeTarihi = datetime('now','localtime') WHERE id = ?`,
+                [oran, id], (err) => {
+                    if (err) {
+                        console.error('Güncelleme hatası:', err);
+                        hataSayac++;
+                    } else {
+                        basariliSayac++;
+                    }
+                }
+            );
+        } else {
+            // Yeni ekle
+            db.run(`INSERT INTO yipranmaPaylari (yapimTeknigi, yasAraligi, minYas, maxYas, yipranmaOrani) VALUES (?, ?, ?, ?, ?)`,
+                [teknik, yasAraligi, minYas, maxYas, oran], (err) => {
+                    if (err) {
+                        console.error('Ekleme hatası:', err);
+                        hataSayac++;
+                    } else {
+                        basariliSayac++;
+                    }
+                }
+            );
+        }
+    });
+    
+    // Sonuç mesajı
+    setTimeout(() => {
+        if (toplamIslem === 0) {
+            alert('⚠️ Kaydedilecek veri bulunamadı!');
+        } else if (hataSayac > 0) {
+            alert(`⚠️ ${basariliSayac} kayıt başarılı, ${hataSayac} kayıtta hata oluştu.`);
+        } else {
+            alert(`✅ ${basariliSayac} yıpranma payı başarıyla kaydedildi!`);
+        }
+        yipranmaPaylariniYukle();
+    }, 500);
+}
+
+// Varsayılan yıpranma paylarını yükle
+function varsayilanYipranmaPaylariniYukle() {
+    if (!confirm('⚠️ DİKKAT! Tüm yıpranma payı verileri varsayılan değerlere sıfırlanacak.\n\nBu işlem mevcut tüm özelleştirmelerinizi silecektir. Devam etmek istiyor musunuz?')) {
+        return;
+    }
+    
+    // Önce tüm verileri sil
+    db.run(`DELETE FROM yipranmaPaylari`, [], (err) => {
+        if (err) {
+            alert('❌ Silme hatası: ' + err.message);
+            return;
+        }
+        
+        // Varsayılan verileri ekle
+        const varsayilanVeriler = [
+            // Çelik
+            ['Çelik', '0-5', 0, 5, 4],
+            ['Çelik', '6-10', 6, 10, 8],
+            ['Çelik', '11-15', 11, 15, 12],
+            ['Çelik', '16-20', 16, 20, 16],
+            ['Çelik', '21-30', 21, 30, 22],
+            ['Çelik', '31-40', 31, 40, 28],
+            ['Çelik', '41-50', 41, 50, 35],
+            ['Çelik', '51+', 51, 999, 40],
+            
+            // Betonarme Karkas
+            ['Betonarme Karkas', '0-5', 0, 5, 5],
+            ['Betonarme Karkas', '6-10', 6, 10, 10],
+            ['Betonarme Karkas', '11-15', 11, 15, 15],
+            ['Betonarme Karkas', '16-20', 16, 20, 20],
+            ['Betonarme Karkas', '21-30', 21, 30, 28],
+            ['Betonarme Karkas', '31-40', 31, 40, 36],
+            ['Betonarme Karkas', '41-50', 41, 50, 45],
+            ['Betonarme Karkas', '51+', 51, 999, 55],
+            
+            // Yığma Kagir
+            ['Yığma Kagir', '0-5', 0, 5, 8],
+            ['Yığma Kagir', '6-10', 6, 10, 15],
+            ['Yığma Kagir', '11-15', 11, 15, 22],
+            ['Yığma Kagir', '16-20', 16, 20, 28],
+            ['Yığma Kagir', '21-30', 21, 30, 38],
+            ['Yığma Kagir', '31-40', 31, 40, 48],
+            ['Yığma Kagir', '41-50', 41, 50, 58],
+            ['Yığma Kagir', '51+', 51, 999, 68],
+            
+            // Yığma Yarı Kagir
+            ['Yığma Yarı Kagir', '0-5', 0, 5, 10],
+            ['Yığma Yarı Kagir', '6-10', 6, 10, 18],
+            ['Yığma Yarı Kagir', '11-15', 11, 15, 26],
+            ['Yığma Yarı Kagir', '16-20', 16, 20, 34],
+            ['Yığma Yarı Kagir', '21-30', 21, 30, 45],
+            ['Yığma Yarı Kagir', '31-40', 31, 40, 55],
+            ['Yığma Yarı Kagir', '41-50', 41, 50, 65],
+            ['Yığma Yarı Kagir', '51+', 51, 999, 75],
+            
+            // Ahşap
+            ['Ahşap', '0-5', 0, 5, 12],
+            ['Ahşap', '6-10', 6, 10, 22],
+            ['Ahşap', '11-15', 11, 15, 32],
+            ['Ahşap', '16-20', 16, 20, 42],
+            ['Ahşap', '21-30', 21, 30, 55],
+            ['Ahşap', '31-40', 31, 40, 68],
+            ['Ahşap', '41-50', 41, 50, 78],
+            ['Ahşap', '51+', 51, 999, 85],
+            
+            // Taş Duvarlı (Çamur Harçlı)
+            ['Taş Duvarlı (Çamur Harçlı)', '0-5', 0, 5, 15],
+            ['Taş Duvarlı (Çamur Harçlı)', '6-10', 6, 10, 25],
+            ['Taş Duvarlı (Çamur Harçlı)', '11-15', 11, 15, 35],
+            ['Taş Duvarlı (Çamur Harçlı)', '16-20', 16, 20, 45],
+            ['Taş Duvarlı (Çamur Harçlı)', '21-30', 21, 30, 58],
+            ['Taş Duvarlı (Çamur Harçlı)', '31-40', 31, 40, 70],
+            ['Taş Duvarlı (Çamur Harçlı)', '41-50', 41, 50, 80],
+            ['Taş Duvarlı (Çamur Harçlı)', '51+', 51, 999, 88],
+            
+            // Kerpiç
+            ['Kerpiç', '0-5', 0, 5, 18],
+            ['Kerpiç', '6-10', 6, 10, 30],
+            ['Kerpiç', '11-15', 11, 15, 42],
+            ['Kerpiç', '16-20', 16, 20, 52],
+            ['Kerpiç', '21-30', 21, 30, 65],
+            ['Kerpiç', '31-40', 31, 40, 78],
+            ['Kerpiç', '41-50', 41, 50, 88],
+            ['Kerpiç', '51+', 51, 999, 95],
+            
+            // Diğer Basit Binalar
+            ['Diğer Basit Binalar', '0-5', 0, 5, 20],
+            ['Diğer Basit Binalar', '6-10', 6, 10, 35],
+            ['Diğer Basit Binalar', '11-15', 11, 15, 48],
+            ['Diğer Basit Binalar', '16-20', 16, 20, 60],
+            ['Diğer Basit Binalar', '21-30', 21, 30, 72],
+            ['Diğer Basit Binalar', '31-40', 31, 40, 82],
+            ['Diğer Basit Binalar', '41-50', 41, 50, 90],
+            ['Diğer Basit Binalar', '51+', 51, 999, 95]
+        ];
+        
+        let eklenenSayac = 0;
+        varsayilanVeriler.forEach(([yapimTeknigi, yasAraligi, minYas, maxYas, yipranmaOrani]) => {
+            db.run(`INSERT INTO yipranmaPaylari (yapimTeknigi, yasAraligi, minYas, maxYas, yipranmaOrani) VALUES (?, ?, ?, ?, ?)`,
+                [yapimTeknigi, yasAraligi, minYas, maxYas, yipranmaOrani], (err) => {
+                    if (!err) eklenenSayac++;
+                });
+        });
+        
+        setTimeout(() => {
+            alert(`✅ ${eklenenSayac} varsayılan yıpranma payı verisi yüklendi!`);
+            yipranmaPaylariniYukle();
+        }, 1000);
+    });
+}
+
+// Yeni yaş aralığı ekle
+function yeniYasAraligiEkle() {
+    const minYas = parseInt(document.getElementById('yeniMinYas').value);
+    const maxYas = parseInt(document.getElementById('yeniMaxYas').value);
+    const yasAraligi = document.getElementById('yeniYasAraligi').value.trim();
+    
+    if (isNaN(minYas) || isNaN(maxYas) || !yasAraligi) {
+        alert('⚠️ Lütfen tüm alanları doldurun!');
+        return;
+    }
+    
+    if (minYas > maxYas) {
+        alert('⚠️ Minimum yaş, maksimum yaştan büyük olamaz!');
+        return;
+    }
+    
+    // Her yapım tekniği için varsayılan değer 0 ile ekle
+    let eklenenSayac = 0;
+    YAPIM_TEKNIKLERI.forEach(teknik => {
+        db.run(`INSERT OR IGNORE INTO yipranmaPaylari (yapimTeknigi, yasAraligi, minYas, maxYas, yipranmaOrani) VALUES (?, ?, ?, ?, ?)`,
+            [teknik, yasAraligi, minYas, maxYas, 0], (err) => {
+                if (!err) eklenenSayac++;
+            });
+    });
+    
+    setTimeout(() => {
+        alert(`✅ "${yasAraligi}" yaş aralığı eklendi. Lütfen yıpranma oranlarını girin.`);
+        
+        // Formu temizle
+        document.getElementById('yeniMinYas').value = '';
+        document.getElementById('yeniMaxYas').value = '';
+        document.getElementById('yeniYasAraligi').value = '';
+        
+        yipranmaPaylariniYukle();
+    }, 500);
+}
+
+// Yaş aralığını sil
+function yasAraligiSil(key) {
+    const [minYas, maxYas] = key.split('_').map(Number);
+    
+    if (!confirm(`⚠️ Bu yaş aralığını (${minYas}-${maxYas}) ve tüm yapım tekniklerine ait verilerini silmek istediğinizden emin misiniz?`)) {
+        return;
+    }
+    
+    db.run(`DELETE FROM yipranmaPaylari WHERE minYas = ? AND maxYas = ?`, [minYas, maxYas], (err) => {
+        if (err) {
+            alert('❌ Silme hatası: ' + err.message);
+            return;
+        }
+        
+        alert('✅ Yaş aralığı başarıyla silindi!');
+        yipranmaPaylariniYukle();
+    });
+}
+
+// Sayfa yüklendiğinde yıpranma paylarını da yükle
+window.addEventListener('load', () => {
+    setTimeout(() => {
+        yipranmaPaylariniYukle();
+    }, 1500);
+})
 
 // ======================
 // EKSİK İMALAT YÖNETİMİ

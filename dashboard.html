@@ -15,8 +15,95 @@
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #2A4C6E 0%, #1D364E 100%);
             min-height: 100vh;
-            padding: 40px 20px;
             overflow-x: hidden;
+        }
+        
+        body.page-mode {
+            background: #F5F7FA;
+            padding: 0;
+        }
+        
+        /* Dashboard içeriği için padding */
+        .dashboard-wrapper {
+            padding: 40px 20px;
+        }
+        
+        /* ===== NAVİGASYON BAR ===== */
+        .navigation-bar {
+            display: none;
+            background: linear-gradient(135deg, #2A4C6E 0%, #3C6B99 100%);
+            color: white;
+            padding: 12px 24px;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .nav-buttons {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .nav-btn {
+            background: rgba(255, 255, 255, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .nav-btn:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.25);
+        }
+        
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .breadcrumb {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            flex-wrap: wrap;
+        }
+        
+        .breadcrumb-item {
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+        }
+        
+        .breadcrumb-item:hover {
+            opacity: 1;
+            text-decoration: underline;
+        }
+        
+        .breadcrumb-current {
+            font-weight: 600;
+        }
+        
+        .breadcrumb-separator {
+            opacity: 0.6;
+        }
+        
+        /* ===== PAGE CONTAINER ===== */
+        #page-container {
+            display: none;
+            min-height: calc(100vh - 52px);
+            background: #F5F7FA;
         }
 
         .container {
@@ -326,6 +413,28 @@
     </style>
 </head>
 <body>
+    <!-- ===== NAVİGASYON BAR ===== -->
+    <nav class="navigation-bar" id="navigation-bar">
+        <div class="nav-buttons">
+            <button class="nav-btn nav-back-btn" onclick="window.navigation.goBack()" title="Geri (ESC)">
+                ← Geri
+            </button>
+            <button class="nav-btn nav-home-btn" onclick="window.navigation.goHome()" title="Ana Sayfa (Alt+Home)">
+                🏠 Ana Sayfa
+            </button>
+        </div>
+        <div class="breadcrumb" id="breadcrumb">
+            <!-- Dinamik olarak doldurulacak -->
+        </div>
+    </nav>
+    
+    <!-- ===== PAGE CONTAINER (Dinamik içerik buraya yüklenecek) ===== -->
+    <div id="page-container">
+        <!-- Sayfa içerikleri buraya yüklenecek -->
+    </div>
+    
+    <!-- ===== DASHBOARD İÇERİĞİ ===== -->
+    <div class="dashboard-wrapper">
     <div class="container">
         <!-- Header -->
         <div class="header">
@@ -353,18 +462,17 @@
             </div>
 
             <!-- Proje Bedeli Modülü -->
-            <div class="module-card disabled" data-module="proje-bedeli">
+            <div class="module-card active" data-module="proje-bedeli">
                 <div class="module-header">
                     <img src="modules/proje-bedeli/assets/proje-bedeli-icon.png" alt="Proje Bedeli" class="module-icon">
                     <div class="module-title-container">
                         <h2 class="module-title">Proje Bedeli</h2>
-                        <span class="module-status status-coming-soon">Yakında</span>
+                        <span class="module-status status-active">✓ Aktif</span>
                     </div>
                 </div>
                 <p class="module-description">
                     Güncel mevzuata uygun şekilde proje bedeli hesabı ve rapor oluşturma.
                 </p>
-                <div class="coming-soon-overlay">🚧 Çok Yakında</div>
             </div>
 
             <!-- Mevzuat Modülü -->
@@ -396,6 +504,20 @@
                 </p>
                 <div class="coming-soon-overlay">🚧 Çok Yakında</div>
             </div>
+
+            <!-- Yönetici Paneli -->
+            <div class="module-card active" data-module="admin">
+                <div class="module-header">
+                    <span class="module-icon emoji">⚙️</span>
+                    <div class="module-title-container">
+                        <h2 class="module-title">Yönetici Paneli</h2>
+                        <span class="module-status status-active">✓ Aktif</span>
+                    </div>
+                </div>
+                <p class="module-description">
+                    Sistem ayarları, birim fiyatlar, raportörler ve kurum yönetimi
+                </p>
+            </div>
         </div>
 
         <!-- Footer -->
@@ -404,12 +526,9 @@
             <p class="version">Versiyon 2.0.0 • 2025</p>
         </div>
     </div>
+    </div> <!-- dashboard-wrapper kapanış -->
 
-    <!-- MODÜL İÇERİK CONTAINER'I -->
-    <div id="module-container" style="display: none; width: 100%; height: 100vh; overflow: auto;">
-        <!-- İçerik buraya dinamik olarak yüklenecek -->
-    </div>
-
+    <script src="shared/scripts/navigation.js"></script>
     <script src="dashboard.js"></script>
 </body>
 </html>

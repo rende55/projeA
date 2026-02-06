@@ -1,0 +1,714 @@
+<!-- Admin Paneli - İçerik -->
+<style>
+    .ad-container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #FFFFFF;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        min-height: calc(100vh - 100px);
+    }
+
+    .ad-header {
+        background: linear-gradient(135deg, #2A4C6E 0%, #3C6B99 100%);
+        color: white;
+        padding: 20px 30px;
+        border-radius: 8px 8px 0 0;
+        margin: -20px -20px 20px -20px;
+    }
+
+    .ad-header h1 {
+        margin: 0;
+        font-size: 24px;
+    }
+
+    /* Tab Navigation */
+    .ad-tab-navigation {
+        display: flex;
+        background-color: #E8ECF2;
+        border-bottom: 2px solid #D3DAE3;
+        margin: 0 -20px;
+        padding: 0 20px;
+    }
+
+    .ad-tab-button {
+        padding: 15px 20px;
+        background: none;
+        border: none;
+        font-size: 14px;
+        font-weight: 600;
+        color: #6F7A86;
+        cursor: pointer;
+        transition: all 0.3s;
+        border-bottom: 3px solid transparent;
+    }
+
+    .ad-tab-button:hover {
+        background-color: #D3DAE3;
+    }
+
+    .ad-tab-button.active {
+        color: #2A4C6E;
+        background-color: #FFFFFF;
+        border-bottom-color: #2A4C6E;
+    }
+
+    .ad-tab-content {
+        display: none;
+        padding: 30px 0;
+    }
+
+    .ad-tab-content.active {
+        display: block;
+    }
+
+    .ad-tab-content h2 {
+        color: #1A1A1A;
+        margin-bottom: 20px;
+        font-size: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #2A4C6E;
+    }
+
+    /* Table Styles */
+    .ad-table-container {
+        overflow-x: auto;
+        margin-top: 20px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .ad-table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: white;
+    }
+
+    .ad-table th,
+    .ad-table td {
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 1px solid #D3DAE3;
+    }
+
+    .ad-table th {
+        background: linear-gradient(135deg, #2A4C6E 0%, #3C6B99 100%);
+        color: white;
+        font-weight: 600;
+        font-size: 13px;
+    }
+
+    .ad-table tr:hover {
+        background-color: #E8ECF2;
+    }
+
+    /* Button Styles */
+    .ad-btn {
+        padding: 8px 16px;
+        border: none;
+        border-radius: 4px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        margin-right: 5px;
+    }
+
+    .ad-btn-primary {
+        background-color: #2A4C6E;
+        color: white;
+    }
+
+    .ad-btn-primary:hover {
+        background-color: #3C6B99;
+    }
+
+    .ad-btn-danger {
+        background-color: #E53935;
+        color: white;
+    }
+
+    .ad-btn-danger:hover {
+        background-color: #c62828;
+    }
+
+    .ad-btn-success {
+        background-color: #4CAF50;
+        color: white;
+    }
+
+    .ad-btn-success:hover {
+        background-color: #45a049;
+    }
+
+    /* Status Badge */
+    .ad-status-badge {
+        display: inline-block;
+        padding: 4px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .ad-status-badge.active {
+        background-color: #C8E6C9;
+        color: #2E7D32;
+    }
+
+    .ad-status-badge.inactive {
+        background-color: #FFCDD2;
+        color: #C62828;
+    }
+
+    /* Info Box */
+    .ad-info-box {
+        background-color: #BBDEFB;
+        color: #1565C0;
+        padding: 15px 20px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        border: 1px solid #90CAF9;
+    }
+
+    /* Empty Message */
+    .ad-empty-message {
+        text-align: center;
+        padding: 40px;
+        color: #6F7A86;
+    }
+</style>
+
+<div class="ad-container">
+    <header class="ad-header">
+        <h1>⚙️ Yönetici Paneli</h1>
+    </header>
+
+    <!-- Tab Navigation -->
+    <div class="ad-tab-navigation">
+        <button type="button" class="ad-tab-button active" data-tab="donemler">💰 Birim Fiyat Dönemleri</button>
+        <button type="button" class="ad-tab-button" data-tab="raportorler">👨‍💼 Raportörler</button>
+        <button type="button" class="ad-tab-button" data-tab="kurumlar">🏢 Kurumlar</button>
+        <button type="button" class="ad-tab-button" data-tab="pidoranlari">📊 PID Oranları</button>
+    </div>
+
+    <!-- Dönemler Tab -->
+    <div id="ad-tab-donemler" class="ad-tab-content active">
+        <h2>Birim Fiyat Dönemleri</h2>
+        
+        <div class="ad-info-box">
+            💡 Birim fiyat dönemlerini buradan yönetebilirsiniz. Her dönem için sınıf ve grup bazında fiyatlar tanımlanabilir.
+        </div>
+        
+        <!-- Yeni Dönem Ekleme Formu -->
+        <div class="ad-form-section" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #2A4C6E;">➕ Yeni Dönem Ekle</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Yıl *</label>
+                    <input type="number" id="ad-yil" placeholder="2025" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Dönem *</label>
+                    <select id="ad-donem" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="1">1. Dönem</option>
+                        <option value="2">2. Dönem</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">R.G. Tarihi</label>
+                    <input type="date" id="ad-resmiGazeteTarih" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">R.G. Sayılı</label>
+                    <input type="text" id="ad-resmiGazeteSayili" placeholder="32123" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div style="grid-column: span 2;">
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Tebliğ Adı</label>
+                    <input type="text" id="ad-tebligAdi" placeholder="Yapı Yaklaşık Birim Maliyetleri Hakkında Tebliğ" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+            </div>
+            <button type="button" class="ad-btn ad-btn-success" style="margin-top: 15px;" onclick="window.adPage.yeniDonemEkle()">➕ Dönem Ekle</button>
+        </div>
+        
+        <div class="ad-table-container">
+            <table class="ad-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Yıl/Dönem</th>
+                        <th>R.G. Tarihi</th>
+                        <th>R.G. Sayılı</th>
+                        <th>Tebliğ Adı</th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="ad-donemlerBody">
+                    <!-- Dinamik içerik -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Grup/Fiyat Düzenleme Bölümü -->
+        <div id="ad-grupDuzenlemeBolumu" style="display: none; margin-top: 40px; padding: 20px; border: 2px solid #2A4C6E; border-radius: 8px; background-color: #f8f9fa;">
+            <h2 style="margin-top: 0; color: #2A4C6E;">📝 Sınıf ve Grup Fiyatları - <span id="ad-seciliDonemBaslik"></span></h2>
+            
+            <div class="ad-info-box">
+                💡 Her sınıf için gerekli grupları (A, B, C, D, E) ekleyin ve birim fiyatlarını girin.
+            </div>
+
+            <div id="ad-sinifGrupContainer" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; margin: 20px 0;">
+                <!-- Dinamik olarak 5 sınıf için gruplar -->
+            </div>
+
+            <div style="margin-top: 20px; display: flex; gap: 10px;">
+                <button type="button" class="ad-btn ad-btn-success" onclick="window.adPage.gruplariKaydet()">💾 Tüm Grupları Kaydet</button>
+                <button type="button" class="ad-btn" style="background: #6c757d; color: white;" onclick="window.adPage.grupDuzenlemeyiKapat()">❌ Kapat</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Raportörler Tab -->
+    <div id="ad-tab-raportorler" class="ad-tab-content">
+        <h2>Raportör Yönetimi</h2>
+        
+        <div class="ad-info-box">
+            👨‍💼 Raportörleri buradan yönetebilirsiniz. Eklenen raportörler form sayfasında seçilebilir olacaktır.
+        </div>
+        
+        <!-- Yeni Raportör Ekleme Formu -->
+        <div class="ad-form-section" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #2A4C6E;">➕ Yeni Raportör Ekle</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Adı *</label>
+                    <input type="text" id="ad-raportorAdi" placeholder="Adı" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Soyadı *</label>
+                    <input type="text" id="ad-raportorSoyadi" placeholder="Soyadı" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Unvanı *</label>
+                    <select id="ad-raportorUnvani" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">Unvan Seçiniz...</option>
+                        <option value="İnşaat Mühendisi">İnşaat Mühendisi</option>
+                        <option value="Mimar">Mimar</option>
+                        <option value="Harita Mühendisi">Harita Mühendisi</option>
+                        <option value="Elektrik Mühendisi">Elektrik Mühendisi</option>
+                        <option value="Makine Mühendisi">Makine Mühendisi</option>
+                        <option value="Şehir Plancısı">Şehir Plancısı</option>
+                        <option value="Tekniker">Tekniker</option>
+                    </select>
+                </div>
+            </div>
+            <button type="button" class="ad-btn ad-btn-success" style="margin-top: 15px;" onclick="window.adPage.yeniRaportorEkle()">➕ Raportör Ekle</button>
+        </div>
+        
+        <div class="ad-table-container">
+            <table class="ad-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Ad Soyad</th>
+                        <th>Unvan</th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="ad-raportorlerBody">
+                    <!-- Dinamik içerik -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Kurumlar Tab -->
+    <div id="ad-tab-kurumlar" class="ad-tab-content">
+        <h2>Kurum Yönetimi</h2>
+        
+        <div class="ad-info-box">
+            🏢 Kurumları buradan yönetebilirsiniz. Eklenen kurumlar form sayfasında seçilebilir olacaktır.
+        </div>
+        
+        <!-- Yeni Kurum Ekleme Formu -->
+        <div class="ad-form-section" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #2A4C6E;">➕ Yeni Kurum Ekle</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Kurum Adı *</label>
+                    <input type="text" id="ad-kurumAdi" placeholder="Örn: Samsun Valiliği" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">Alt Birim (Opsiyonel)</label>
+                    <input type="text" id="ad-altKurum" placeholder="Örn: Defterdarlık" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                </div>
+            </div>
+            <button type="button" class="ad-btn ad-btn-success" style="margin-top: 15px;" onclick="window.adPage.yeniKurumEkle()">➕ Kurum Ekle</button>
+        </div>
+        
+        <div class="ad-table-container">
+            <table class="ad-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Kurum Adı</th>
+                        <th>Alt Birim</th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="ad-kurumlarBody">
+                    <!-- Dinamik içerik -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- PID Oranları Tab -->
+    <div id="ad-tab-pidoranlari" class="ad-tab-content">
+        <h2>PID Oranları Tablosu</h2>
+        
+        <div class="ad-info-box">
+            📊 Proje bedeli hesaplaması için PID oranlarını buradan yönetebilirsiniz. Sütunlar hizmet sınıflarını (1-5), satırlar ise m² değerlerini gösterir.
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <button type="button" class="ad-btn ad-btn-success" onclick="window.adPage.pidOranlariKaydet()">💾 Tüm Değişiklikleri Kaydet</button>
+            <button type="button" class="ad-btn ad-btn-primary" onclick="window.adPage.pidOranlariYukle()" style="margin-left: 10px;">🔄 Yenile</button>
+        </div>
+        
+        <div class="ad-table-container" style="max-height: 600px; overflow-y: auto;">
+            <table class="ad-table" id="ad-pidTable" style="font-size: 13px;">
+                <thead style="position: sticky; top: 0; z-index: 10;">
+                    <tr>
+                        <th style="min-width: 100px; text-align: center;">m²</th>
+                        <th style="min-width: 80px; text-align: center;">1. Sınıf</th>
+                        <th style="min-width: 80px; text-align: center;">2. Sınıf</th>
+                        <th style="min-width: 80px; text-align: center;">3. Sınıf</th>
+                        <th style="min-width: 80px; text-align: center;">4. Sınıf</th>
+                        <th style="min-width: 80px; text-align: center;">5. Sınıf</th>
+                    </tr>
+                </thead>
+                <tbody id="ad-pidOranlariBody">
+                    <!-- 500 m² -->
+                    <tr data-alan="500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 1000 m² -->
+                    <tr data-alan="1000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">1000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 2500 m² -->
+                    <tr data-alan="2500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">2500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 5000 m² -->
+                    <tr data-alan="5000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">5000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 7500 m² -->
+                    <tr data-alan="7500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">7500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 10000 m² -->
+                    <tr data-alan="10000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">10000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 12500 m² -->
+                    <tr data-alan="12500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">12500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 15000 m² -->
+                    <tr data-alan="15000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">15000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 17500 m² -->
+                    <tr data-alan="17500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">17500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 20000 m² -->
+                    <tr data-alan="20000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">20000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 22500 m² -->
+                    <tr data-alan="22500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">22500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 25000 m² -->
+                    <tr data-alan="25000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">25000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 27500 m² -->
+                    <tr data-alan="27500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">27500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 30000 m² -->
+                    <tr data-alan="30000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">30000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 32500 m² -->
+                    <tr data-alan="32500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">32500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 35000 m² -->
+                    <tr data-alan="35000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">35000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 37500 m² -->
+                    <tr data-alan="37500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">37500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 40000 m² -->
+                    <tr data-alan="40000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">40000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 42500 m² -->
+                    <tr data-alan="42500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">42500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 45000 m² -->
+                    <tr data-alan="45000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">45000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 47500 m² -->
+                    <tr data-alan="47500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">47500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 50000 m² -->
+                    <tr data-alan="50000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">50000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 52500 m² -->
+                    <tr data-alan="52500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">52500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 55000 m² -->
+                    <tr data-alan="55000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">55000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 57500 m² -->
+                    <tr data-alan="57500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">57500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 60000 m² -->
+                    <tr data-alan="60000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">60000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 62500 m² -->
+                    <tr data-alan="62500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">62500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 65000 m² -->
+                    <tr data-alan="65000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">65000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 67500 m² -->
+                    <tr data-alan="67500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">67500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 70000 m² -->
+                    <tr data-alan="70000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">70000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 72500 m² -->
+                    <tr data-alan="72500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">72500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 75000 m² -->
+                    <tr data-alan="75000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">75000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 77500 m² -->
+                    <tr data-alan="77500">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">77500</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- 80000 m² -->
+                    <tr data-alan="80000">
+                        <td style="font-weight: 600; background: #f8f9fa; text-align: center;">80000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                    <!-- +80000 m² (80000 üstü) -->
+                    <tr data-alan="80001" style="background: #fff3e0;">
+                        <td style="font-weight: 600; background: #ffe0b2; text-align: center;">+80000</td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="1" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="2" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="3" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="4" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                        <td><input type="number" step="0.0001" class="pid-input" data-sinif="5" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px; text-align: center;"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
