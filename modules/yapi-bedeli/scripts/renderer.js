@@ -2,9 +2,10 @@ const { ipcRenderer } = require('electron');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const fs = require('fs');
+const { getDbPath } = require('../../../shared/scripts/db-helper');
 
-// Veritabanı ana dizinde (3 seviye yukarı: scripts -> yapi-bedeli -> modules -> projeA)
-const dbPath = path.join(__dirname, '..', '..', '..', 'raporlar.db');
+// Veritabanı ana dizinde (ASAR uyumlu)
+const dbPath = getDbPath();
 let db = new sqlite3.Database(dbPath);
 
 // Birim fiyat verileri cache (veritabanından yüklenecek)

@@ -6,9 +6,10 @@
 
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const { getDbPath } = require('../../../shared/scripts/db-helper');
 
 // Veritabanı bağlantısı
-const dbPath = path.join(__dirname, '..', '..', '..', 'raporlar.db');
+const dbPath = getDbPath();
 let db = null;
 
 // Navigation referansı
@@ -605,7 +606,13 @@ function donemSil(id) {
 function yeniRaportorEkle() {
     const adi = document.getElementById('ad-raportorAdi').value.trim();
     const soyadi = document.getElementById('ad-raportorSoyadi').value.trim();
-    const unvani = document.getElementById('ad-raportorUnvani').value;
+    let unvani = document.getElementById('ad-raportorUnvani').value;
+    
+    // Elle giriş seçildiyse, text input'tan al
+    if (unvani === '__diger__') {
+        const digerInput = document.getElementById('ad-raportorUnvaniDiger');
+        unvani = digerInput ? digerInput.value.trim() : '';
+    }
 
     if (!adi || !soyadi || !unvani) {
         if (window.showNotification) {
@@ -649,6 +656,8 @@ function yeniRaportorEkle() {
             document.getElementById('ad-raportorAdi').value = '';
             document.getElementById('ad-raportorSoyadi').value = '';
             document.getElementById('ad-raportorUnvani').value = '';
+            const digerInput = document.getElementById('ad-raportorUnvaniDiger');
+            if (digerInput) { digerInput.value = ''; digerInput.style.display = 'none'; }
             
             loadRaportorler();
         });

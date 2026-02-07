@@ -1,12 +1,25 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 const remoteMain = require('@electron/remote/main');
 
 remoteMain.initialize();
 
 let mainWindow;
 let db;
+
+// ASAR uyumlu yol hesaplama
+// Production (ASAR): exe'nin bulunduğu klasör
+// Development: __dirname (proje kök dizini)
+function getAppRootPath() {
+    if (app.isPackaged) {
+        return path.dirname(app.getPath('exe'));
+    }
+    return __dirname;
+}
+
+const APP_ROOT = getAppRootPath();
 
 // VERİTABANI MİGRATION SİSTEMİ
 function migrateDatabase() {
@@ -165,7 +178,9 @@ function migrateDatabase() {
 }
 
 function createDatabase() {
-    db = new sqlite3.Database(path.join(__dirname, 'raporlar.db'), (err) => {
+    const dbPath = path.join(APP_ROOT, 'raporlar.db');
+    console.log('📂 Veritabanı yolu:', dbPath);
+    db = new sqlite3.Database(dbPath, (err) => {
         if (err) {
             console.error(err.message);
         }
@@ -673,7 +688,7 @@ function createWindow() {
         width: 1400,
         height: 900,
         title: 'Proje A - Proje Geliştirme Platformu',
-        icon: path.join(__dirname, 'assets', 'icon.png'),
+        icon: path.join(__dirname, 'assets', 'icons', 'icons', 'win', 'icon.ico'),
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -684,11 +699,36 @@ function createWindow() {
     });
 
     remoteMain.enable(mainWindow.webContents);
+    
+    // Renderer process hatalarını ve loglarını yakala
+    mainWindow.webContents.on('console-message', (event, level, message, line, sourceId) => {
+        const levels = ['LOG', 'WARN', 'ERROR'];
+        const logLine = `[Renderer ${levels[level] || level}] ${message} (${sourceId}:${line})`;
+        console.log(logLine);
+        // Hataları log dosyasına yaz
+        if (level >= 2) {
+            const logPath = path.join(app.getPath('userData'), 'error.log');
+            const fs = require('fs');
+            fs.appendFileSync(logPath, `${new Date().toISOString()} ${logLine}\n`);
+        }
+    });
+    
+    mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription) => {
+        console.error(`❌ Sayfa yükleme hatası: ${errorCode} - ${errorDescription}`);
+    });
+    
     // Ana modül seçim ekranı (Dashboard)
     mainWindow.loadFile('dashboard.html');
     
-    // DevTools aç - debug için
-    mainWindow.webContents.openDevTools();
+    // Production: DevTools erişimini engelle
+    mainWindow.webContents.on('before-input-event', (event, input) => {
+        // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U engelle
+        if (input.key === 'F12' || 
+            (input.control && input.shift && (input.key === 'I' || input.key === 'i' || input.key === 'J' || input.key === 'j')) ||
+            (input.control && (input.key === 'U' || input.key === 'u'))) {
+            event.preventDefault();
+        }
+    });
 }
 
 app.whenReady().then(() => {
@@ -764,8 +804,14 @@ ipcMain.on('open-editor', (event, data) => {
         console.error('❌ Editör yükleme hatası:', err);
     });
     
-    // DevTools aç - debug için
-    editorWindow.webContents.openDevTools();
+    // Production: DevTools erişimini engelle
+    editorWindow.webContents.on('before-input-event', (event, input) => {
+        if (input.key === 'F12' || 
+            (input.control && input.shift && (input.key === 'I' || input.key === 'i' || input.key === 'J' || input.key === 'j')) ||
+            (input.control && (input.key === 'U' || input.key === 'u'))) {
+            event.preventDefault();
+        }
+    });
 });
 
 // Ön İzleme Penceresi Aç
@@ -920,7 +966,7 @@ ipcMain.on('export-word-from-preview', (event, data) => {
     const reportGenerator = require('./modules/yapi-bedeli/scripts/reportGenerator');
     
     // Veritabanından rapor verisini çek
-    const dbPath = path.join(__dirname, 'raporlar.db');
+    const dbPath = path.join(APP_ROOT, 'raporlar.db');
     const tempDb = new sqlite3.Database(dbPath);
     
     tempDb.get(`SELECT * FROM raporlar WHERE id = ?`, [data.raporId], (err, row) => {

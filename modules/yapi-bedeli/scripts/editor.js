@@ -1,9 +1,10 @@
 const { ipcRenderer } = require('electron');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const { getDbPath } = require('../../../shared/scripts/db-helper');
 
 // Veritabanı bağlantısı
-const dbPath = path.join(__dirname, '..', '..', '..', 'raporlar.db');
+const dbPath = getDbPath();
 let db = new sqlite3.Database(dbPath);
 
 // Global değişkenler

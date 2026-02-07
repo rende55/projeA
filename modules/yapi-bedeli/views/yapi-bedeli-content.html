@@ -5,10 +5,11 @@
         max-width: 1400px;
         margin: 0 auto;
         background-color: #FFFFFF;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
         overflow: hidden;
         min-height: calc(100vh - 100px);
+        border: 1px solid #E2E8F0;
     }
 
     .yb-form-container {
@@ -18,13 +19,13 @@
     }
 
     .yb-button-panel {
-        width: 280px;
-        background: #E8ECF2;
-        border-left: 2px solid #D3DAE3;
-        padding: 30px 20px;
+        width: 260px;
+        background: #F8FAFC;
+        border-left: 1px solid #E2E8F0;
+        padding: 24px 16px;
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 12px;
         position: sticky;
         top: 0;
         height: fit-content;
@@ -33,19 +34,21 @@
     }
 
     .yb-button-panel h3 {
-        margin: 0 0 20px 0;
-        color: #1A1A1A;
-        font-size: 18px;
+        margin: 0 0 16px 0;
+        color: #0F172A;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
         text-align: center;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #D3DAE3;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #E2E8F0;
     }
 
     .yb-header {
-        background: linear-gradient(135deg, #2A4C6E 0%, #3C6B99 100%);
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%);
         color: white;
-        padding: 20px 30px;
-        border-bottom: 2px solid #D3DAE3;
+        padding: 20px 28px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -55,80 +58,102 @@
     
     .yb-header h1 {
         margin: 0;
-        font-size: 24px;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .yb-header h1 .header-icon {
+        width: 36px;
+        height: 36px;
+        background: rgba(59, 130, 246, 0.2);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .yb-header h1 .header-icon svg {
+        width: 20px;
+        height: 20px;
+        color: #93C5FD;
     }
     
     .yb-nav-buttons {
         display: flex;
-        gap: 10px;
+        gap: 8px;
         flex-wrap: wrap;
     }
     
     .yb-nav-button {
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255,255,255,0.9);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 8px 16px;
         border-radius: 8px;
         cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
-        transition: all 0.3s ease;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s ease;
         display: flex;
         align-items: center;
-        gap: 8px;
-        min-height: 44px;
-        min-width: 44px;
+        gap: 6px;
+        min-height: 38px;
+        font-family: inherit;
     }
     
     .yb-nav-button:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        background: rgba(255, 255, 255, 0.18);
+        border-color: rgba(255, 255, 255, 0.3);
     }
 
     /* Tab Navigation */
     .yb-tab-navigation {
         display: flex;
-        background-color: #E8ECF2;
-        border-bottom: 2px solid #D3DAE3;
+        background-color: #F8FAFC;
+        border-bottom: 1px solid #E2E8F0;
     }
 
     .yb-tab-button {
         flex: 1;
-        padding: 18px 20px;
+        padding: 14px 20px;
         background: none;
         border: none;
         cursor: pointer;
-        font-size: 16px;
+        font-size: 13px;
         font-weight: 600;
-        color: #6F7A86;
-        transition: all 0.3s;
+        color: #94A3B8;
+        transition: all 0.2s;
         position: relative;
+        font-family: inherit;
+        letter-spacing: 0.1px;
     }
 
     .yb-tab-button:hover {
-        background-color: #D3DAE3;
-        color: #333333;
+        background-color: #F1F5F9;
+        color: #475569;
     }
 
     .yb-tab-button.active {
-        color: #2A4C6E;
+        color: #0F172A;
         background-color: #FFFFFF;
     }
 
     .yb-tab-button.active::after {
         content: '';
         position: absolute;
-        bottom: -2px;
+        bottom: -1px;
         left: 0;
         right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #2A4C6E 0%, #3C6B99 100%);
+        height: 2px;
+        background: #3B82F6;
     }
 
     .yb-tab-button.completed {
-        color: #4CAF50;
+        color: #059669;
     }
 
     .yb-tab-button.completed::before {
@@ -139,8 +164,8 @@
     /* Tab Content */
     .yb-tab-content {
         display: none;
-        padding: 40px;
-        animation: ybFadeIn 0.3s;
+        padding: 32px;
+        animation: ybFadeIn 0.25s;
         min-height: 500px;
     }
 
@@ -149,23 +174,25 @@
     }
 
     @keyframes ybFadeIn {
-        from { opacity: 0; transform: translateY(10px); }
+        from { opacity: 0; transform: translateY(8px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
     .yb-tab-content h2 {
-        color: #1A1A1A;
-        margin-bottom: 25px;
-        font-size: 22px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #2A4C6E;
+        color: #0F172A;
+        margin-bottom: 24px;
+        font-size: 18px;
+        font-weight: 700;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #E2E8F0;
+        letter-spacing: -0.2px;
     }
 
     .yb-form-row {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-        margin-bottom: 20px;
+        gap: 16px;
+        margin-bottom: 16px;
     }
 
     .yb-form-row.full-width {
@@ -179,34 +206,38 @@
 
     .yb-form-group label {
         display: block;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         font-weight: 600;
-        color: #333333;
-        font-size: 14px;
+        color: #334155;
+        font-size: 13px;
+        letter-spacing: 0.1px;
     }
 
     .yb-form-group input,
     .yb-form-group select {
         width: 100%;
-        padding: 12px 15px;
-        border: 2px solid #C9D1DB;
-        border-radius: 6px;
-        font-size: 15px;
-        transition: all 0.3s;
+        padding: 10px 14px;
+        border: 1px solid #CBD5E1;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
         background-color: #FFFFFF;
+        color: #0F172A;
+        font-family: inherit;
     }
 
     .yb-form-group input:focus,
     .yb-form-group select:focus {
         outline: none;
-        border-color: #2A4C6E;
-        box-shadow: 0 0 0 3px rgba(42, 76, 110, 0.1);
+        border-color: #3B82F6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
     .yb-form-group input:read-only {
-        background-color: #E8ECF2;
-        color: #6F7A86;
+        background-color: #F1F5F9;
+        color: #64748B;
         cursor: not-allowed;
+        border-color: #E2E8F0;
     }
 
     /* Number input okları gizle */
@@ -224,47 +255,48 @@
     .yb-navigation-buttons {
         display: flex;
         justify-content: space-between;
-        margin-top: 30px;
-        padding-top: 30px;
-        border-top: 2px solid #D8DFE6;
-        gap: 15px;
+        margin-top: 28px;
+        padding-top: 24px;
+        border-top: 1px solid #E2E8F0;
+        gap: 12px;
     }
 
     .yb-navigation-buttons button {
-        padding: 14px 30px;
+        padding: 10px 24px;
         border: none;
         border-radius: 8px;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.2s;
         flex: 1;
-        max-width: 200px;
+        max-width: 180px;
+        font-family: inherit;
     }
 
     .yb-btn-prev {
-        background: #E8ECF2;
-        color: #2A4C6E;
-        border: 2px solid #2A4C6E;
+        background: #F1F5F9;
+        color: #334155;
+        border: 1px solid #CBD5E1 !important;
     }
 
     .yb-btn-prev:hover:not(:disabled) {
-        transform: translateY(-2px);
-        background: #D3DAE3;
+        background: #E2E8F0;
+        border-color: #94A3B8 !important;
     }
 
     .yb-btn-next {
-        background: #2A4C6E;
+        background: #3B82F6;
         color: #FFFFFF;
     }
 
     .yb-btn-next:hover:not(:disabled) {
-        transform: translateY(-2px);
-        background: #3C6B99;
+        background: #2563EB;
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
     }
 
     .yb-btn-next:disabled, .yb-btn-prev:disabled {
-        opacity: 0.5;
+        opacity: 0.4;
         cursor: not-allowed;
     }
 
@@ -272,34 +304,38 @@
     .yb-action-buttons {
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 10px;
     }
 
     .yb-action-buttons button {
-        padding: 16px 20px;
+        padding: 12px 16px;
         border: none;
-        border-radius: 8px;
-        font-size: 15px;
+        border-radius: 10px;
+        font-size: 13px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.2s;
         color: white;
         width: 100%;
         text-align: center;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        font-family: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
 
-    .yb-hesapla-button { background: #2196F3; }
-    .yb-hesapla-button:hover { background: #1976D2; transform: translateY(-2px); }
+    .yb-hesapla-button { background: #3B82F6; }
+    .yb-hesapla-button:hover { background: #2563EB; box-shadow: 0 4px 12px rgba(59,130,246,0.3); }
 
-    .yb-save-button { background: #4CAF50; }
-    .yb-save-button:hover { background: #45a049; transform: translateY(-2px); }
+    .yb-save-button { background: #10B981; }
+    .yb-save-button:hover { background: #059669; box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
 
-    .yb-clear-button { background: #FFC107; color: #1D1D1D; }
-    .yb-clear-button:hover { background: #F3C870; transform: translateY(-2px); }
+    .yb-clear-button { background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; }
+    .yb-clear-button:hover { background: #E2E8F0; }
 
-    .yb-show-reports-button { background: #2A4C6E; }
-    .yb-show-reports-button:hover { background: #3C6B99; transform: translateY(-2px); }
+    .yb-show-reports-button { background: #0F172A; }
+    .yb-show-reports-button:hover { background: #1E293B; box-shadow: 0 4px 12px rgba(15,23,42,0.3); }
 
     /* Responsive */
     @media (max-width: 1200px) {
@@ -311,22 +347,22 @@
             width: 100%;
             position: static;
             border-left: none;
-            border-top: 2px solid #D3DAE3;
+            border-top: 1px solid #E2E8F0;
             flex-direction: row;
             flex-wrap: wrap;
             justify-content: center;
-            padding: 20px;
+            padding: 16px;
         }
         
         .yb-action-buttons {
             flex-direction: row;
             flex-wrap: wrap;
-            gap: 10px;
+            gap: 8px;
         }
         
         .yb-action-buttons button {
             flex: 1;
-            min-width: 200px;
+            min-width: 180px;
         }
     }
 
@@ -349,10 +385,15 @@
     <div class="yb-main-container">
         <div class="yb-form-container">
             <header class="yb-header">
-                <h1>📊 Yapı Bedeli Modülü</h1>
+                <h1>
+                    <span class="header-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/><path d="M9 9h1"/><path d="M9 13h1"/><path d="M9 17h1"/></svg>
+                    </span>
+                    Yapı Bedeli
+                </h1>
                 <div class="yb-nav-buttons">
                     <button class="yb-nav-button" id="yb-reportsNavButton" title="Raporları Görüntüle">
-                        <span>📊</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
                         <span>Raporlar</span>
                     </button>
                 </div>

@@ -1,93 +1,71 @@
-# ⚠️ ÖNEMLİ NOTLAR
+# ÖNEMLİ NOTLAR
 
-## 📁 Klasör Değişikliği
+## Proje Geçmişi
 
-**Eski Konum**: `d:\02. yazilimisleri\kitar\`  
-**Yeni Konum**: `d:\02. yazilimisleri\projeA\`
-
-### ✅ Yapılması Gerekenler
-
-1. **IDE/Editor'ü Kapatın ve Yeniden Açın**
-   - Visual Studio Code veya kullandığınız editörü tamamen kapatın
-   - Yeni klasörü açın: `d:\02. yazilimisleri\projeA\`
-
-2. **Eski Klasörü Silin** (İsteğe Bağlı)
-   - `d:\02. yazilimisleri\kitar\` klasörü artık kullanılmıyor
-   - Tüm dosyalar `projeA` klasörüne taşındı
-   - Eski klasörü güvenle silebilirsiniz
-
-3. **Git Repository** (Eğer kullanıyorsanız)
-   ```bash
-   cd d:\02. yazilimisleri\projeA
-   git remote -v  # Remote URL'leri kontrol edin
-   # Gerekirse güncelleyin
-   ```
+| Tarih | Değişiklik |
+|-------|-----------|
+| 20.11.2025 | İlk stabil sürüm: KİTAR (Kıymet Takdir Raporu) v1.0.0 |
+| 22.11.2025 | Proje adı değişikliği: KİTAR → Proje A, klasör: `kitar` → `projeA` |
+| 22.11.2025 | Modüler yapıya geçiş (v2.0.0) |
+| 2025-2026 | Dashboard, SPA navigasyon, Proje Bedeli modülü, Admin paneli |
+| 07.02.2026 | UI modernizasyonu (SVG ikonlar, modern design system) |
 
 ---
 
-## 🚀 Proje Durumu
+## Proje Durumu
 
-### ✅ Tamamlanan İşlemler
-- ✅ Proje adı: KİTAR → Proje A
-- ✅ Klasör adı: kitar → projeA
-- ✅ Modüler yapıya geçiş
-- ✅ Gereksiz dosyalar temizlendi
-- ✅ Tüm referanslar güncellendi
-- ✅ Uygulama test edildi ve çalışıyor
+### Modüller
 
-### 📦 Modüller
-1. **Yapı Bedeli** - ✅ Aktif
-2. **Proje Bedeli** - ⏳ Planlı
-3. **Mevzuat** - ⏳ Planlı
-4. **Hesaplama** - ⏳ Planlı
+| Modül | Durum | Konum |
+|-------|-------|-------|
+| **Yapı Bedeli** | Aktif | `modules/yapi-bedeli/` |
+| **Proje Bedeli** | Aktif | `modules/proje-bedeli/` |
+| **Mevzuat** | Planlı | `modules/mevzuat/` |
+| **Hesaplama** | Planlı | `modules/hesaplama/` |
+
+### Tamamlanan Özellikler
+- Proje adı: KİTAR → Proje A (v2.0.0)
+- Modüler yapıya geçiş
+- Dashboard (ana sayfa) ve SPA navigasyon sistemi (`NavigationManager`)
+- Yapı Bedeli modülü (form, hesaplama, rapor, admin paneli)
+- Proje Bedeli modülü (4 branş, PID oranları, hizmet bedeli hesaplama)
+- Admin paneli (4 sekmeli: Dönemler, Raportörler, Kurumlar, PID Oranları)
+- Modern UI tasarımı (SVG ikonlar, Inter font, Slate renk paleti)
+- 9 veritabanı tablosu (raporlar, birimFiyatlar, raportorler, kurumlar, vb.)
 
 ---
 
-## 🔧 Çalıştırma
+## Çalıştırma
 
 ```bash
-cd d:\02. yazilimisleri\projeA
 npm start
 ```
 
+Uygulama Electron masaüstü uygulaması olarak çalışır (localhost üzerinden değil).
+
 ---
 
-## 📝 Değişiklik Özeti
+## Proje Yapısı
 
-### Proje Yapısı
 ```
-projeA/                          # ← YENİ İSİM
+projeA/
+├── main.js                          # Electron ana süreç + DB + IPC
+├── dashboard.html                   # Ana sayfa (SPA shell)
+├── dashboard.js                     # Dashboard mantığı
 ├── modules/
-│   └── yapi-bedeli/
-│       ├── views/
-│       ├── scripts/
-│       └── styles/
+│   ├── yapi-bedeli/                 # Yapı Bedeli (views, scripts, styles)
+│   └── proje-bedeli/                # Proje Bedeli (views, scripts, assets)
 ├── shared/
-├── docs/
-├── main.js
-├── package.json
-└── raporlar.db
+│   └── scripts/navigation.js        # SPA navigasyon yöneticisi
+├── assets/                          # Uygulama görselleri
+├── docs/                            # Dokümantasyon (10 rehber)
+├── raporlar/                        # Oluşturulan Word raporları
+└── raporlar.db                      # SQLite veritabanı (otomatik oluşur)
 ```
 
-### Güncellenen Dosyalar
-- ✅ `package.json` - name: "proje-a"
-- ✅ `main.js` - Modüler yollar
-- ✅ `README.md` - Proje A dokümantasyonu
-- ✅ `CHANGELOG.md` - Tüm değişiklikler kaydedildi
-- ✅ `PROJE_YAPISI.md` - Yeni yapı dokümantasyonu
-
 ---
 
-## ⚡ Hızlı Kontrol Listesi
-
-- [ ] IDE'yi kapatıp yeni klasörü açtınız mı?
-- [ ] `npm start` komutu çalışıyor mu?
-- [ ] Eski `kitar` klasörünü sildiniz mi?
-- [ ] Git remote URL'leri güncel mi? (varsa)
-
----
-
-## 🆘 Sorun Giderme
+## Sorun Giderme
 
 ### Uygulama Açılmıyorsa
 
@@ -98,25 +76,43 @@ projeA/                          # ← YENİ İSİM
 
 2. **Node Modules Yeniden Yükle**:
    ```bash
-   rm -rf node_modules
+   Remove-Item -Recurse -Force node_modules
    npm install
    ```
 
 3. **Veritabanı Sorunu**:
-   - `raporlar.db` dosyası mevcut mu kontrol edin
-   - Gerekirse eski klasörden kopyalayın
+   - `raporlar.db` dosyası silinebilir, uygulama yeniden başlatıldığında otomatik oluşur
+   - Mevcut veriler kaybolur, yedekleme yapın
+
+### Beyaz Ekran / Hata
+
+1. DevTools açın: `Ctrl + Shift + I`
+2. Console sekmesinde hata mesajını kontrol edin
+3. Genellikle `require()` veya veritabanı bağlantı hatalarıdır
 
 ---
 
-## 📞 Destek
+## Önemli Uyarılar
 
-Sorularınız için:
-- `CHANGELOG.md` - Tüm değişiklikler
-- `README.md` - Genel dokümantasyon
-- `PROJE_YAPISI.md` - Detaylı yapı bilgisi
+- **Güvenlik**: `contextIsolation: false` kullanılıyor. Production için iyileştirme gerekli.
+- **Yedekleme**: `raporlar.db` dosyasını düzenli yedekleyin.
+- **Silme**: Rapor silme işlemi geri alınamaz.
+- **Veritabanı**: Migration sistemi `main.js` içindedir. Yeni tablo/sütun eklemeleri otomatik yapılır.
 
 ---
 
-**Son Güncelleme**: 22.11.2025 - 14:46  
-**Durum**: ✅ Başarıyla Tamamlandı  
-**Yeni Konum**: `d:\02. yazilimisleri\projeA\`
+## Referans Dosyalar
+
+| Dosya | İçerik |
+|-------|--------|
+| `CHANGELOG.md` | Tüm değişiklik kayıtları (tarih/saat ile) |
+| `README.md` | Genel proje dokümantasyonu |
+| `PROJE_YAPISI.md` | Detaylı yapı bilgisi ve modül rehberi |
+| `docs/` | 10 kapsamlı dokümantasyon rehberi |
+
+---
+
+**Son Güncelleme**: 07.02.2026
+**Versiyon**: 2.0.0
+**Durum**: Aktif Geliştirme
+**Konum**: `d:\02. yazilimisleri\projeA\`

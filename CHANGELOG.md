@@ -1,5 +1,213 @@
 # CHANGELOG
 
+## [07.02.2026 - 19:00] - Portable Build Türkçe Karakter Düzeltmesi
+
+### Düzeltilen Sorun
+- **Portable build'de Türkçe karakterler bozuk görünüyordu**: Ş, İ, Ö, Ç, Ğ, Ü gibi karakterler yanlış gösteriliyordu
+
+### Kök Neden
+- PowerShell üzerinden `sqlite3` komutu ile yapılan DB güncellemelerinde encoding Windows-1254 (Latin-5) olarak kaydediliyordu
+- UTF-8'de `İ` = `C4B0` olması gerekirken `DD` (Latin-1) olarak yazılmıştı
+
+### Çözüm
+- DB güncellemeleri Node.js script'i ile yapıldı (UTF-8 garanti)
+- `raporlar_build.db` yeniden oluşturuldu, tüm Türkçe karakterler doğru encoding'de
+- Portable exe yeniden build alındı
+
+---
+
+## [07.02.2026 - 18:48] - Raportör Ünvan Listesi Genişletildi ve Elle Giriş Eklendi
+
+### Yapılan İşlemler
+- **Ünvan listesi genişletildi**: Elektrik-Elektronik Mühendisi, Çevre Mühendisi, Jeofizik Mühendisi, Tekniker, Teknisyen, Teknik Ressam eklendi
+- **Kategorilere ayrıldı**: Mühendislik, İdari, Teknik ve Diğer grupları
+- **Elle giriş desteği**: "Elle Giriş..." seçeneği ile listede olmayan ünvanlar yazılabiliyor
+- **Düzenleme formunda akıllı algılama**: Mevcut ünvan listede yoksa otomatik olarak elle giriş moduna geçiyor
+
+### Etkilenen Dosyalar
+- `modules/yapi-bedeli/views/admin-content.html` (tek pencere admin formu)
+- `modules/yapi-bedeli/views/admin.html` (ekleme + düzenleme formları)
+- `modules/yapi-bedeli/scripts/admin-page.js` (yeniRaportorEkle)
+- `modules/yapi-bedeli/scripts/admin.js` (yeniRaportorEkle, raportorDuzenle, raportorGuncelle)
+
+---
+
+## [07.02.2026 - 18:33] - Veritabanı Build'e Dahil Edilmesi
+
+### Yapılan İşlemler
+- **Temizlenmiş veritabanı** (`raporlar_build.db`) oluşturuldu
+  - Birim fiyatlar ve PID oranları korundu (değişmez veriler)
+  - Raportör isimleri rastgele Türkçe isimlerle değiştirildi (gizlilik)
+  - Kurumlar temizlendi, tek default kurum eklendi: *Samsun Çevre, Şehircilik ve İklim Değişikliği İl Müdürlüğü / Proje Şube Müdürlüğü*
+  - Tüm raporlar ve proje bedeli raporları silindi (kişisel veri)
+- **`build.js`** güncellendi: `raporlar_build.db` → `extra/raporlar.db` olarak build-temp'e kopyalanıyor
+- **`package.json` build config**: `extraResources` ile DB dosyası ASAR dışında exe'nin yanına kopyalanıyor
+- Portable exe yeniden oluşturuldu: `dist/ProjeA-2.0.0-Portable.exe`
+
+---
+
+## [07.02.2026 - 14:47] - ASAR Paketleme Uyumluluğu Düzeltmesi
+
+### Düzeltilen Sorun
+- **Modül sayfaları portable build'de boş açılıyordu**: Dashboard yükleniyor ama modüllere tıklayınca boş ekran geliyordu (obfuscation'sız build'de de aynı sorun)
+
+### Kök Neden
+- **ASAR içinde `__dirname` yazılamaz bir yolu gösteriyor**: Tüm renderer modül script'leri `path.join(__dirname, '..', '..', '..', 'raporlar.db')` ile veritabanı yolunu hesaplıyordu. ASAR paketlemede bu yol `app.asar` arşivinin içini gösteriyor ve veritabanı dosyası oluşturulamıyor/açılamıyordu (`SQLITE_CANTOPEN` hatası)
+- `main.js`'te de aynı sorun: `path.join(__dirname, 'raporlar.db')` ASAR içine yazma denemesi
+
+### Yapılan Düzeltmeler
+- **`shared/scripts/db-helper.js`** oluşturuldu: ASAR uyumlu veritabanı yolu hesaplama modülü
+  - `app.isPackaged` kontrolü ile production/development ayrımı
+  - Production: `path.dirname(app.getPath('exe'))` (exe'nin yanı)
+  - Development: `app.getAppPath()` (proje kök dizini)
+- **10 renderer dosyasında** `__dirname` ile DB yolu → `getDbPath()` ile değiştirildi
+- **`main.js`'te** `APP_ROOT` değişkeni ile veritabanı yolu düzeltildi
+- **`main.js`'e** renderer hata loglama mekanizması eklendi (`console-message` event)
+- **`proje-bedeli-page.js`'te** raporlar klasörü yolu da `getAppRootDir()` ile düzeltildi
+- **`build.js`'e** `--no-obfuscate` flag desteği eklendi (debug build için)
+
+### Etkilenen Dosyalar
+- `shared/scripts/db-helper.js` (yeni)
+- `main.js`
+- `build.js`
+- `modules/yapi-bedeli/scripts/`: yapi-bedeli-page.js, renderer.js, raporlar-page.js, editor-page.js, editor.js, admin.js, admin-page.js
+- `modules/proje-bedeli/scripts/`: proje-bedeli-page.js, pb-raporlar-page.js
+
+---
+
+## [07.02.2026 - 03:15] - Obfuscation Düzeltmesi ve Yeniden Build
+
+### Düzeltilen Sorun
+- **Modül sayfaları yüklenmiyor**: Portable build'de dashboard açılıyor ama modül sayfalarına tıklayınca boş sayfa geliyordu
+
+### Kök Neden
+- Obfuscation ayarlarında `selfDefending: true` ASAR içinde kodu kırıyordu
+- `debugProtection: true` renderer process'te sonsuz debugger döngüsü başlatıyordu
+- `target: 'node'` renderer dosyaları için yanlıştı
+- `splitStrings` ve `transformObjectKeys` dosya yollarını ve `module.exports` yapısını bozuyordu
+
+### Yapılan Düzeltmeler
+- **Main process** ve **renderer process** için ayrı obfuscation ayarları oluşturuldu
+- `selfDefending`, `debugProtection`, `deadCodeInjection` kapatıldı
+- `splitStrings` ve `transformObjectKeys` kapatıldı
+- Renderer target `'browser-no-eval'` olarak ayarlandı
+- `disableConsoleOutput` kapatıldı (hata ayıklama için)
+- Portable exe yeniden oluşturuldu: `dist/ProjeA-2.0.0-Portable.exe`
+
+---
+
+## [07.02.2026 - 01:35] - Production Build ve Güvenlik Önlemleri
+
+### Güvenlik Kontrolleri ve Düzeltmeler
+- **Debug Koruması**: `openDevTools()` çağrıları kaldırıldı (main window + editor window). F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U kısayolları tüm pencerelerde engellendi
+- **Ağ Kısıtlamaları**: Google Fonts CDN (`fonts.googleapis.com`) kaldırıldı. Inter fontu lokal woff2 dosyalarıyla (`assets/fonts/`) yükleniyor. Uygulama tamamen offline çalışıyor
+- **Bağımlılık Güvenliği**: `npm audit fix` çalıştırıldı. Kalan açıklar build-time bağımlılıklarda (tar, node-gyp) — runtime riski yok
+- **Dosya Erişim**: Veritabanı `__dirname` ile relative path kullanıyor, Program Files'a yazmıyor
+- **Geçici Dosya**: Word export doğrudan kullanıcı seçtiği yere yazıyor, temp dosya üretilmiyor
+- **Hassas Veri**: Kod taraması yapıldı — API key, şifre, gerçek kişi bilgisi bulunamadı
+
+### Kod Gizliliği (Obfuscation)
+- **`javascript-obfuscator`** paketi eklendi (devDependency)
+- **16 JS dosyası** karartıldı: `main.js`, `dashboard.js`, `navigation.js`, tüm modül script'leri
+- Obfuscation ayarları: control flow flattening, dead code injection, debug protection, string array encoding (base64), self defending
+
+### Portable Build
+- **`electron-builder`** paketi eklendi (devDependency)
+- **`build.js`** build script'i oluşturuldu (kopyala → obfuscate → paketle)
+- **`ProjeA-2.0.0-Portable.exe`** (~98 MB) oluşturuldu — `dist/` klasöründe
+- ASAR paketleme aktif, maximum sıkıştırma
+- Build script'leri: `npm run obfuscate`, `npm run build`, `npm run build:dir`
+
+### Diğer
+- **`package.json`** — build yapılandırması ve script'ler eklendi
+- **`.gitignore`** — `build-temp/`, `dist/`, `mainS.png` eklendi
+- **`assets/fonts/`** — Inter font woff2 dosyaları (300-800 weight, latin-ext)
+
+### Context Isolation Notu
+- `contextIsolation: false` şimdilik korundu. `true` yapılması tüm renderer kodlarının preload + IPC bridge pattern'e çevrilmesini gerektirir (gelecek sürüm planında)
+
+---
+
+## [07.02.2026 - 01:00] - Uygulama İkonu Eklendi
+
+### Yapılan Değişiklikler
+- **Yeni uygulama ikonu** oluşturuldu (`mainS.png` kaynak dosyasından)
+- **`electron-icon-builder`** paketi ile tüm platformlara uygun formatlar üretildi:
+  - Windows: `assets/icons/icons/win/icon.ico`
+  - macOS: `assets/icons/icons/mac/icon.icns`
+  - PNG: 16x16, 24x24, 32x32, 48x48, 64x64, 128x128, 256x256, 512x512, 1024x1024
+- **`main.js`** - Pencere ikonu yeni `.ico` dosyasına yönlendirildi
+- **`dashboard.html`** - Hero logosu yeni ikon ile değiştirildi (256x256 PNG)
+
+---
+
+## [07.02.2026 - 00:44] - Dashboard UI Düzeltmesi
+
+### Düzeltilen Sorunlar
+- **`dashboard.html`** - Modül kartlarının hero section arkaplanına taşması düzeltildi (negatif margin kaldırıldı, üst padding eklendi)
+- **`dashboard.html`** - Tüm modül kartları artık ekran boyutu fark etmeksizin eşit boyutta görünüyor (grid: `auto-fill minmax` yerine sabit `repeat(2, 1fr)` kullanıldı)
+
+---
+
+## [07.02.2026 - 00:38] - Dokümantasyon Güncellemesi
+
+### Güncellenen Dosyalar
+- **`README.md`** - Proje Bedeli modülü "Aktif" olarak güncellendi, SPA navigasyon sistemi eklendi, veritabanı tabloları (9 tablo) eklendi, proje yapısı güncel dosya ağacıyla yeniden yazıldı, Proje Bedeli hesaplama formülleri eklendi, modern UI bilgileri eklendi, alt bilgi KİTAR v1.0.0 → Proje A v2.0.0 olarak düzeltildi
+- **`PROJE_YAPISI.md`** - Proje Bedeli modülü tam dosya yapısıyla eklendi, NavigationManager ve kayıtlı sayfalar tablosu eklendi, yeni modül ekleme rehberi SPA yapısına göre güncellendi (IPC yerine NavigationManager), CSS prefix standartları eklendi, bağımlılıklar tablosu güncellendi, versiyon geçmişine güncel bilgiler eklendi
+- **`ONEMLI_NOTLAR.md`** - Proje geçmişi kronolojik tablo olarak düzenlendi, modül durumları güncellendi (Proje Bedeli: Aktif), proje yapısı güncel dosya ağacıyla yeniden yazıldı, PowerShell uyumlu komutlar eklendi, beyaz ekran/hata sorun giderme eklendi
+
+---
+
+## [07.02.2026 - 00:27] - UI Modernizasyonu - Tüm Sayfalar
+
+### ✨ Yapılan Değişiklikler
+- **Dashboard tamamen yeniden tasarlandı**
+  - Dark hero section, Inter font ailesi, CSS custom properties (design tokens)
+  - Emoji ikonlar yerine SVG ikonlar (Lucide tarzı) kullanıldı
+  - Modül kartlarına renkli ikon wrapper ve ok (arrow) göstergesi eklendi
+  - Modern renk paleti: Slate tonları, subtle shadow'lar, ince border'lar
+  - Navigasyon bar: beyaz arka plan, SVG ikonlu butonlar, temiz breadcrumb
+  - Custom scrollbar stilleri eklendi
+- **Yapı Bedeli modül sayfası modernize edildi**
+  - Header: dark gradient, SVG ikon badge
+  - Tab navigasyon: ince alt çizgi, modern renk geçişleri
+  - Form elemanları: 1px border, 8px radius, mavi focus ring
+  - Butonlar: modern renkler, hover glow efektleri
+  - Sağ panel: açık gri arka plan, uppercase başlık
+- **Proje Bedeli modül sayfası modernize edildi**
+  - Aynı design system uygulandı (indigo accent rengi)
+  - Alt tab navigasyon: rounded container, dark active state
+  - Form ve buton stilleri tutarlı hale getirildi
+- **Raporlar sayfaları modernize edildi** (yapi-bedeli + proje-bedeli)
+  - Tablo: açık header, uppercase sütun başlıkları, ince border'lar
+  - Aksiyon butonları: pastel renkli arka plan + koyu metin (daha okunabilir)
+  - Header: SVG ikonlu badge, dark gradient
+- **Admin paneli modernize edildi**
+  - Tablo stilleri, tab navigasyon, butonlar ve badge'ler güncellendi
+  - Info box: açık mavi arka plan, modern border radius
+
+### 🎨 Design System
+- **Renkler**: Slate (#0F172A, #1E293B, #334155), Blue (#3B82F6), Emerald (#10B981)
+- **Tipografi**: Inter font, -0.3px letter-spacing başlıklar
+- **Gölgeler**: 3 kademe (sm, md, xl) - çok hafif ve modern
+- **Border**: 1px solid #E2E8F0, 8-16px radius
+- **İkonlar**: Inline SVG (Lucide icon seti tarzı)
+
+### 🔄 Güncellenen Dosyalar
+- `dashboard.html` - Ana sayfa tamamen yeniden tasarlandı
+- `modules/yapi-bedeli/views/yapi-bedeli-content.html` - CSS ve header modernizasyonu
+- `modules/proje-bedeli/views/proje-bedeli-content.html` - CSS ve header modernizasyonu
+- `modules/yapi-bedeli/views/raporlar-content.html` - Tablo ve header modernizasyonu
+- `modules/yapi-bedeli/views/admin-content.html` - Tüm CSS ve header modernizasyonu
+- `modules/proje-bedeli/views/pb-raporlar-content.html` - Tablo ve header modernizasyonu
+
+### ⚠️ Notlar
+- Hiçbir JavaScript dosyası değiştirilmedi (backend/UX bağımlılıkları korundu)
+- Tüm class isimleri, ID'ler ve data attribute'ları korundu
+- Mevcut fonksiyonellik bozulmadan sadece görsel iyileştirme yapıldı
+
+---
+
 ## [07.02.2026 - 00:07] - Yapı Bedeli - Resmi Yazı Sayısı 4 Parçalı Giriş
 
 ### ✨ Yeni Özellikler

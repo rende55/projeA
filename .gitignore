@@ -1,7 +1,9 @@
 node_modules/
 raporlar_cikti/
+raporlar/
 *.db
 .DS_Store
 Thumbs.db
-
-
+build-temp/
+dist/
+mainS.png

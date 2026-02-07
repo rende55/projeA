@@ -1,4 +1,4 @@
-# 🚀 Proje A - Proje Geliştirme Platformu
+# Proje A - Proje Geliştirme Platformu
 
 > Modüler yapıda proje geliştirme ve yönetim platformu
 
@@ -9,32 +9,22 @@
 
 ---
 
-## 🎯 Proje Hakkında
+## Proje Hakkında
 
-**Proje A**, kamu kurumları ve yerel yönetimler için modüler yapıda geliştirilmiş profesyonel bir proje geliştirme platformudur. Her modül bağımsız çalışabilir ve kolayca genişletilebilir.
+**Proje A**, kamu kurumları ve yerel yönetimler için modüler yapıda geliştirilmiş profesyonel bir masaüstü uygulamasıdır. Tek pencere (SPA) navigasyon sistemiyle çalışır; her modül bağımsız geliştirilebilir ve kolayca genişletilebilir.
 
-### 📦 Modüller
+### Modüller
 
-#### 1. 🏗️ Yapı Bedeli Modülü (Aktif)
-Yapı değerleme raporlarının Resmi Gazete tebliğlerine uygun şekilde oluşturulması
-- 📝 3 Adımlı form sistemi
-- 🧮 Otomatik hesaplama (yıpranma payı, yapı bedeli, levazım bedeli)
-- 💰 Akıllı birim fiyat yönetimi
-- 📄 Word rapor çıktısı
-- 💾 SQLite veritabanı
-
-#### 2. 💼 Proje Bedeli Modülü (Planlı)
-Türkiye mevzuatına göre proje bedeli hesaplama
-
-#### 3. 📚 Mevzuat Modülü (Planlı)
-Cari mevzuat yönetimi ve görüntüleme
-
-#### 4. 🧮 Hesaplama Modülü (Planlı)
-Gelişmiş hesap makinesi
+| # | Modül | Durum | Açıklama |
+|---|-------|-------|----------|
+| 1 | **Yapı Bedeli** | Aktif | Yapı değerleme raporları - 3 adımlı form, otomatik hesaplama, Word çıktısı |
+| 2 | **Proje Bedeli** | Aktif | Mimarlık/mühendislik proje bedeli hesaplama - 4 branş, PID oranları |
+| 3 | **Mevzuat** | Planlı | Cari mevzuat yönetimi ve görüntüleme |
+| 4 | **Hesaplama** | Planlı | Gelişmiş hesap makinesi |
 
 ---
 
-## 🚀 Hızlı Başlangıç
+## Hızlı Başlangıç
 
 ### Gereksinimler
 
@@ -53,243 +43,208 @@ npm start
 
 ### İlk Kullanım
 
-1. Uygulama açıldığında **Genel Bilgiler** sekmesinden başlayın
-2. Tüm zorunlu alanları doldurun
-3. **İleri** butonuyla diğer sekmelere geçin
-4. **Yapı Bilgileri** sekmesinde **Hesapla** butonuna basın
-5. **Raporu Kaydet** ile veritabanına kaydedin
-6. **Kayıtlı Raporlar** ile Word raporu oluşturun
+1. Uygulama açıldığında **Dashboard** (ana sayfa) karşılar
+2. İstediğiniz modül kartına tıklayarak ilgili modüle geçin
+3. Üst navigasyon çubuğundaki butonlarla geri dönün veya ana sayfaya gidin
+4. Her modülde form doldurup hesaplama yapabilir, rapor oluşturabilirsiniz
 
 ---
 
-## 📚 Dokümantasyon
+## Dokümantasyon
 
 Detaylı dokümantasyon için `docs/` klasörüne bakın:
 
 | Dokümantasyon | Açıklama |
 |---------------|----------|
-| **[docs/INDEX.md](docs/INDEX.md)** | 📑 Dokümantasyon rehberi ve indeks |
-| **[docs/README.md](docs/README.md)** | 📖 Genel bakış ve özellikler |
-| **[docs/KURULUM.md](docs/KURULUM.md)** | ⚙️ Kurulum ve yapılandırma |
-| **[docs/KULLANIM.md](docs/KULLANIM.md)** | 📝 Kullanıcı kılavuzu |
-| **[docs/BIRIM_FIYAT_YONETIMI.md](docs/BIRIM_FIYAT_YONETIMI.md)** | 💰 Birim fiyat otomasyonu rehberi |
-| **[docs/MIMARI.md](docs/MIMARI.md)** | 🏗️ Uygulama mimarisi |
-| **[docs/VERITABANI.md](docs/VERITABANI.md)** | 🗄️ Veritabanı yapısı |
-| **[docs/MODULLER.md](docs/MODULLER.md)** | 📦 Modül ve fonksiyon referansları |
-| **[docs/GELISTIRICI.md](docs/GELISTIRICI.md)** | 👨‍💻 Geliştirici rehberi |
-
-> **💡 İpucu**: Dokümantasyonu keşfetmeye [docs/INDEX.md](docs/INDEX.md) dosyasından başlayın!
-
----
-
-## 🛠️ Teknoloji Stack
-
-### Frontend
-- HTML5, CSS3, Vanilla JavaScript
-- Modern gradient UI
-- Responsive design
-
-### Backend
-- Electron 34.0.1
-- Node.js
-- SQLite3 5.1.7
-
-### Doküman İşleme
-- docx 9.5.1
-- docxtemplater 3.67.0
-- pizzip 3.2.0
+| [docs/INDEX.md](docs/INDEX.md) | Dokümantasyon rehberi ve indeks |
+| [docs/README.md](docs/README.md) | Genel bakış ve özellikler |
+| [docs/KURULUM.md](docs/KURULUM.md) | Kurulum ve yapılandırma |
+| [docs/KULLANIM.md](docs/KULLANIM.md) | Kullanıcı kılavuzu |
+| [docs/BIRIM_FIYAT_YONETIMI.md](docs/BIRIM_FIYAT_YONETIMI.md) | Birim fiyat otomasyonu rehberi |
+| [docs/ADMIN_PANEL_REHBERI.md](docs/ADMIN_PANEL_REHBERI.md) | Yönetici paneli rehberi |
+| [docs/MIMARI.md](docs/MIMARI.md) | Uygulama mimarisi |
+| [docs/VERITABANI.md](docs/VERITABANI.md) | Veritabanı yapısı |
+| [docs/MODULLER.md](docs/MODULLER.md) | Modül ve fonksiyon referansları |
+| [docs/GELISTIRICI.md](docs/GELISTIRICI.md) | Geliştirici rehberi |
 
 ---
 
-## 📊 Proje Yapısı
+## Teknoloji Stack
+
+| Katman | Teknoloji |
+|--------|-----------|
+| **Masaüstü** | Electron 34.0.1, @electron/remote |
+| **Frontend** | HTML5, CSS3, Vanilla JavaScript, Inter font |
+| **Veritabanı** | SQLite3 5.1.7 |
+| **Doküman** | docx 9.5.1, docxtemplater 3.67.0, pizzip 3.2.0 |
+| **UI** | Modern design system (Slate renk paleti, SVG ikonlar, glassmorphism) |
+
+---
+
+## Proje Yapısı
 
 ```
 proje-a/
-├── main.js                      # Electron ana süreç
-├── package.json                 # Proje yapılandırması
-├── raporlar.db                  # SQLite veritabanı
-├── modules/                     # 📦 Modüller
-│   └── yapi-bedeli/            # Yapı Bedeli Modülü
-│       ├── views/              # HTML dosyaları
-│       │   ├── index.html
-│       │   ├── raporlar.html
-│       │   └── admin.html
-│       ├── scripts/            # JavaScript dosyaları
-│       │   ├── renderer.js
-│       │   ├── raporlar.js
-│       │   ├── admin.js
-│       │   └── reportGenerator.js
-│       ├── styles/             # CSS dosyaları
-│       │   └── style.css
-│       ├── KT_Sablon_1.docx    # Rapor şablonu
-│       └── birimFiyatlar.json  # Birim fiyat verileri
-├── shared/                      # 🔗 Paylaşılan kaynaklar
-│   ├── database/               # Veritabanı yönetimi
-│   └── utils/                  # Yardımcı fonksiyonlar
-├── docs/                        # 📚 Dokümantasyon
-└── raporlar_cikti/             # Oluşturulan raporlar
+├── main.js                          # Electron ana süreç + veritabanı + IPC
+├── dashboard.html                   # Ana sayfa (SPA shell + navigasyon)
+├── dashboard.js                     # Dashboard mantığı
+├── package.json                     # Proje yapılandırması (v2.0.0)
+│
+├── modules/                         # Modüller
+│   ├── yapi-bedeli/                 # Yapı Bedeli Modülü
+│   │   ├── views/
+│   │   │   ├── yapi-bedeli-content.html   # Ana form (3 sekmeli)
+│   │   │   ├── raporlar-content.html      # Kayıtlı raporlar
+│   │   │   ├── admin-content.html         # Yönetim paneli (4 sekmeli)
+│   │   │   └── editor-content.html        # Rapor editörü
+│   │   ├── scripts/
+│   │   │   ├── yapi-bedeli-page.js        # Form mantığı (SPA)
+│   │   │   ├── raporlar-page.js           # Rapor listesi (SPA)
+│   │   │   ├── admin-page.js              # Admin mantığı (SPA)
+│   │   │   ├── editor-page.js             # Editör mantığı (SPA)
+│   │   │   ├── renderer.js                # Eski form mantığı
+│   │   │   ├── raporlar.js                # Eski rapor mantığı
+│   │   │   ├── admin.js                   # Eski admin mantığı
+│   │   │   └── reportGenerator.js         # Word rapor oluşturma
+│   │   ├── styles/
+│   │   ├── KT_Sablon_1.docx              # Rapor şablonu
+│   │   └── birimFiyatlar.json             # Birim fiyat verileri
+│   │
+│   └── proje-bedeli/                # Proje Bedeli Modülü
+│       ├── views/
+│       │   ├── proje-bedeli-content.html  # Ana form (3 sekmeli)
+│       │   └── pb-raporlar-content.html   # Kayıtlı raporlar
+│       ├── scripts/
+│       │   ├── proje-bedeli-page.js       # Form mantığı (SPA)
+│       │   ├── pb-raporlar-page.js        # Rapor listesi (SPA)
+│       │   └── pb-reportGenerator.js      # Word rapor oluşturma
+│       └── assets/
+│
+├── shared/                          # Paylaşılan kaynaklar
+│   ├── scripts/
+│   │   └── navigation.js           # Tek pencere navigasyon yöneticisi
+│   ├── database/                    # (gelecekte)
+│   └── utils/                       # (gelecekte)
+│
+├── assets/                          # Uygulama ikonları ve görseller
+├── docs/                            # Dokümantasyon (10 rehber)
+├── raporlar/                        # Oluşturulan Word raporları
+└── raporlar.db                      # SQLite veritabanı (otomatik oluşur)
 ```
 
 ---
 
-## 🎓 Kullanıcı Tiplerine Göre Rehber
+## Uygulama Mimarisi
 
-### 👤 Son Kullanıcı
-Uygulamayı kullanarak rapor oluşturmak istiyorsanız:
-1. [docs/KURULUM.md](docs/KURULUM.md) - Uygulamayı kurun
-2. [docs/KULLANIM.md](docs/KULLANIM.md) - Nasıl kullanılır öğrenin
+### Tek Pencere Navigasyon (SPA)
 
-### 🔧 Sistem Yöneticisi
-Uygulamayı kurum genelinde yaygınlaştırmak istiyorsanız:
-1. [docs/KURULUM.md](docs/KURULUM.md) - Sistem gereksinimleri
-2. [docs/MIMARI.md](docs/MIMARI.md) - Teknik mimari
-3. [docs/VERITABANI.md](docs/VERITABANI.md) - Veri yönetimi
+Uygulama tek bir `BrowserWindow` içinde çalışır. `NavigationManager` sınıfı sayfa geçişlerini yönetir:
 
-### 👨‍💻 Geliştirici
-Kod geliştirme ve katkıda bulunmak istiyorsanız:
-1. [docs/MIMARI.md](docs/MIMARI.md) - Uygulama mimarisi
-2. [docs/MODULLER.md](docs/MODULLER.md) - Kod yapısı
-3. [docs/GELISTIRICI.md](docs/GELISTIRICI.md) - Geliştirme rehberi
+```
+Dashboard → Yapı Bedeli → Raporlar → Editör
+         → Proje Bedeli → PB Raporlar
+         → Admin Paneli
+```
+
+- **Geri/İleri**: Sayfa stack'i ile geçmiş yönetimi
+- **Breadcrumb**: Anlık konum göstergesi
+- **Klavye kısayolları**: Alt+Sol (geri), Alt+Home (ana sayfa)
+
+### Veritabanı Tabloları
+
+| Tablo | Açıklama |
+|-------|----------|
+| `raporlar` | Yapı bedeli raporları |
+| `birimFiyatlar` | Yıl bazlı birim fiyat dönemleri |
+| `birimFiyatDetay` | Yapı sınıfı/grup bazlı detay fiyatlar |
+| `raportorler` | Raportör bilgileri |
+| `kurumlar` | Kurum ve alt kurum bilgileri |
+| `yipranmaPaylari` | Yıpranma payı cetvelleri |
+| `pidOranlari` | PID oranları (Proje Bedeli) |
+| `hizmetDaliKatsayilari` | Hizmet dalı katsayıları (Proje Bedeli) |
+| `projeBedeliRaporlari` | Proje bedeli raporları |
 
 ---
 
-## 🧮 Hesaplama Formülleri
+## Hesaplama Formülleri
 
-### Yıpranma Payı
-Resmi Gazete (02.12.1982, Sayı: 17.886) cetvellerine göre otomatik hesaplanır.
+### Yapı Bedeli Modülü
 
-### Yapı Bedeli
+**Yapı Bedeli:**
 ```
 Yapı Bedeli = Yapı Alanı × Birim Fiyat × (1 - Yıpranma Payı/100) × (1 - Eksik İmalat/100)
 ```
 
-### Asgari Levazım Bedeli
+**Asgari Levazım Bedeli:**
 ```
 Levazım Bedeli = Yapı Bedeli × 0.70 × 0.75
 ```
 
----
+### Proje Bedeli Modülü
 
-## 📸 Ekran Görüntüleri
+**Yapı Yaklaşık Maliyeti:**
+```
+Maliyet = Yapı İnşaat Alanı × Birim Maliyet × Yapı Sınıfı Katsayısı
+```
 
-Ana form ekranı ve rapor listesi için `Screenshot_1.jpg` dosyasına bakın.
-
----
-
-## 🤝 Katkıda Bulunma
-
-Projeye katkıda bulunmak için:
-1. [docs/GELISTIRICI.md](docs/GELISTIRICI.md) → Katkıda Bulunma bölümünü okuyun
-2. Fork yapın
-3. Feature branch oluşturun (`git checkout -b feature/AmazingFeature`)
-4. Commit edin (`git commit -m 'feat: Add some AmazingFeature'`)
-5. Push edin (`git push origin feature/AmazingFeature`)
-6. Pull Request açın
+**Hizmet Bedeli:**
+```
+Hizmet Bedeli = Maliyet × PID Oranı × Hizmet Dalı Katsayısı
+```
 
 ---
 
-## 🐛 Sorun Bildirme
+## Öne Çıkan Özellikler
 
-Bir hata bulduysanız veya öneriniz varsa:
-- Issue açın (GitHub/GitLab)
-- [docs/KURULUM.md](docs/KURULUM.md) → Sorun Giderme bölümünü kontrol edin
+- **Resmi Gazete Uyumluluğu** - Yıpranma payları ve birim fiyatlar tebliğlere göre
+- **Türkçe Yazıya Çevirme** - Bedeller otomatik Türkçe yazıya çevrilir
+- **Profesyonel Rapor** - Word formatında tablolu ve standart raporlar
+- **Veri Güvenliği** - Tüm veriler lokal SQLite veritabanında
+- **Modern UI** - SVG ikonlar, Inter font, Slate renk paleti, modern tasarım
+- **Tek Pencere** - SPA navigasyon ile hızlı sayfa geçişleri
 
 ---
 
-## 📝 Lisans
+## Önemli Notlar
+
+- **Güvenlik**: Uygulama `contextIsolation: false` kullanıyor. Production için güvenlik iyileştirmesi gerekli.
+- **Yedekleme**: `raporlar.db` dosyasını düzenli olarak yedekleyin.
+- **Silme**: Rapor silme işlemi geri alınamaz.
+
+---
+
+## Gelecek Planları
+
+- [ ] Mevzuat modülü
+- [ ] Hesaplama modülü
+- [ ] Excel çıktısı desteği
+- [ ] Toplu rapor oluşturma
+- [ ] Şablon yönetimi
+- [ ] Yedekleme sistemi
+- [ ] Kullanıcı ayarları
+- [ ] Standalone exe build
+
+---
+
+## Lisans
 
 Bu proje özel mülkiyettedir. Tüm hakları saklıdır.
 
 ---
 
-## 👥 İletişim
-
-Sorularınız için lütfen iletişime geçin.
-
----
-
-## 🎯 Gelecek Planları
-
-- [ ] Rapor revize etme özelliği
-- [ ] Excel çıktısı desteği
-- [ ] Toplu rapor oluşturma
-- [ ] Harita entegrasyonu (Leaflet)
-- [ ] Şablon yönetimi
-- [ ] Yedekleme sistemi
-- [ ] Kullanıcı ayarları
-- [ ] Multi-language support
-
----
-
-## 📊 İstatistikler
-
-```
-📁 Toplam Dosya: 15+
-📝 Kod Satırı: ~2000+
-📦 Bağımlılık: 9 npm paketi
-🖥️ Platform: Windows, macOS, Linux
-📚 Dokümantasyon: 8 kapsamlı rehber
-```
-
----
-
-## ⭐ Öne Çıkan Özellikler
-
-### 1. Resmi Gazete Uyumluluğu
-Yıpranma payları 02.12.1982 tarih ve 17.886 sayılı Resmi Gazete'de yayınlanan cetvellere göre otomatik hesaplanır.
-
-### 2. Türkçe Yazıya Çevirme
-Hesaplanan bedeller otomatik olarak Türkçe yazıya çevrilir:
-```
-1,234,567 TL → "bir milyon ikiyüz otuz dört bin beşyüz altmış yedi Türk Lirasıdır"
-```
-
-### 3. Profesyonel Rapor Formatı
-Word formatında, tablolu ve standart yapıda profesyonel raporlar.
-
-### 4. Veri Güvenliği
-Tüm veriler lokal SQLite veritabanında güvenle saklanır.
-
----
-
-## 🚨 Önemli Notlar
-
-⚠️ **Güvenlik**: Uygulama `contextIsolation: false` kullanıyor. Production kullanımı için güvenlik iyileştirmeleri yapılmalı.
-
-⚠️ **Yedekleme**: `raporlar.db` dosyasını düzenli olarak yedekleyin!
-
-⚠️ **Silme İşlemleri**: Rapor silme işlemi geri alınamaz!
-
----
-
-## 📞 Destek ve Yardım
-
-### Dokümantasyon
-Tüm sorularınız için detaylı dokümantasyona göz atın:
-- [Kurulum Sorunları](docs/KURULUM.md#sorun-giderme)
-- [Kullanım Soruları](docs/KULLANIM.md#sık-sorulan-sorular)
-- [Geliştirme](docs/GELISTIRICI.md)
-
-### Topluluk
-- GitHub Issues
-- E-posta desteği
-- Teknik dokümantasyon
-
----
-
 <div align="center">
 
-**KİTAR (Kıymet Takdir Raporu)** 
+**Proje A - Proje Geliştirme Platformu**
 
-*Yapı Değerleme Raporlarını Profesyonelce Yönetin*
+*Modüler Yapıda Profesyonel Proje Yönetimi*
 
-**Versiyon 1.0.0** | 2024
+**Versiyon 2.0.0** | 2025-2026
 
 ---
 
-**[Dokümantasyon](docs/INDEX.md)** • 
-**[Kurulum](docs/KURULUM.md)** • 
-**[Kullanım](docs/KULLANIM.md)** • 
+**[Dokümantasyon](docs/INDEX.md)** | 
+**[Kurulum](docs/KURULUM.md)** | 
+**[Kullanım](docs/KULLANIM.md)** | 
 **[Geliştirici](docs/GELISTIRICI.md)**
 
 </div>

@@ -6,9 +6,10 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const { generateReport } = require('./pb-reportGenerator');
 const { shell } = require('electron');
+const { getDbPath, getAppRootDir } = require('../../../shared/scripts/db-helper');
 
 // Veritabanı bağlantısı
-const dbPath = path.join(__dirname, '..', '..', '..', 'raporlar.db');
+const dbPath = getDbPath();
 let db = null;
 
 let pbContainer = null;
@@ -1113,7 +1114,7 @@ function raporOlustur() {
     
     // Raporlar klasörünü oluştur (proje kök dizininde)
     const fs = require('fs');
-    const raporlarDir = path.join(__dirname, '..', '..', '..', 'raporlar');
+    const raporlarDir = path.join(getAppRootDir(), 'raporlar');
     console.log('📁 Raporlar dizini:', raporlarDir);
     
     try {

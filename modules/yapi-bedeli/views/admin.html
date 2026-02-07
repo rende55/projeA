@@ -448,7 +448,7 @@
                 </div>
                 <div class="form-group">
                     <label>Ünvan <span class="required">*</span></label>
-                    <select id="raportorUnvani" required>
+                    <select id="raportorUnvani" required onchange="if(this.value==='__diger__'){document.getElementById('raportorUnvaniDiger').style.display='block';document.getElementById('raportorUnvaniDiger').focus();}else{document.getElementById('raportorUnvaniDiger').style.display='none';document.getElementById('raportorUnvaniDiger').value='';}">
                         <option value="">Ünvan Seçiniz...</option>
                         <optgroup label="Mühendislik Ünvanları">
                             <option value="Mimar">Mimar</option>
@@ -459,22 +459,34 @@
                             <option value="Peyzaj Mimarı">Peyzaj Mimarı</option>
                             <option value="Makine Mühendisi">Makine Mühendisi</option>
                             <option value="Elektrik Mühendisi">Elektrik Mühendisi</option>
+                            <option value="Elektrik-Elektronik Mühendisi">Elektrik-Elektronik Mühendisi</option>
                             <option value="Ziraat Mühendisi">Ziraat Mühendisi</option>
                             <option value="Orman Mühendisi">Orman Mühendisi</option>
+                            <option value="Çevre Mühendisi">Çevre Mühendisi</option>
+                            <option value="Jeofizik Mühendisi">Jeofizik Mühendisi</option>
                         </optgroup>
                         <optgroup label="İdari Ünvanlar">
                             <option value="İl Müdürü">İl Müdürü</option>
                             <option value="İl Müdür Yardımcısı">İl Müdür Yardımcısı</option>
                             <option value="Şube Müdürü">Şube Müdürü</option>
                             <option value="Müdür Yardımcısı">Müdür Yardımcısı</option>
+                            <option value="Daire Başkanı">Daire Başkanı</option>
                             <option value="Başkan">Başkan</option>
                             <option value="Başkan Yardımcısı">Başkan Yardımcısı</option>
-                            <option value="Daire Başkanı">Daire Başkanı</option>
                             <option value="Şef">Şef</option>
                             <option value="Uzman">Uzman</option>
                             <option value="Kontrolör">Kontrolör</option>
                         </optgroup>
+                        <optgroup label="Teknik Ünvanlar">
+                            <option value="Tekniker">Tekniker</option>
+                            <option value="Teknisyen">Teknisyen</option>
+                            <option value="Teknik Ressam">Teknik Ressam</option>
+                        </optgroup>
+                        <optgroup label="Diğer">
+                            <option value="__diger__">Elle Giriş...</option>
+                        </optgroup>
                     </select>
+                    <input type="text" id="raportorUnvaniDiger" placeholder="Ünvanı yazınız..." style="display: none; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px;">
                 </div>
             </div>
 
@@ -518,7 +530,7 @@
                     </div>
                     <div class="form-group">
                         <label>Ünvan <span class="required">*</span></label>
-                        <select id="duzenleRaportorUnvani" required>
+                        <select id="duzenleRaportorUnvani" required onchange="if(this.value==='__diger__'){document.getElementById('duzenleRaportorUnvaniDiger').style.display='block';document.getElementById('duzenleRaportorUnvaniDiger').focus();}else{document.getElementById('duzenleRaportorUnvaniDiger').style.display='none';document.getElementById('duzenleRaportorUnvaniDiger').value='';}">
                             <option value="">Ünvan Seçiniz...</option>
                             <optgroup label="Mühendislik Ünvanları">
                                 <option value="Mimar">Mimar</option>
@@ -529,22 +541,34 @@
                                 <option value="Peyzaj Mimarı">Peyzaj Mimarı</option>
                                 <option value="Makine Mühendisi">Makine Mühendisi</option>
                                 <option value="Elektrik Mühendisi">Elektrik Mühendisi</option>
+                                <option value="Elektrik-Elektronik Mühendisi">Elektrik-Elektronik Mühendisi</option>
                                 <option value="Ziraat Mühendisi">Ziraat Mühendisi</option>
                                 <option value="Orman Mühendisi">Orman Mühendisi</option>
+                                <option value="Çevre Mühendisi">Çevre Mühendisi</option>
+                                <option value="Jeofizik Mühendisi">Jeofizik Mühendisi</option>
                             </optgroup>
                             <optgroup label="İdari Ünvanlar">
                                 <option value="İl Müdürü">İl Müdürü</option>
                                 <option value="İl Müdür Yardımcısı">İl Müdür Yardımcısı</option>
                                 <option value="Şube Müdürü">Şube Müdürü</option>
                                 <option value="Müdür Yardımcısı">Müdür Yardımcısı</option>
+                                <option value="Daire Başkanı">Daire Başkanı</option>
                                 <option value="Başkan">Başkan</option>
                                 <option value="Başkan Yardımcısı">Başkan Yardımcısı</option>
-                                <option value="Daire Başkanı">Daire Başkanı</option>
                                 <option value="Şef">Şef</option>
                                 <option value="Uzman">Uzman</option>
                                 <option value="Kontrolör">Kontrolör</option>
                             </optgroup>
+                            <optgroup label="Teknik Ünvanlar">
+                                <option value="Tekniker">Tekniker</option>
+                                <option value="Teknisyen">Teknisyen</option>
+                                <option value="Teknik Ressam">Teknik Ressam</option>
+                            </optgroup>
+                            <optgroup label="Diğer">
+                                <option value="__diger__">Elle Giriş...</option>
+                            </optgroup>
                         </select>
+                        <input type="text" id="duzenleRaportorUnvaniDiger" placeholder="Ünvanı yazınız..." style="display: none; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px;">
                     </div>
                 </div>
 

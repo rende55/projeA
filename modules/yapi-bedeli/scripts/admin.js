@@ -1,8 +1,9 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const { getDbPath } = require('../../../shared/scripts/db-helper');
 
-// Veritabanı ana dizinde (3 seviye yukarı: scripts -> yapi-bedeli -> modules -> projeA)
-const dbPath = path.join(__dirname, '..', '..', '..', 'raporlar.db');
+// Veritabanı ana dizinde (ASAR uyumlu)
+const dbPath = getDbPath();
 let db = new sqlite3.Database(dbPath);
 
 // Global değişkenler
@@ -434,7 +435,13 @@ window.addEventListener('load', () => {
 function yeniRaportorEkle() {
     const adi = document.getElementById('raportorAdi').value.trim();
     const soyadi = document.getElementById('raportorSoyadi').value.trim();
-    const unvani = document.getElementById('raportorUnvani').value;
+    let unvani = document.getElementById('raportorUnvani').value;
+    
+    // Elle giriş seçildiyse, text input'tan al
+    if (unvani === '__diger__') {
+        const digerInput = document.getElementById('raportorUnvaniDiger');
+        unvani = digerInput ? digerInput.value.trim() : '';
+    }
 
     if (!adi || !soyadi || !unvani) {
         alert('⚠️ Lütfen tüm alanları doldurun!');
@@ -546,7 +553,19 @@ function raportorDuzenle(raportorId) {
         // Düzenleme formunu doldur
         document.getElementById('duzenleRaportorAdi').value = row.adi;
         document.getElementById('duzenleRaportorSoyadi').value = row.soyadi;
-        document.getElementById('duzenleRaportorUnvani').value = row.unvani;
+        
+        // Ünvan listede var mı kontrol et, yoksa elle giriş moduna geç
+        const unvanSelect = document.getElementById('duzenleRaportorUnvani');
+        const digerInput = document.getElementById('duzenleRaportorUnvaniDiger');
+        const optionExists = Array.from(unvanSelect.options).some(opt => opt.value === row.unvani);
+        if (optionExists) {
+            unvanSelect.value = row.unvani;
+            if (digerInput) { digerInput.style.display = 'none'; digerInput.value = ''; }
+        } else {
+            unvanSelect.value = '__diger__';
+            if (digerInput) { digerInput.style.display = 'block'; digerInput.value = row.unvani; }
+        }
+        
         document.getElementById('duzenlenecekRaportorBaslik').textContent = `${row.adi} ${row.soyadi}`;
         
         duzenlenecekRaportorId = raportorId;
@@ -571,7 +590,13 @@ function raportorGuncelle() {
 
     const adi = document.getElementById('duzenleRaportorAdi').value.trim();
     const soyadi = document.getElementById('duzenleRaportorSoyadi').value.trim();
-    const unvani = document.getElementById('duzenleRaportorUnvani').value;
+    let unvani = document.getElementById('duzenleRaportorUnvani').value;
+    
+    // Elle giriş seçildiyse, text input'tan al
+    if (unvani === '__diger__') {
+        const digerInput = document.getElementById('duzenleRaportorUnvaniDiger');
+        unvani = digerInput ? digerInput.value.trim() : '';
+    }
 
     if (!adi || !soyadi || !unvani) {
         alert('⚠️ Lütfen tüm alanları doldurun!');

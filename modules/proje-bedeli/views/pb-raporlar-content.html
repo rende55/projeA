@@ -2,52 +2,71 @@
     .pb-raporlar-container {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 20px;
+        padding: 24px;
     }
 
     .pb-raporlar-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
         border-bottom: 2px solid #E2E8F0;
     }
 
     .pb-raporlar-header h1 {
-        color: #1E3A5F;
-        font-size: 28px;
+        color: #0F172A;
+        font-size: 20px;
+        font-weight: 700;
         margin: 0;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 10px;
+        letter-spacing: -0.3px;
+    }
+
+    .pb-raporlar-header h1 .header-icon {
+        width: 36px;
+        height: 36px;
+        background: linear-gradient(135deg, #E0E7FF, #C7D2FE);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pb-raporlar-header h1 .header-icon svg {
+        width: 20px;
+        height: 20px;
+        color: #4338CA;
     }
 
     .pb-raporlar-back-btn {
-        background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
-        color: #FFFFFF;
-        border: none;
-        padding: 12px 24px;
+        background: #F1F5F9;
+        color: #334155;
+        border: 1px solid #CBD5E1;
+        padding: 8px 18px;
         border-radius: 8px;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 6px;
+        font-family: inherit;
     }
 
     .pb-raporlar-back-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        background: #E2E8F0;
+        border-color: #94A3B8;
     }
 
     .pb-raporlar-table-container {
         background: #FFFFFF;
         border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        border: 1px solid #E2E8F0;
     }
 
     .pb-raporlar-table {
@@ -56,15 +75,18 @@
     }
 
     .pb-raporlar-table thead {
-        background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%);
+        background: #F8FAFC;
     }
 
     .pb-raporlar-table thead th {
-        color: #FFFFFF;
+        color: #334155;
         font-weight: 600;
-        font-size: 13px;
-        padding: 16px 12px;
+        font-size: 12px;
+        padding: 14px 12px;
         text-align: left;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #E2E8F0;
     }
 
     .pb-raporlar-table tbody tr {
@@ -73,18 +95,18 @@
     }
 
     .pb-raporlar-table tbody tr:hover {
-        background: #F7FAFC;
+        background: #F8FAFC;
     }
 
     .pb-raporlar-table tbody td {
-        padding: 14px 12px;
-        font-size: 14px;
-        color: #2D3748;
+        padding: 12px;
+        font-size: 13px;
+        color: #334155;
     }
 
     .pb-raporlar-table tbody td.rapor-no {
         font-weight: 600;
-        color: #1E3A5F;
+        color: #0F172A;
     }
 
     .pb-raporlar-table tbody td.bedel {
@@ -94,11 +116,11 @@
 
     .pb-raporlar-actions {
         display: flex;
-        gap: 8px;
+        gap: 6px;
     }
 
     .pb-raporlar-btn {
-        padding: 8px 14px;
+        padding: 6px 12px;
         border: none;
         border-radius: 6px;
         font-size: 12px;
@@ -108,61 +130,67 @@
         display: flex;
         align-items: center;
         gap: 4px;
+        font-family: inherit;
     }
 
     .pb-raporlar-btn.view {
-        background: #3B82F6;
-        color: #FFFFFF;
+        background: #DBEAFE;
+        color: #1D4ED8;
+        border: 1px solid #BFDBFE;
     }
 
     .pb-raporlar-btn.view:hover {
-        background: #2563EB;
+        background: #BFDBFE;
     }
 
     .pb-raporlar-btn.export {
-        background: #10B981;
-        color: #FFFFFF;
+        background: #ECFDF5;
+        color: #059669;
+        border: 1px solid #A7F3D0;
     }
 
     .pb-raporlar-btn.export:hover {
-        background: #059669;
+        background: #A7F3D0;
     }
 
     .pb-raporlar-btn.delete {
-        background: #EF4444;
-        color: #FFFFFF;
+        background: #FEE2E2;
+        color: #DC2626;
+        border: 1px solid #FECACA;
     }
 
     .pb-raporlar-btn.delete:hover {
-        background: #DC2626;
+        background: #FECACA;
     }
 
     .pb-raporlar-empty {
         text-align: center;
-        padding: 60px 20px;
-        color: #718096;
+        padding: 56px 20px;
+        color: #94A3B8;
     }
 
     .pb-raporlar-empty-icon {
-        font-size: 64px;
-        margin-bottom: 20px;
+        font-size: 48px;
+        margin-bottom: 16px;
+        opacity: 0.5;
     }
 
     .pb-raporlar-empty h3 {
-        font-size: 20px;
-        color: #4A5568;
-        margin-bottom: 10px;
+        font-size: 16px;
+        color: #475569;
+        margin-bottom: 8px;
+        font-weight: 600;
     }
 
     .pb-raporlar-empty p {
-        font-size: 14px;
+        font-size: 13px;
     }
 
     /* Responsive */
     @media (max-width: 768px) {
         .pb-raporlar-header {
             flex-direction: column;
-            gap: 15px;
+            gap: 12px;
             text-align: center;
         }
 
@@ -178,9 +206,15 @@
 
 <div class="pb-raporlar-container">
     <header class="pb-raporlar-header">
-        <h1>📋 Proje Bedeli - Kayıtlı Raporlar</h1>
+        <h1>
+            <span class="header-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+            </span>
+            Proje Bedeli - Kayıtlı Raporlar
+        </h1>
         <button class="pb-raporlar-back-btn" id="pbr-backButton">
-            ◀ Forma Dön
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M19 12H5"/><path d="m12 19-7-7 7-7"/></svg>
+            Forma Dön
         </button>
     </header>
 

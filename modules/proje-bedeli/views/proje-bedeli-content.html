@@ -5,10 +5,11 @@
         max-width: 1400px;
         margin: 0 auto;
         background-color: #FFFFFF;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
         overflow: hidden;
         min-height: calc(100vh - 100px);
+        border: 1px solid #E2E8F0;
     }
 
     .pb-form-container {
@@ -18,13 +19,13 @@
     }
 
     .pb-button-panel {
-        width: 280px;
-        background: #E8ECF2;
-        border-left: 2px solid #D3DAE3;
-        padding: 30px 20px;
+        width: 260px;
+        background: #F8FAFC;
+        border-left: 1px solid #E2E8F0;
+        padding: 24px 16px;
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 12px;
         position: sticky;
         top: 0;
         height: fit-content;
@@ -33,19 +34,21 @@
     }
 
     .pb-button-panel h3 {
-        margin: 0 0 20px 0;
-        color: #1A1A1A;
-        font-size: 18px;
+        margin: 0 0 16px 0;
+        color: #0F172A;
+        font-size: 13px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
         text-align: center;
-        padding-bottom: 15px;
-        border-bottom: 2px solid #D3DAE3;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #E2E8F0;
     }
 
     .pb-header {
-        background: linear-gradient(135deg, #2A4C6E 0%, #3C6B99 100%);
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%);
         color: white;
-        padding: 20px 30px;
-        border-bottom: 2px solid #D3DAE3;
+        padding: 20px 28px;
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -55,80 +58,102 @@
     
     .pb-header h1 {
         margin: 0;
-        font-size: 24px;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .pb-header h1 .header-icon {
+        width: 36px;
+        height: 36px;
+        background: rgba(99, 102, 241, 0.2);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .pb-header h1 .header-icon svg {
+        width: 20px;
+        height: 20px;
+        color: #A5B4FC;
     }
     
     .pb-nav-buttons {
         display: flex;
-        gap: 10px;
+        gap: 8px;
         flex-wrap: wrap;
     }
     
     .pb-nav-button {
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-        border: 2px solid rgba(255, 255, 255, 0.3);
-        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255,255,255,0.9);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 8px 16px;
         border-radius: 8px;
         cursor: pointer;
-        font-size: 14px;
-        font-weight: 600;
-        transition: all 0.3s ease;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s ease;
         display: flex;
         align-items: center;
-        gap: 8px;
-        min-height: 44px;
-        min-width: 44px;
+        gap: 6px;
+        min-height: 38px;
+        font-family: inherit;
     }
     
     .pb-nav-button:hover {
-        background: rgba(255, 255, 255, 0.3);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        background: rgba(255, 255, 255, 0.18);
+        border-color: rgba(255, 255, 255, 0.3);
     }
 
     /* Ana Tab Navigation */
     .pb-tab-navigation {
         display: flex;
-        background-color: #E8ECF2;
-        border-bottom: 2px solid #D3DAE3;
+        background-color: #F8FAFC;
+        border-bottom: 1px solid #E2E8F0;
     }
 
     .pb-tab-button {
         flex: 1;
-        padding: 18px 20px;
+        padding: 14px 20px;
         background: none;
         border: none;
         cursor: pointer;
-        font-size: 16px;
+        font-size: 13px;
         font-weight: 600;
-        color: #6F7A86;
-        transition: all 0.3s;
+        color: #94A3B8;
+        transition: all 0.2s;
         position: relative;
+        font-family: inherit;
+        letter-spacing: 0.1px;
     }
 
     .pb-tab-button:hover {
-        background-color: #D3DAE3;
-        color: #333333;
+        background-color: #F1F5F9;
+        color: #475569;
     }
 
     .pb-tab-button.active {
-        color: #2A4C6E;
+        color: #0F172A;
         background-color: #FFFFFF;
     }
 
     .pb-tab-button.active::after {
         content: '';
         position: absolute;
-        bottom: -2px;
+        bottom: -1px;
         left: 0;
         right: 0;
-        height: 3px;
-        background: linear-gradient(90deg, #2A4C6E 0%, #3C6B99 100%);
+        height: 2px;
+        background: #6366F1;
     }
 
     .pb-tab-button.completed {
-        color: #4CAF50;
+        color: #059669;
     }
 
     .pb-tab-button.completed::before {
@@ -139,8 +164,8 @@
     /* Tab Content */
     .pb-tab-content {
         display: none;
-        padding: 40px;
-        animation: pbFadeIn 0.3s;
+        padding: 32px;
+        animation: pbFadeIn 0.25s;
         min-height: 500px;
     }
 
@@ -149,39 +174,42 @@
     }
 
     @keyframes pbFadeIn {
-        from { opacity: 0; transform: translateY(10px); }
+        from { opacity: 0; transform: translateY(8px); }
         to { opacity: 1; transform: translateY(0); }
     }
 
     .pb-tab-content h2 {
-        color: #1A1A1A;
-        margin-bottom: 25px;
-        font-size: 22px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #2A4C6E;
+        color: #0F172A;
+        margin-bottom: 24px;
+        font-size: 18px;
+        font-weight: 700;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #E2E8F0;
+        letter-spacing: -0.2px;
     }
 
     /* Alt Tab (Branş) Navigation */
     .pb-sub-tab-navigation {
         display: flex;
-        background-color: #F5F7FA;
-        border: 2px solid #D3DAE3;
-        border-radius: 8px;
-        margin-bottom: 25px;
+        background-color: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 10px;
+        margin-bottom: 20px;
         overflow: hidden;
     }
 
     .pb-sub-tab-button {
         flex: 1;
-        padding: 14px 16px;
+        padding: 12px 16px;
         background: none;
         border: none;
         cursor: pointer;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
-        color: #6F7A86;
-        transition: all 0.3s;
-        border-right: 1px solid #D3DAE3;
+        color: #94A3B8;
+        transition: all 0.2s;
+        border-right: 1px solid #E2E8F0;
+        font-family: inherit;
     }
 
     .pb-sub-tab-button:last-child {
@@ -189,13 +217,13 @@
     }
 
     .pb-sub-tab-button:hover {
-        background-color: #E8ECF2;
-        color: #333333;
+        background-color: #F1F5F9;
+        color: #475569;
     }
 
     .pb-sub-tab-button.active {
         color: #FFFFFF;
-        background: linear-gradient(135deg, #2A4C6E 0%, #3C6B99 100%);
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
     }
 
     .pb-sub-tab-content {
@@ -223,8 +251,8 @@
     .pb-form-row {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 20px;
-        margin-bottom: 20px;
+        gap: 16px;
+        margin-bottom: 16px;
     }
 
     .pb-form-row.full-width {
@@ -238,36 +266,40 @@
 
     .pb-form-group label {
         display: block;
-        margin-bottom: 8px;
+        margin-bottom: 6px;
         font-weight: 600;
-        color: #333333;
-        font-size: 14px;
+        color: #334155;
+        font-size: 13px;
+        letter-spacing: 0.1px;
     }
 
     .pb-form-group input,
     .pb-form-group select,
     .pb-form-group textarea {
         width: 100%;
-        padding: 12px 15px;
-        border: 2px solid #C9D1DB;
-        border-radius: 6px;
-        font-size: 15px;
-        transition: all 0.3s;
+        padding: 10px 14px;
+        border: 1px solid #CBD5E1;
+        border-radius: 8px;
+        font-size: 14px;
+        transition: all 0.2s;
         background-color: #FFFFFF;
+        color: #0F172A;
+        font-family: inherit;
     }
 
     .pb-form-group input:focus,
     .pb-form-group select:focus,
     .pb-form-group textarea:focus {
         outline: none;
-        border-color: #2A4C6E;
-        box-shadow: 0 0 0 3px rgba(42, 76, 110, 0.1);
+        border-color: #6366F1;
+        box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
     }
 
     .pb-form-group input:read-only {
-        background-color: #E8ECF2;
-        color: #6F7A86;
+        background-color: #F1F5F9;
+        color: #64748B;
         cursor: not-allowed;
+        border-color: #E2E8F0;
     }
 
     /* Number input okları gizle */
@@ -285,47 +317,48 @@
     .pb-navigation-buttons {
         display: flex;
         justify-content: space-between;
-        margin-top: 30px;
-        padding-top: 30px;
-        border-top: 2px solid #D8DFE6;
-        gap: 15px;
+        margin-top: 28px;
+        padding-top: 24px;
+        border-top: 1px solid #E2E8F0;
+        gap: 12px;
     }
 
     .pb-navigation-buttons button {
-        padding: 14px 30px;
+        padding: 10px 24px;
         border: none;
         border-radius: 8px;
-        font-size: 16px;
+        font-size: 14px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.2s;
         flex: 1;
-        max-width: 200px;
+        max-width: 180px;
+        font-family: inherit;
     }
 
     .pb-btn-prev {
-        background: #E8ECF2;
-        color: #2A4C6E;
-        border: 2px solid #2A4C6E !important;
+        background: #F1F5F9;
+        color: #334155;
+        border: 1px solid #CBD5E1 !important;
     }
 
     .pb-btn-prev:hover:not(:disabled) {
-        transform: translateY(-2px);
-        background: #D3DAE3;
+        background: #E2E8F0;
+        border-color: #94A3B8 !important;
     }
 
     .pb-btn-next {
-        background: #2A4C6E;
+        background: #6366F1;
         color: #FFFFFF;
     }
 
     .pb-btn-next:hover:not(:disabled) {
-        transform: translateY(-2px);
-        background: #3C6B99;
+        background: #4F46E5;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
     }
 
     .pb-btn-next:disabled, .pb-btn-prev:disabled {
-        opacity: 0.5;
+        opacity: 0.4;
         cursor: not-allowed;
     }
 
@@ -333,37 +366,41 @@
     .pb-action-buttons {
         display: flex;
         flex-direction: column;
-        gap: 15px;
+        gap: 10px;
     }
 
     .pb-action-buttons button {
-        padding: 16px 20px;
+        padding: 12px 16px;
         border: none;
-        border-radius: 8px;
-        font-size: 15px;
+        border-radius: 10px;
+        font-size: 13px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s;
+        transition: all 0.2s;
         color: white;
         width: 100%;
         text-align: center;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        font-family: inherit;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
     }
 
-    .pb-hesapla-button { background: #2196F3; }
-    .pb-hesapla-button:hover { background: #1976D2; transform: translateY(-2px); }
+    .pb-hesapla-button { background: #6366F1; }
+    .pb-hesapla-button:hover { background: #4F46E5; box-shadow: 0 4px 12px rgba(99,102,241,0.3); }
 
-    .pb-save-button { background: #4CAF50; }
-    .pb-save-button:hover { background: #45a049; transform: translateY(-2px); }
+    .pb-save-button { background: #10B981; }
+    .pb-save-button:hover { background: #059669; box-shadow: 0 4px 12px rgba(16,185,129,0.3); }
 
-    .pb-clear-button { background: #FFC107; color: #1D1D1D; }
-    .pb-clear-button:hover { background: #F3C870; transform: translateY(-2px); }
+    .pb-clear-button { background: #F1F5F9; color: #475569; border: 1px solid #CBD5E1; }
+    .pb-clear-button:hover { background: #E2E8F0; }
 
-    .pb-show-reports-button { background: #2A4C6E; }
-    .pb-show-reports-button:hover { background: #3C6B99; transform: translateY(-2px); }
+    .pb-show-reports-button { background: #0F172A; }
+    .pb-show-reports-button:hover { background: #1E293B; box-shadow: 0 4px 12px rgba(15,23,42,0.3); }
 
-    .pb-rapor-olustur-button { background: #9C27B0; }
-    .pb-rapor-olustur-button:hover { background: #7B1FA2; transform: translateY(-2px); }
+    .pb-rapor-olustur-button { background: #7C3AED; }
+    .pb-rapor-olustur-button:hover { background: #6D28D9; box-shadow: 0 4px 12px rgba(124,58,237,0.3); }
 
     /* İmzacı Stilleri */
     .pb-imzaci-row {
@@ -1029,10 +1066,15 @@
     <div class="pb-main-container">
         <div class="pb-form-container">
             <header class="pb-header">
-                <h1>📐 Proje Bedeli Modülü</h1>
+                <h1>
+                    <span class="header-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M5 20V8.2a1 1 0 0 1 .4-.8l6-4.5a1 1 0 0 1 1.2 0l6 4.5a1 1 0 0 1 .4.8V20"/><path d="M12 10v4"/><path d="M10 12h4"/></svg>
+                    </span>
+                    Proje Bedeli
+                </h1>
                 <div class="pb-nav-buttons">
                     <button class="pb-nav-button" id="pb-reportsNavButton" title="Raporları Görüntüle">
-                        <span>📊</span>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
                         <span>Raporlar</span>
                     </button>
                 </div>

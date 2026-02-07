@@ -3,60 +3,89 @@
     .ad-container {
         max-width: 1400px;
         margin: 0 auto;
-        padding: 20px;
+        padding: 24px;
         background-color: #FFFFFF;
-        border-radius: 12px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
         min-height: calc(100vh - 100px);
+        border: 1px solid #E2E8F0;
     }
 
     .ad-header {
-        background: linear-gradient(135deg, #2A4C6E 0%, #3C6B99 100%);
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%);
         color: white;
-        padding: 20px 30px;
-        border-radius: 8px 8px 0 0;
-        margin: -20px -20px 20px -20px;
+        padding: 20px 28px;
+        border-radius: 16px 16px 0 0;
+        margin: -24px -24px 24px -24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
     }
 
     .ad-header h1 {
         margin: 0;
-        font-size: 24px;
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .ad-header h1 .header-icon {
+        width: 36px;
+        height: 36px;
+        background: rgba(148, 163, 184, 0.2);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .ad-header h1 .header-icon svg {
+        width: 20px;
+        height: 20px;
+        color: #CBD5E1;
     }
 
     /* Tab Navigation */
     .ad-tab-navigation {
         display: flex;
-        background-color: #E8ECF2;
-        border-bottom: 2px solid #D3DAE3;
-        margin: 0 -20px;
-        padding: 0 20px;
+        background-color: #F8FAFC;
+        border-bottom: 1px solid #E2E8F0;
+        margin: 0 -24px;
+        padding: 0 24px;
+        gap: 0;
     }
 
     .ad-tab-button {
-        padding: 15px 20px;
+        padding: 12px 18px;
         background: none;
         border: none;
-        font-size: 14px;
+        font-size: 13px;
         font-weight: 600;
-        color: #6F7A86;
+        color: #94A3B8;
         cursor: pointer;
-        transition: all 0.3s;
-        border-bottom: 3px solid transparent;
+        transition: all 0.2s;
+        border-bottom: 2px solid transparent;
+        font-family: inherit;
+        letter-spacing: 0.1px;
     }
 
     .ad-tab-button:hover {
-        background-color: #D3DAE3;
+        background-color: #F1F5F9;
+        color: #475569;
     }
 
     .ad-tab-button.active {
-        color: #2A4C6E;
+        color: #0F172A;
         background-color: #FFFFFF;
-        border-bottom-color: #2A4C6E;
+        border-bottom-color: #3B82F6;
     }
 
     .ad-tab-content {
         display: none;
-        padding: 30px 0;
+        padding: 24px 0;
     }
 
     .ad-tab-content.active {
@@ -64,19 +93,21 @@
     }
 
     .ad-tab-content h2 {
-        color: #1A1A1A;
-        margin-bottom: 20px;
-        font-size: 20px;
-        padding-bottom: 10px;
-        border-bottom: 2px solid #2A4C6E;
+        color: #0F172A;
+        margin-bottom: 16px;
+        font-size: 18px;
+        font-weight: 700;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #E2E8F0;
+        letter-spacing: -0.2px;
     }
 
     /* Table Styles */
     .ad-table-container {
         overflow-x: auto;
-        margin-top: 20px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        margin-top: 16px;
+        border-radius: 10px;
+        border: 1px solid #E2E8F0;
     }
 
     .ad-table {
@@ -87,101 +118,118 @@
 
     .ad-table th,
     .ad-table td {
-        padding: 12px 15px;
+        padding: 12px 14px;
         text-align: left;
-        border-bottom: 1px solid #D3DAE3;
-    }
-
-    .ad-table th {
-        background: linear-gradient(135deg, #2A4C6E 0%, #3C6B99 100%);
-        color: white;
-        font-weight: 600;
+        border-bottom: 1px solid #E2E8F0;
         font-size: 13px;
     }
 
+    .ad-table th {
+        background: #F8FAFC;
+        color: #334155;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #E2E8F0;
+    }
+
     .ad-table tr:hover {
-        background-color: #E8ECF2;
+        background-color: #F8FAFC;
     }
 
     /* Button Styles */
     .ad-btn {
-        padding: 8px 16px;
+        padding: 7px 14px;
         border: none;
-        border-radius: 4px;
-        font-size: 13px;
+        border-radius: 6px;
+        font-size: 12px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.3s;
-        margin-right: 5px;
+        transition: all 0.2s;
+        margin-right: 4px;
+        font-family: inherit;
     }
 
     .ad-btn-primary {
-        background-color: #2A4C6E;
-        color: white;
+        background-color: #DBEAFE;
+        color: #1D4ED8;
+        border: 1px solid #BFDBFE;
     }
 
     .ad-btn-primary:hover {
-        background-color: #3C6B99;
+        background-color: #BFDBFE;
     }
 
     .ad-btn-danger {
-        background-color: #E53935;
-        color: white;
+        background-color: #FEE2E2;
+        color: #DC2626;
+        border: 1px solid #FECACA;
     }
 
     .ad-btn-danger:hover {
-        background-color: #c62828;
+        background-color: #FECACA;
     }
 
     .ad-btn-success {
-        background-color: #4CAF50;
+        background-color: #10B981;
         color: white;
     }
 
     .ad-btn-success:hover {
-        background-color: #45a049;
+        background-color: #059669;
     }
 
     /* Status Badge */
     .ad-status-badge {
         display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 12px;
+        padding: 4px 10px;
+        border-radius: 100px;
+        font-size: 11px;
         font-weight: 600;
     }
 
     .ad-status-badge.active {
-        background-color: #C8E6C9;
-        color: #2E7D32;
+        background-color: #ECFDF5;
+        color: #059669;
+        border: 1px solid #A7F3D0;
     }
 
     .ad-status-badge.inactive {
-        background-color: #FFCDD2;
-        color: #C62828;
+        background-color: #FEF2F2;
+        color: #DC2626;
+        border: 1px solid #FECACA;
     }
 
     /* Info Box */
     .ad-info-box {
-        background-color: #BBDEFB;
-        color: #1565C0;
-        padding: 15px 20px;
-        border-radius: 6px;
-        margin-bottom: 20px;
-        border: 1px solid #90CAF9;
+        background-color: #EFF6FF;
+        color: #1D4ED8;
+        padding: 12px 16px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        border: 1px solid #BFDBFE;
+        font-size: 13px;
+        line-height: 1.5;
     }
 
     /* Empty Message */
     .ad-empty-message {
         text-align: center;
-        padding: 40px;
-        color: #6F7A86;
+        padding: 48px;
+        color: #94A3B8;
+        font-size: 14px;
     }
 </style>
 
 <div class="ad-container">
     <header class="ad-header">
-        <h1>⚙️ Yönetici Paneli</h1>
+        <h1>
+            <span class="header-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+            </span>
+            Yönetici Paneli
+        </h1>
     </header>
 
     <!-- Tab Navigation -->
@@ -291,16 +339,45 @@
                 </div>
                 <div>
                     <label style="display: block; margin-bottom: 5px; font-weight: 600;">Unvanı *</label>
-                    <select id="ad-raportorUnvani" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                    <select id="ad-raportorUnvani" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;" onchange="if(this.value==='__diger__'){document.getElementById('ad-raportorUnvaniDiger').style.display='block';document.getElementById('ad-raportorUnvaniDiger').focus();}else{document.getElementById('ad-raportorUnvaniDiger').style.display='none';document.getElementById('ad-raportorUnvaniDiger').value='';}">
                         <option value="">Unvan Seçiniz...</option>
-                        <option value="İnşaat Mühendisi">İnşaat Mühendisi</option>
-                        <option value="Mimar">Mimar</option>
-                        <option value="Harita Mühendisi">Harita Mühendisi</option>
-                        <option value="Elektrik Mühendisi">Elektrik Mühendisi</option>
-                        <option value="Makine Mühendisi">Makine Mühendisi</option>
-                        <option value="Şehir Plancısı">Şehir Plancısı</option>
-                        <option value="Tekniker">Tekniker</option>
+                        <optgroup label="Mühendislik Ünvanları">
+                            <option value="Mimar">Mimar</option>
+                            <option value="İnşaat Mühendisi">İnşaat Mühendisi</option>
+                            <option value="Harita Mühendisi">Harita Mühendisi</option>
+                            <option value="Şehir Plancısı">Şehir Plancısı</option>
+                            <option value="Jeolog">Jeolog</option>
+                            <option value="Peyzaj Mimarı">Peyzaj Mimarı</option>
+                            <option value="Makine Mühendisi">Makine Mühendisi</option>
+                            <option value="Elektrik Mühendisi">Elektrik Mühendisi</option>
+                            <option value="Elektrik-Elektronik Mühendisi">Elektrik-Elektronik Mühendisi</option>
+                            <option value="Ziraat Mühendisi">Ziraat Mühendisi</option>
+                            <option value="Orman Mühendisi">Orman Mühendisi</option>
+                            <option value="Çevre Mühendisi">Çevre Mühendisi</option>
+                            <option value="Jeofizik Mühendisi">Jeofizik Mühendisi</option>
+                        </optgroup>
+                        <optgroup label="İdari Ünvanlar">
+                            <option value="İl Müdürü">İl Müdürü</option>
+                            <option value="İl Müdür Yardımcısı">İl Müdür Yardımcısı</option>
+                            <option value="Şube Müdürü">Şube Müdürü</option>
+                            <option value="Müdür Yardımcısı">Müdür Yardımcısı</option>
+                            <option value="Daire Başkanı">Daire Başkanı</option>
+                            <option value="Başkan">Başkan</option>
+                            <option value="Başkan Yardımcısı">Başkan Yardımcısı</option>
+                            <option value="Şef">Şef</option>
+                            <option value="Uzman">Uzman</option>
+                            <option value="Kontrolör">Kontrolör</option>
+                        </optgroup>
+                        <optgroup label="Teknik Ünvanlar">
+                            <option value="Tekniker">Tekniker</option>
+                            <option value="Teknisyen">Teknisyen</option>
+                            <option value="Teknik Ressam">Teknik Ressam</option>
+                        </optgroup>
+                        <optgroup label="Diğer">
+                            <option value="__diger__">Elle Giriş...</option>
+                        </optgroup>
                     </select>
+                    <input type="text" id="ad-raportorUnvaniDiger" placeholder="Ünvanı yazınız..." style="display: none; width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; margin-top: 8px;">
                 </div>
             </div>
             <button type="button" class="ad-btn ad-btn-success" style="margin-top: 15px;" onclick="window.adPage.yeniRaportorEkle()">➕ Raportör Ekle</button>
