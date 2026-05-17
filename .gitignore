@@ -2,8 +2,11 @@ node_modules/
 raporlar_cikti/
 raporlar/
 *.db
+*.db.eski
+*.log
 .DS_Store
 Thumbs.db
 build-temp/
 dist/
 mainS.png
+.claude/
