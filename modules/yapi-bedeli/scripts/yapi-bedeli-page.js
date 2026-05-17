@@ -26,6 +26,8 @@ let parselFotograflari = {}; // Ayrı raporlar için her parselin fotoğrafları
 let nav = null;
 
 // İlçeler artık veritabanından (varsayılan il -> aktif ilçeler) yüklenir.
+// populateIlceler() çağrısı bu cache'i doldurur; çoklu parsel kodu da buradan okur.
+let ilcelerCache = [];
 
 /**
  * Sayfa yüklendiğinde çağrılır
@@ -291,6 +293,7 @@ function populateIlceler() {
             console.error('İlçeler yüklenemedi:', err);
             return;
         }
+        ilcelerCache = rows.map(r => r.ilce_adi);
         rows.forEach(row => {
             const option = document.createElement('option');
             option.value = row.ilce_adi;
@@ -1467,8 +1470,8 @@ function yeniParselEkle() {
     parselCard.dataset.yapiSayaci = '0';
     parselCard.style.cssText = 'border: 2px solid #007bff; border-radius: 10px; padding: 20px; margin-bottom: 25px; background: #f0f7ff;';
     
-    // İlçe select options
-    const ilceOptions = samsunIlceleri.map(ilce => `<option value="${ilce}">${ilce}</option>`).join('');
+    // İlçe select options (varsayılan ilin aktif ilçeleri - populateIlceler tarafından doldurulan cache)
+    const ilceOptions = ilcelerCache.map(ilce => `<option value="${ilce}">${ilce}</option>`).join('');
     
     parselCard.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 10px;">
