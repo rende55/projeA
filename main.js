@@ -432,6 +432,88 @@ function createDatabase() {
         }
     });
 
+    // İller tablosu
+    db.run(`CREATE TABLE IF NOT EXISTS iller (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        sehir_id TEXT,
+        sehir_adi TEXT NOT NULL,
+        aktif INTEGER DEFAULT 1,
+        varsayilan INTEGER DEFAULT 0,
+        olusturmaTarihi TEXT DEFAULT (datetime('now','localtime')),
+        guncellemeTarihi TEXT DEFAULT (datetime('now','localtime')),
+        UNIQUE(sehir_adi)
+    )`, (err) => {
+        if (err) {
+            console.error('İller tablosu hatası:', err.message);
+            return;
+        }
+        console.log('İller tablosu oluşturuldu.');
+
+        // İlçeler tablosu (iller'e referans verir)
+        db.run(`CREATE TABLE IF NOT EXISTS ilceler (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            ilce_id TEXT,
+            ilce_adi TEXT NOT NULL,
+            il_id INTEGER NOT NULL,
+            aktif INTEGER DEFAULT 1,
+            olusturmaTarihi TEXT DEFAULT (datetime('now','localtime')),
+            guncellemeTarihi TEXT DEFAULT (datetime('now','localtime')),
+            UNIQUE(il_id, ilce_adi),
+            FOREIGN KEY(il_id) REFERENCES iller(id) ON DELETE CASCADE
+        )`, (err) => {
+            if (err) {
+                console.error('İlçeler tablosu hatası:', err.message);
+                return;
+            }
+            console.log('İlçeler tablosu oluşturuldu.');
+
+            // Seed: Tablo boşsa varsayılan ili (Samsun) JSON'dan oku ve yükle (Alaçam dahil)
+            db.get('SELECT COUNT(*) as count FROM iller', [], (err, row) => {
+                if (err || row.count > 0) return;
+
+                const VARSAYILAN_SEHIR_ID = '55'; // SAMSUN
+                let sehirler = [];
+                let tumIlceler = [];
+                try {
+                    const sehirlerJsonPath = path.join(APP_ROOT, 'sehirler.json');
+                    const ilcelerJsonPath = path.join(APP_ROOT, 'ilceler.json');
+                    if (fs.existsSync(sehirlerJsonPath) && fs.existsSync(ilcelerJsonPath)) {
+                        sehirler = JSON.parse(fs.readFileSync(sehirlerJsonPath, 'utf8'));
+                        tumIlceler = JSON.parse(fs.readFileSync(ilcelerJsonPath, 'utf8'));
+                    }
+                } catch (e) {
+                    console.error('Sehirler/Ilceler JSON okuma hatası:', e.message);
+                }
+
+                const samsun = sehirler.find(s => s.sehir_id === VARSAYILAN_SEHIR_ID);
+                if (!samsun) {
+                    console.warn('⚠️ Varsayılan il (Samsun) JSON\'da bulunamadı, seed atlandı.');
+                    return;
+                }
+
+                console.log('Varsayılan il (Samsun) ve ilçeleri ekleniyor...');
+                db.run(`INSERT INTO iller (sehir_id, sehir_adi, varsayilan) VALUES (?, ?, 1)`,
+                    [samsun.sehir_id, samsun.sehir_adi], function(err) {
+                        if (err) {
+                            console.error('Samsun ekleme hatası:', err);
+                            return;
+                        }
+                        const samsunId = this.lastID;
+                        const samsunIlceleri = tumIlceler.filter(i => i.sehir_id === VARSAYILAN_SEHIR_ID);
+                        const stmt = db.prepare(`INSERT INTO ilceler (ilce_id, ilce_adi, il_id) VALUES (?, ?, ?)`);
+                        samsunIlceleri.forEach(i => {
+                            stmt.run([i.ilce_id, i.ilce_adi, samsunId], (err) => {
+                                if (err) console.error('İlçe ekleme hatası:', err);
+                            });
+                        });
+                        stmt.finalize(() => {
+                            console.log(`✅ Samsun + ${samsunIlceleri.length} ilçe (Alaçam dahil) eklendi`);
+                        });
+                    });
+            });
+        });
+    });
+
     // Yıpranma Payları tablosu
     db.run(`CREATE TABLE IF NOT EXISTS yipranmaPaylari (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

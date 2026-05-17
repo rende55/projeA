@@ -82,6 +82,8 @@ const COPY_LIST = [
     'modules',
     'shared',
     'assets',
+    'sehirler.json',
+    'ilceler.json',
 ];
 
 // Build'e dahil edilecek veritabanı (temizlenmiş versiyon)

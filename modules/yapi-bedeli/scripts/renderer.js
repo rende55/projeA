@@ -14,26 +14,7 @@ let yapiGrupCache = {}; // Yapı sınıfı için mevcut grupları sakla
 let hesapDonemleriCache = []; // Hesap dönemleri
 let fotograflar = []; // Seçilen fotoğraflar
 
-// SAMSUN'un ilçeleri
-const samsunIlceleri = [
-    "Atakum",
-    "Canik",
-    "İlkadım",
-    "Bafra",
-    "Ladik",
-    "Tekkeköy",
-    "Vezirköprü",
-    "Havza",
-    "Salıpazarı",
-    "Çarşamba",
-    "Kavak",
-    "Ayvacık",
-    "Alacam",
-    "Terme",
-    "19 Mayıs",
-    "Asarcık",
-    "Yakakent"
-];
+// İlçeler veritabanından (varsayılan il -> aktif ilçeler) yüklenir.
 
 // Sayfa yüklendiğinde
 window.onload = () => {
@@ -61,20 +42,36 @@ window.onload = () => {
     // Raportör alanlarını oluştur
     updateRaportorAlanlari();
     
-    // İlçeleri doldur
-    const ilceler = [
-        'Atakum', 'Canik', 'İlkadım', 'Tekkeköy', 'Asarcık', 'Ayvacık', 'Bafra', 
-        'Çarşamba', 'Havza', 'Kavak', 'Ladik', 'Ondokuzmayıs', 'Salıpazarı', 
-        'Terme', 'Vezirköprü', 'Yakakent'
-    ];
-    
+    // İlçeleri DB'den yükle (varsayılan il -> aktif ilçeler)
     const ilceSelect = document.getElementById('ilce');
-    ilceler.forEach(ilce => {
-        const option = document.createElement('option');
-        option.value = ilce;
-        option.textContent = ilce;
-        ilceSelect.appendChild(option);
-    });
+    if (ilceSelect) {
+        const sql = `
+            SELECT ilceler.ilce_adi
+            FROM ilceler
+            INNER JOIN iller ON ilceler.il_id = iller.id
+            WHERE ilceler.aktif = 1
+              AND iller.aktif = 1
+              AND iller.id = (
+                  SELECT id FROM iller
+                  WHERE aktif = 1
+                  ORDER BY varsayilan DESC, id ASC
+                  LIMIT 1
+              )
+            ORDER BY ilceler.ilce_adi
+        `;
+        db.all(sql, [], (err, rows) => {
+            if (err) {
+                console.error('İlçeler yüklenemedi:', err);
+                return;
+            }
+            rows.forEach(row => {
+                const option = document.createElement('option');
+                option.value = row.ilce_adi;
+                option.textContent = row.ilce_adi;
+                ilceSelect.appendChild(option);
+            });
+        });
+    }
     
     // Event listener'ları ekle
     const raportorSayisiElement = document.getElementById('raportorSayisi');

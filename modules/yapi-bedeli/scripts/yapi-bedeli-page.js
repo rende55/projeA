@@ -23,12 +23,7 @@ let yapiSayaci = 0;
 // Navigation referansı
 let nav = null;
 
-// SAMSUN'un ilçeleri
-const samsunIlceleri = [
-    'Atakum', 'Canik', 'İlkadım', 'Tekkeköy', 'Asarcık', 'Ayvacık', 'Bafra', 
-    'Çarşamba', 'Havza', 'Kavak', 'Ladik', 'Ondokuzmayıs', 'Salıpazarı', 
-    'Terme', 'Vezirköprü', 'Yakakent'
-];
+// İlçeler artık veritabanından (varsayılan il -> aktif ilçeler) yüklenir.
 
 /**
  * Sayfa yüklendiğinde çağrılır
@@ -245,12 +240,38 @@ function prevTab() {
 function populateIlceler() {
     const ilceSelect = document.getElementById('yb-ilce');
     if (!ilceSelect) return;
-    
-    samsunIlceleri.forEach(ilce => {
-        const option = document.createElement('option');
-        option.value = ilce;
-        option.textContent = ilce;
-        ilceSelect.appendChild(option);
+
+    // Mevcut seçenekleri (placeholder hariç) temizle
+    Array.from(ilceSelect.querySelectorAll('option')).forEach(opt => {
+        if (opt.value !== '') opt.remove();
+    });
+
+    // Varsayılan ilin aktif ilçelerini yükle; varsayılan yoksa aktif olan ilk ili kullan
+    const sql = `
+        SELECT ilceler.ilce_adi
+        FROM ilceler
+        INNER JOIN iller ON ilceler.il_id = iller.id
+        WHERE ilceler.aktif = 1
+          AND iller.aktif = 1
+          AND iller.id = (
+              SELECT id FROM iller
+              WHERE aktif = 1
+              ORDER BY varsayilan DESC, id ASC
+              LIMIT 1
+          )
+        ORDER BY ilceler.ilce_adi
+    `;
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            console.error('İlçeler yüklenemedi:', err);
+            return;
+        }
+        rows.forEach(row => {
+            const option = document.createElement('option');
+            option.value = row.ilce_adi;
+            option.textContent = row.ilce_adi;
+            ilceSelect.appendChild(option);
+        });
     });
 }
 

@@ -6,6 +6,8 @@
 
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
+const remote = require('@electron/remote');
 const { getDbPath } = require('../../../shared/scripts/db-helper');
 
 // Veritabanı bağlantısı
@@ -17,7 +19,32 @@ let nav = null;
 
 // Global değişkenler
 let seciliDonemId = null;
+let seciliIlId = null;
+let sehirlerJsonCache = null;
+let ilcelerJsonCache = null;
 const GRUP_HARFLERI = ['A', 'B', 'C', 'D', 'E'];
+
+/**
+ * JSON dosyalarını yükle (sehirler.json + ilceler.json)
+ */
+function loadCityJsonFiles() {
+    if (sehirlerJsonCache && ilcelerJsonCache) return true;
+    try {
+        const appPath = remote.app.getAppPath();
+        const sehirlerPath = path.join(appPath, 'sehirler.json');
+        const ilcelerPath = path.join(appPath, 'ilceler.json');
+        if (fs.existsSync(sehirlerPath) && fs.existsSync(ilcelerPath)) {
+            sehirlerJsonCache = JSON.parse(fs.readFileSync(sehirlerPath, 'utf8'));
+            ilcelerJsonCache = JSON.parse(fs.readFileSync(ilcelerPath, 'utf8'));
+            return true;
+        }
+        console.warn('sehirler.json veya ilceler.json bulunamadı');
+        return false;
+    } catch (err) {
+        console.error('JSON yükleme hatası:', err);
+        return false;
+    }
+}
 
 /**
  * Sayfa yüklendiğinde çağrılır
@@ -103,12 +130,17 @@ function showTab(tabName) {
 async function loadData() {
     // Dönemleri yükle
     await loadDonemler();
-    
+
     // Raportörleri yükle
     await loadRaportorler();
-    
+
     // Kurumları yükle
     await loadKurumlar();
+
+    // İlleri yükle + JSON dropdown'ını doldur
+    loadCityJsonFiles();
+    jsonIlSelectDoldur();
+    await loadIller();
 }
 
 /**
@@ -1010,6 +1042,469 @@ function pidOranlariKaydet() {
     });
 }
 
+// ======================
+// İL / İLÇE YÖNETİMİ
+// ======================
+
+const MANUEL_IL_SENTINEL = '__manuel__';
+
+/**
+ * JSON'daki illeri dropdown'a doldur, en sonda "Aradığım il burada yok" seçeneği
+ */
+function jsonIlSelectDoldur() {
+    const select = document.getElementById('ad-jsonIlSelect');
+    if (!select) return;
+
+    select.innerHTML = '<option value="">İl Seçiniz...</option>';
+
+    if (sehirlerJsonCache && Array.isArray(sehirlerJsonCache)) {
+        const sirali = [...sehirlerJsonCache].sort((a, b) =>
+            (a.sehir_adi || '').localeCompare(b.sehir_adi || '', 'tr')
+        );
+        sirali.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.sehir_id;
+            opt.textContent = s.sehir_adi;
+            select.appendChild(opt);
+        });
+    }
+
+    // Manuel ekleme seçeneği (en alt)
+    const manuelOpt = document.createElement('option');
+    manuelOpt.value = MANUEL_IL_SENTINEL;
+    manuelOpt.textContent = '🔍 Aradığım il burada yok (manuel ekle)';
+    select.appendChild(manuelOpt);
+
+    // Seçim değişince manuel kutuyu aç/kapat
+    select.onchange = () => {
+        const manuelBox = document.getElementById('ad-manuelIlBolumu');
+        if (!manuelBox) return;
+        if (select.value === MANUEL_IL_SENTINEL) {
+            manuelBox.style.display = 'block';
+            const inp = document.getElementById('ad-manuelIlAdi');
+            if (inp) inp.focus();
+        } else {
+            manuelBox.style.display = 'none';
+        }
+    };
+}
+
+/**
+ * Yüklü illeri tabloya yükle
+ */
+function loadIller() {
+    return new Promise((resolve) => {
+        const tbody = document.getElementById('ad-illerBody');
+        if (!tbody) { resolve(); return; }
+
+        const sql = `
+            SELECT i.id, i.sehir_adi, i.aktif, i.varsayilan,
+                   (SELECT COUNT(*) FROM ilceler WHERE il_id = i.id AND aktif = 1) AS ilceSayisi
+            FROM iller i
+            ORDER BY i.varsayilan DESC, i.sehir_adi
+        `;
+        db.all(sql, [], (err, rows) => {
+            if (err) {
+                console.error('İller yüklenemedi:', err);
+                resolve();
+                return;
+            }
+
+            tbody.innerHTML = '';
+            if (rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="ad-empty-message">Henüz il yüklenmedi. Yukarıdan bir il seçip yükleyin.</td></tr>`;
+                resolve();
+                return;
+            }
+
+            rows.forEach(row => {
+                const tr = document.createElement('tr');
+                const varsayilanBtn = row.varsayilan
+                    ? `<span class="ad-status-badge active">⭐ Varsayılan</span>`
+                    : `<button class="ad-btn" style="background:#17a2b8;color:white;" onclick="window.adPage.ilVarsayilanYap(${row.id})">Varsayılan Yap</button>`;
+
+                const durumBtn = row.aktif
+                    ? `<button class="ad-btn" style="background:#ff9800;color:white;" onclick="window.adPage.ilDurumDegistir(${row.id}, false)">Pasif Yap</button>`
+                    : `<button class="ad-btn ad-btn-success" onclick="window.adPage.ilDurumDegistir(${row.id}, true)">Aktif Yap</button>`;
+
+                tr.innerHTML = `
+                    <td>${row.id}</td>
+                    <td><strong>${escapeHtml(row.sehir_adi)}</strong></td>
+                    <td>${row.ilceSayisi}</td>
+                    <td>${varsayilanBtn}</td>
+                    <td><span class="ad-status-badge ${row.aktif ? 'active' : 'inactive'}">${row.aktif ? 'Aktif' : 'Pasif'}</span></td>
+                    <td>
+                        <button class="ad-btn" style="background:#2A4C6E;color:white;" onclick="window.adPage.ilceleriniGoster(${row.id}, '${escapeJs(row.sehir_adi)}')">📍 İlçeler</button>
+                        ${durumBtn}
+                        <button class="ad-btn ad-btn-danger" onclick="window.adPage.ilSil(${row.id})">Sil</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            resolve();
+        });
+    });
+}
+
+/**
+ * Dropdown'dan seçilen ili (ve tüm ilçelerini) DB'ye yükle
+ */
+function ilYukle() {
+    const select = document.getElementById('ad-jsonIlSelect');
+    if (!select) return;
+    const secilenSehirId = select.value;
+
+    if (!secilenSehirId) {
+        if (window.showNotification) window.showNotification('Lütfen bir il seçin!', 'error');
+        return;
+    }
+
+    if (secilenSehirId === MANUEL_IL_SENTINEL) {
+        if (window.showNotification) window.showNotification('Manuel ekleme için aşağıdaki kutuyu kullanın.', 'info');
+        return;
+    }
+
+    if (!sehirlerJsonCache || !ilcelerJsonCache) {
+        if (window.showNotification) window.showNotification('İl/ilçe veri dosyaları bulunamadı!', 'error');
+        return;
+    }
+
+    const sehir = sehirlerJsonCache.find(s => s.sehir_id === secilenSehirId);
+    if (!sehir) {
+        if (window.showNotification) window.showNotification('Seçilen il bulunamadı!', 'error');
+        return;
+    }
+
+    // Aynı il zaten yüklü mü?
+    db.get(`SELECT id FROM iller WHERE sehir_adi = ?`, [sehir.sehir_adi], (err, mevcut) => {
+        if (err) {
+            if (window.showNotification) window.showNotification('Veritabanı hatası: ' + err.message, 'error');
+            return;
+        }
+        if (mevcut) {
+            if (window.showNotification) window.showNotification(`"${sehir.sehir_adi}" zaten yüklü!`, 'error');
+            return;
+        }
+
+        db.run(`INSERT INTO iller (sehir_id, sehir_adi) VALUES (?, ?)`,
+            [sehir.sehir_id, sehir.sehir_adi], function(err) {
+                if (err) {
+                    if (window.showNotification) window.showNotification('İl ekleme hatası: ' + err.message, 'error');
+                    return;
+                }
+                const yeniIlId = this.lastID;
+                const ilceler = ilcelerJsonCache.filter(i => i.sehir_id === secilenSehirId);
+
+                const stmt = db.prepare(`INSERT INTO ilceler (ilce_id, ilce_adi, il_id) VALUES (?, ?, ?)`);
+                let eklenen = 0;
+                ilceler.forEach(i => {
+                    stmt.run([i.ilce_id, i.ilce_adi, yeniIlId], (err) => {
+                        if (!err) eklenen++;
+                    });
+                });
+                stmt.finalize(() => {
+                    if (window.showNotification) {
+                        window.showNotification(`✅ ${sehir.sehir_adi} ve ${eklenen} ilçesi başarıyla yüklendi!`, 'success');
+                    }
+                    select.value = '';
+                    const manuelBox = document.getElementById('ad-manuelIlBolumu');
+                    if (manuelBox) manuelBox.style.display = 'none';
+                    loadIller();
+                });
+            });
+    });
+}
+
+/**
+ * Manuel il ekle (listede olmayan iller için)
+ */
+function manuelIlEkle() {
+    const input = document.getElementById('ad-manuelIlAdi');
+    if (!input) return;
+    const ilAdi = input.value.trim().toLocaleUpperCase('tr');
+
+    if (!ilAdi) {
+        if (window.showNotification) window.showNotification('İl adı boş olamaz!', 'error');
+        return;
+    }
+
+    db.get(`SELECT id FROM iller WHERE sehir_adi = ?`, [ilAdi], (err, mevcut) => {
+        if (err) {
+            if (window.showNotification) window.showNotification('Veritabanı hatası: ' + err.message, 'error');
+            return;
+        }
+        if (mevcut) {
+            if (window.showNotification) window.showNotification(`"${ilAdi}" zaten yüklü!`, 'error');
+            return;
+        }
+        db.run(`INSERT INTO iller (sehir_id, sehir_adi) VALUES (NULL, ?)`,
+            [ilAdi], function(err) {
+                if (err) {
+                    if (window.showNotification) window.showNotification('Ekleme hatası: ' + err.message, 'error');
+                    return;
+                }
+                if (window.showNotification) window.showNotification(`✅ "${ilAdi}" manuel olarak eklendi! Şimdi ilçelerini ekleyebilirsiniz.`, 'success');
+                input.value = '';
+                const select = document.getElementById('ad-jsonIlSelect');
+                if (select) select.value = '';
+                const manuelBox = document.getElementById('ad-manuelIlBolumu');
+                if (manuelBox) manuelBox.style.display = 'none';
+                loadIller();
+            });
+    });
+}
+
+/**
+ * İl varsayılan yap (sadece bir il varsayılan olabilir)
+ */
+function ilVarsayilanYap(id) {
+    db.serialize(() => {
+        db.run(`UPDATE iller SET varsayilan = 0`, [], (err) => {
+            if (err) {
+                if (window.showNotification) window.showNotification('Hata: ' + err.message, 'error');
+                return;
+            }
+            db.run(`UPDATE iller SET varsayilan = 1, aktif = 1, guncellemeTarihi = datetime('now','localtime') WHERE id = ?`,
+                [id], (err) => {
+                    if (err) {
+                        if (window.showNotification) window.showNotification('Hata: ' + err.message, 'error');
+                        return;
+                    }
+                    if (window.showNotification) window.showNotification('Varsayılan il güncellendi!', 'success');
+                    loadIller();
+                });
+        });
+    });
+}
+
+/**
+ * İl aktif/pasif yap
+ */
+function ilDurumDegistir(id, aktif) {
+    db.run(`UPDATE iller SET aktif = ?, guncellemeTarihi = datetime('now','localtime') WHERE id = ?`,
+        [aktif ? 1 : 0, id], (err) => {
+            if (err) {
+                if (window.showNotification) window.showNotification('Hata: ' + err.message, 'error');
+                return;
+            }
+            if (window.showNotification) window.showNotification(aktif ? 'İl aktif yapıldı' : 'İl pasif yapıldı', 'success');
+            loadIller();
+        });
+}
+
+/**
+ * İl sil (kalıcı - ilçeleri ile birlikte)
+ */
+function ilSil(id) {
+    db.get(`SELECT sehir_adi, varsayilan FROM iller WHERE id = ?`, [id], (err, row) => {
+        if (err || !row) {
+            if (window.showNotification) window.showNotification('İl bulunamadı!', 'error');
+            return;
+        }
+        if (row.varsayilan) {
+            if (window.showNotification) window.showNotification('Varsayılan il silinemez! Önce başka bir ili varsayılan yapın.', 'error');
+            return;
+        }
+        if (!confirm(`"${row.sehir_adi}" ilini ve TÜM ilçelerini kalıcı olarak silmek istediğinizden emin misiniz?\n\nBu işlem GERİ ALINAMAZ!`)) return;
+
+        db.serialize(() => {
+            db.run(`DELETE FROM ilceler WHERE il_id = ?`, [id]);
+            db.run(`DELETE FROM iller WHERE id = ?`, [id], (err) => {
+                if (err) {
+                    if (window.showNotification) window.showNotification('Silme hatası: ' + err.message, 'error');
+                    return;
+                }
+                if (window.showNotification) window.showNotification(`"${row.sehir_adi}" silindi!`, 'success');
+                if (seciliIlId === id) ilceYonetiminiKapat();
+                loadIller();
+            });
+        });
+    });
+}
+
+/**
+ * Seçilen ilin ilçelerini alt panelde göster
+ */
+function ilceleriniGoster(ilId, ilAdi) {
+    seciliIlId = ilId;
+    const bolum = document.getElementById('ad-ilceYonetimBolumu');
+    const baslik = document.getElementById('ad-seciliIlAdi');
+    if (baslik) baslik.textContent = ilAdi;
+    if (bolum) {
+        bolum.style.display = 'block';
+        bolum.scrollIntoView({ behavior: 'smooth' });
+    }
+    loadIlceler();
+}
+
+/**
+ * Seçili ilin ilçelerini tabloya yükle
+ */
+function loadIlceler() {
+    if (!seciliIlId) return;
+    const tbody = document.getElementById('ad-ilcelerBody');
+    if (!tbody) return;
+
+    db.all(`SELECT * FROM ilceler WHERE il_id = ? ORDER BY ilce_adi`, [seciliIlId], (err, rows) => {
+        if (err) {
+            console.error('İlçeler yüklenemedi:', err);
+            return;
+        }
+        tbody.innerHTML = '';
+        if (rows.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="4" class="ad-empty-message">Bu ile henüz ilçe eklenmedi.</td></tr>`;
+            return;
+        }
+        rows.forEach(row => {
+            const tr = document.createElement('tr');
+            const durumBtn = row.aktif
+                ? `<button class="ad-btn" style="background:#ff9800;color:white;" onclick="window.adPage.ilceDurumDegistir(${row.id}, false)">Pasif Yap</button>`
+                : `<button class="ad-btn ad-btn-success" onclick="window.adPage.ilceDurumDegistir(${row.id}, true)">Aktif Yap</button>`;
+            tr.innerHTML = `
+                <td>${row.id}</td>
+                <td><input type="text" value="${escapeHtml(row.ilce_adi)}" data-id="${row.id}" class="ad-ilce-edit" style="width: 100%; padding: 6px; border: 1px solid #ddd; border-radius: 4px;"></td>
+                <td><span class="ad-status-badge ${row.aktif ? 'active' : 'inactive'}">${row.aktif ? 'Aktif' : 'Pasif'}</span></td>
+                <td>
+                    <button class="ad-btn ad-btn-success" onclick="window.adPage.ilceGuncelle(${row.id})">💾 Kaydet</button>
+                    ${durumBtn}
+                    <button class="ad-btn ad-btn-danger" onclick="window.adPage.ilceSil(${row.id})">Sil</button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    });
+}
+
+/**
+ * Seçili ile yeni ilçe ekle
+ */
+function ilceEkle() {
+    if (!seciliIlId) return;
+    const input = document.getElementById('ad-yeniIlceAdi');
+    if (!input) return;
+    const ilceAdi = input.value.trim().toLocaleUpperCase('tr');
+
+    if (!ilceAdi) {
+        if (window.showNotification) window.showNotification('İlçe adı boş olamaz!', 'error');
+        return;
+    }
+
+    db.get(`SELECT id FROM ilceler WHERE il_id = ? AND ilce_adi = ?`,
+        [seciliIlId, ilceAdi], (err, mevcut) => {
+            if (err) {
+                if (window.showNotification) window.showNotification('Veritabanı hatası: ' + err.message, 'error');
+                return;
+            }
+            if (mevcut) {
+                if (window.showNotification) window.showNotification(`"${ilceAdi}" bu ilde zaten var!`, 'error');
+                return;
+            }
+            db.run(`INSERT INTO ilceler (ilce_id, ilce_adi, il_id) VALUES (NULL, ?, ?)`,
+                [ilceAdi, seciliIlId], function(err) {
+                    if (err) {
+                        if (window.showNotification) window.showNotification('Ekleme hatası: ' + err.message, 'error');
+                        return;
+                    }
+                    if (window.showNotification) window.showNotification(`✅ "${ilceAdi}" eklendi!`, 'success');
+                    input.value = '';
+                    loadIlceler();
+                    loadIller(); // İlçe sayısı güncellensin
+                });
+        });
+}
+
+/**
+ * İlçe adını güncelle
+ */
+function ilceGuncelle(id) {
+    const input = document.querySelector(`.ad-ilce-edit[data-id="${id}"]`);
+    if (!input) return;
+    const yeniAd = input.value.trim().toLocaleUpperCase('tr');
+
+    if (!yeniAd) {
+        if (window.showNotification) window.showNotification('İlçe adı boş olamaz!', 'error');
+        return;
+    }
+
+    db.run(`UPDATE ilceler SET ilce_adi = ?, guncellemeTarihi = datetime('now','localtime') WHERE id = ?`,
+        [yeniAd, id], (err) => {
+            if (err) {
+                if (window.showNotification) window.showNotification('Güncelleme hatası: ' + err.message, 'error');
+                return;
+            }
+            if (window.showNotification) window.showNotification(`✅ İlçe güncellendi: ${yeniAd}`, 'success');
+            loadIlceler();
+        });
+}
+
+/**
+ * İlçe aktif/pasif yap
+ */
+function ilceDurumDegistir(id, aktif) {
+    db.run(`UPDATE ilceler SET aktif = ?, guncellemeTarihi = datetime('now','localtime') WHERE id = ?`,
+        [aktif ? 1 : 0, id], (err) => {
+            if (err) {
+                if (window.showNotification) window.showNotification('Hata: ' + err.message, 'error');
+                return;
+            }
+            if (window.showNotification) window.showNotification(aktif ? 'İlçe aktif yapıldı' : 'İlçe pasif yapıldı', 'success');
+            loadIlceler();
+            loadIller();
+        });
+}
+
+/**
+ * İlçe sil (kalıcı)
+ */
+function ilceSil(id) {
+    db.get(`SELECT ilce_adi FROM ilceler WHERE id = ?`, [id], (err, row) => {
+        if (err || !row) {
+            if (window.showNotification) window.showNotification('İlçe bulunamadı!', 'error');
+            return;
+        }
+        if (!confirm(`"${row.ilce_adi}" ilçesini kalıcı olarak silmek istediğinizden emin misiniz?\n\nBu işlem GERİ ALINAMAZ!`)) return;
+        db.run(`DELETE FROM ilceler WHERE id = ?`, [id], (err) => {
+            if (err) {
+                if (window.showNotification) window.showNotification('Silme hatası: ' + err.message, 'error');
+                return;
+            }
+            if (window.showNotification) window.showNotification(`"${row.ilce_adi}" silindi!`, 'success');
+            loadIlceler();
+            loadIller();
+        });
+    });
+}
+
+/**
+ * İlçe yönetim panelini kapat
+ */
+function ilceYonetiminiKapat() {
+    seciliIlId = null;
+    const bolum = document.getElementById('ad-ilceYonetimBolumu');
+    if (bolum) bolum.style.display = 'none';
+}
+
+/**
+ * HTML escape (XSS koruması)
+ */
+function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
+
+/**
+ * JS string escape (inline onclick için)
+ */
+function escapeJs(str) {
+    if (str == null) return '';
+    return String(str).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
 // Global erişim için
 window.adPage = {
     yeniDonemEkle,
@@ -1029,7 +1524,19 @@ window.adPage = {
     kurumAktifYap,
     kurumSil,
     pidOranlariYukle,
-    pidOranlariKaydet
+    pidOranlariKaydet,
+    // İl / İlçe
+    ilYukle,
+    manuelIlEkle,
+    ilVarsayilanYap,
+    ilDurumDegistir,
+    ilSil,
+    ilceleriniGoster,
+    ilceEkle,
+    ilceGuncelle,
+    ilceDurumDegistir,
+    ilceSil,
+    ilceYonetiminiKapat
 };
 
 // Export
