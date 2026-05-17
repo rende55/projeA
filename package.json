@@ -1,7 +1,7 @@
 {
   "name": "proje-a",
   "productName": "Proje A",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Modüler yapıda proje geliştirme ve yönetim platformu - Yapı Bedeli, Proje Bedeli, Mevzuat ve Hesaplama modülleri",
   "author": "Proje Geliştirme Birimi",
   "main": "main.js",

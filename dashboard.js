@@ -13,7 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Modül kartlarını ayarla
     setupModuleCards();
-    
+
+    // Versiyon bilgisi modalını kur
+    setupVersionModal();
+
     // CSS animasyonlarını ekle
     addAnimationStyles();
     
@@ -35,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
   • Alt+← - Geri git
   • Alt+Home - Ana sayfaya git
 
-Versiyon: 2.0.0
+Versiyon: 2.1.0
 `);
 });
 
@@ -183,3 +186,39 @@ function addAnimationStyles() {
 
 // Global erişim için
 window.showNotification = showNotification;
+
+// ===== VERSIYON BİLGİ MODALI =====
+function setupVersionModal() {
+    const overlay = document.getElementById('versionModalOverlay');
+    const openBtn = document.getElementById('versionInfoBtn');
+    const closeBtn = document.getElementById('versionModalClose');
+    const okBtn = document.getElementById('versionModalOkBtn');
+
+    if (!overlay || !openBtn) return;
+
+    const open = () => {
+        overlay.classList.add('active');
+        document.addEventListener('keydown', handleEsc);
+    };
+
+    const close = () => {
+        overlay.classList.remove('active');
+        document.removeEventListener('keydown', handleEsc);
+    };
+
+    const handleEsc = (e) => {
+        if (e.key === 'Escape') {
+            e.preventDefault();
+            close();
+        }
+    };
+
+    openBtn.addEventListener('click', open);
+    closeBtn?.addEventListener('click', close);
+    okBtn?.addEventListener('click', close);
+
+    // Overlay'in kendisine (modal dışı tıklama) tıklayınca kapat
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) close();
+    });
+}

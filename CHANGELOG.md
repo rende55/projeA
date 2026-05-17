@@ -1,5 +1,34 @@
 # CHANGELOG
 
+## [18.05.2026 - v2.1.0] - Proje Bedeli Rapor Editörü + Versiyon Modalı
+
+### Yeni Özellik
+- **Proje Bedeli Rapor Editörü**: Kayıtlı raporlar artık Yapı Bedeli modülündeki gibi sonradan açılıp düzenlenebiliyor (alan, birim maliyet, branş bedelleri, hizmet bölümleri ve imzacılar üzerinde canlı hesaplamalı düzenleme)
+- **Doğrudan Word Aktarımı**: Kayıtlı Raporlar listesinde `📥 Word` düğmesi ile rapor açılmadan tek tıkla `.docx` üretilip `raporlar/` klasörüne kaydedilip otomatik açılır
+- **Versiyon Bilgi Modalı**: Dashboard footer'ındaki sürüm yazısı tıklanabilir hale geldi; tıklayınca o sürümün yenilikleri detaylı bir modalda gösteriliyor (ESC veya dışına tıklayarak kapanır)
+
+### Geliştirmeler
+- `pb-raporlar` sayfasındaki `Görüntüle` alert'i kaldırıldı; yerine `📝 Düzenle` / `📥 Word` / `🗑️ Sil` aksiyon düğmeleri eklendi
+- Editörde `Ctrl+S` ile hızlı kayıt, `ESC` ile kaydedilmemiş değişiklik uyarısı
+- Branş tablosunda alan değişikliklerinde otomatik yeniden hesaplama (toplam maliyet → branş bedelleri → genel toplam)
+
+### Veritabanı
+- `projeBedeliRaporlari` tablosuna `raportorSayisi (INTEGER)`, `raportorAdi (TEXT)`, `raportorUnvani (TEXT)` kolonları eklendi (migration otomatik çalışır, mevcut veriler korunur)
+- `raporKaydet()` artık imzacı bilgilerini de yazar
+
+### Etkilenen Dosyalar
+- `main.js` (migration + CREATE TABLE güncellemesi)
+- `modules/proje-bedeli/views/pb-editor-content.html` (YENİ)
+- `modules/proje-bedeli/scripts/pb-editor-page.js` (YENİ)
+- `modules/proje-bedeli/scripts/pb-raporlar-page.js` (Düzenle/Word/Sil aksiyonları)
+- `modules/proje-bedeli/scripts/proje-bedeli-page.js` (raporKaydet imzacı desteği)
+- `shared/scripts/navigation.js` (`pb-editor` route'u)
+- `dashboard.html` (versiyon modalı + tıklanabilir versiyon yazısı)
+- `dashboard.js` (modal aç/kapat mantığı)
+- `package.json` (2.0.0 → 2.1.0)
+
+---
+
 ## [04.03.2026 - 01:15] - Çoklu Parsel: Taşınmaz Bilgileri Tablosu Kaldırıldı
 
 ### Yapılan İşlemler

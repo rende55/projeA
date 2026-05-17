@@ -2,7 +2,7 @@
 
 > Modüler yapıda proje geliştirme ve yönetim platformu
 
-[![Version](https://img.shields.io/badge/version-2.0.0-blue.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](package.json)
 [![Electron](https://img.shields.io/badge/electron-34.0.1-brightgreen.svg)](https://electronjs.org/)
 [![Node](https://img.shields.io/badge/node-%3E%3D14.0.0-green.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
