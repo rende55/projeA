@@ -67,6 +67,12 @@ class NavigationManager {
                 icon: '📋',
                 template: 'modules/proje-bedeli/views/pb-raporlar-content.html',
                 script: 'modules/proje-bedeli/scripts/pb-raporlar-page.js'
+            },
+            'pb-editor': {
+                title: 'Proje Bedeli Editörü',
+                icon: '📝',
+                template: 'modules/proje-bedeli/views/pb-editor-content.html',
+                script: 'modules/proje-bedeli/scripts/pb-editor-page.js'
             }
         };
     }

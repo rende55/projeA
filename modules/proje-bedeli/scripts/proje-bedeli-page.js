@@ -834,10 +834,25 @@ function raporKaydet() {
         genelToplamBedel += hizmetBedeli;
     });
     
+    // İmzacı bilgilerini topla
+    const raportorSayisi = parseInt(pbContainer.querySelector('#pb-raportorSayisi')?.value) || 1;
+    const raportorAdlari = [];
+    const raportorUnvanlari = [];
+    for (let i = 1; i <= raportorSayisi; i++) {
+        const ad = pbContainer.querySelector(`#pb-raportorAdi${i}`)?.value?.trim() || '';
+        const unvan = pbContainer.querySelector(`#pb-raportorUnvani${i}`)?.value?.trim() || '';
+        if (ad) {
+            raportorAdlari.push(ad);
+            raportorUnvanlari.push(unvan);
+        }
+    }
+    const raportorAdiStr = raportorAdlari.join(', ');
+    const raportorUnvaniStr = raportorUnvanlari.join(', ');
+
     // Rapor numarası oluştur
     const now = new Date();
     const raporNo = `PB-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}${String(now.getSeconds()).padStart(2, '0')}`;
-    
+
     // Veritabanına kaydet
     const sql = `INSERT INTO projeBedeliRaporlari (
         raporNo, isAdi, toplamInsaatAlani, hesapYili, yapiSinifi, yapiGrubu, birimMaliyet, toplamMaliyet,
@@ -845,16 +860,16 @@ function raporKaydet() {
         insSinif, insPidOrani, insProjeBedeli, insHizmetOrani, insHizmetBedeli, insHizmetBolumleri,
         mekSinif, mekPidOrani, mekProjeBedeli, mekHizmetOrani, mekHizmetBedeli, mekHizmetBolumleri,
         elkSinif, elkPidOrani, elkProjeBedeli, elkHizmetOrani, elkHizmetBedeli, elkHizmetBolumleri,
-        genelToplamBedel
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
-    
+        genelToplamBedel, raportorSayisi, raportorAdi, raportorUnvani
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
     const params = [
         raporNo, isAdi, toplamInsaatAlani, hesapYili, yapiSinifi, yapiGrubu, birimMaliyet, toplamMaliyet,
         bransVerileri.mim.sinif, bransVerileri.mim.pidOrani, bransVerileri.mim.projeBedeli, bransVerileri.mim.hizmetOrani, bransVerileri.mim.hizmetBedeli, bransVerileri.mim.hizmetBolumleri,
         bransVerileri.ins.sinif, bransVerileri.ins.pidOrani, bransVerileri.ins.projeBedeli, bransVerileri.ins.hizmetOrani, bransVerileri.ins.hizmetBedeli, bransVerileri.ins.hizmetBolumleri,
         bransVerileri.mek.sinif, bransVerileri.mek.pidOrani, bransVerileri.mek.projeBedeli, bransVerileri.mek.hizmetOrani, bransVerileri.mek.hizmetBedeli, bransVerileri.mek.hizmetBolumleri,
         bransVerileri.elk.sinif, bransVerileri.elk.pidOrani, bransVerileri.elk.projeBedeli, bransVerileri.elk.hizmetOrani, bransVerileri.elk.hizmetBedeli, bransVerileri.elk.hizmetBolumleri,
-        genelToplamBedel
+        genelToplamBedel, raportorSayisi, raportorAdiStr, raportorUnvaniStr
     ];
     
     // Önce tabloyu oluştur (yoksa)
@@ -893,6 +908,9 @@ function raporKaydet() {
         elkHizmetBedeli REAL,
         elkHizmetBolumleri TEXT,
         genelToplamBedel REAL,
+        raportorSayisi INTEGER DEFAULT 1,
+        raportorAdi TEXT,
+        raportorUnvani TEXT,
         aciklama TEXT,
         aktif INTEGER DEFAULT 1,
         olusturmaTarihi TEXT DEFAULT (datetime('now','localtime')),

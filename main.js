@@ -151,7 +151,7 @@ function migrateDatabase() {
         
         if (columns && columns.length > 0) {
             const donemKolonuVar = columns.some(col => col.name === 'donem');
-            
+
             if (!donemKolonuVar) {
                 console.log('⚠️ Eski veritabanı yapısı tespit edildi. Güncelleniyor...');
                 
@@ -206,6 +206,27 @@ function migrateDatabase() {
                 console.log('✅ Veritabanı yapısı güncel.');
             }
         }
+    });
+
+    // 3. projeBedeliRaporlari tablosuna imzacı kolonları var mı kontrol et
+    db.all(`PRAGMA table_info(projeBedeliRaporlari)`, [], (err, columns) => {
+        if (err || !columns || columns.length === 0) return;
+
+        const yeniKolonlar = [
+            { name: 'raportorSayisi', sql: 'INTEGER DEFAULT 1' },
+            { name: 'raportorAdi', sql: 'TEXT' },
+            { name: 'raportorUnvani', sql: 'TEXT' }
+        ];
+
+        yeniKolonlar.forEach(({ name, sql }) => {
+            const varMi = columns.some(col => col.name === name);
+            if (!varMi) {
+                db.run(`ALTER TABLE projeBedeliRaporlari ADD COLUMN ${name} ${sql}`, (e) => {
+                    if (e) console.error(`projeBedeliRaporlari.${name} eklenemedi:`, e);
+                    else console.log(`✅ projeBedeliRaporlari tablosuna ${name} kolonu eklendi.`);
+                });
+            }
+        });
     });
 }
 
@@ -783,7 +804,12 @@ function createDatabase() {
         
         -- Toplam
         genelToplamBedel REAL,
-        
+
+        -- İmzacılar
+        raportorSayisi INTEGER DEFAULT 1,
+        raportorAdi TEXT,
+        raportorUnvani TEXT,
+
         -- Meta
         aciklama TEXT,
         aktif INTEGER DEFAULT 1,

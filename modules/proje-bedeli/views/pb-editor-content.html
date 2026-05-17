@@ -1,0 +1,552 @@
+<!-- Proje Bedeli Rapor Editörü - İçerik -->
+<style>
+    .pbed-wrapper {
+        height: calc(100vh - 52px);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        background-color: #E8ECF2;
+    }
+
+    .pbed-header {
+        background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%);
+        color: white;
+        padding: 15px 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .pbed-header h1 {
+        font-size: 1.4em;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .pbed-header-info {
+        font-size: 0.9em;
+        opacity: 0.95;
+    }
+
+    .pbed-header-info .raporNo {
+        background: rgba(255,255,255,0.15);
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-family: monospace;
+        margin-left: 8px;
+    }
+
+    .pbed-main-content {
+        flex: 1;
+        padding: 20px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .pbed-editor-container {
+        flex: 1;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .pbed-editor-toolbar {
+        padding: 12px 20px;
+        background: #F8FAFC;
+        border-bottom: 1px solid #E2E8F0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .pbed-editor-toolbar h2 {
+        font-size: 1.1em;
+        color: #1E3A5F;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .pbed-editor-status {
+        font-size: 0.85em;
+        color: #6c757d;
+        font-weight: 500;
+    }
+    .pbed-editor-status.modified { color: #dc2626; }
+    .pbed-editor-status.saved { color: #16a34a; }
+
+    .pbed-editor-area {
+        flex: 1;
+        padding: 25px 30px;
+        overflow-y: auto;
+        background: #FAFBFC;
+    }
+
+    .pbed-editor-content {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: white;
+        padding: 30px 35px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.06);
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+    }
+
+    /* Sections */
+    .pbed-section {
+        margin-bottom: 28px;
+    }
+
+    .pbed-section-title {
+        font-size: 14px;
+        font-weight: 700;
+        color: #1E3A5F;
+        margin: 0 0 12px 0;
+        padding-bottom: 8px;
+        border-bottom: 2px solid #E2E8F0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Form grid */
+    .pbed-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 14px 18px;
+    }
+
+    .pbed-form-grid.full {
+        grid-template-columns: 1fr;
+    }
+
+    .pbed-form-grid.triple {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
+    .pbed-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .pbed-form-group label {
+        font-size: 12px;
+        font-weight: 600;
+        color: #475569;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+
+    .pbed-form-group input,
+    .pbed-form-group select {
+        padding: 9px 12px;
+        border: 1.5px solid #CBD5E1;
+        border-radius: 6px;
+        font-size: 14px;
+        font-family: inherit;
+        background: white;
+        transition: all 0.15s;
+        color: #0F172A;
+    }
+
+    .pbed-form-group input:focus,
+    .pbed-form-group select:focus {
+        border-color: #2C5282;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(44, 82, 130, 0.12);
+    }
+
+    .pbed-form-group input.readonly,
+    .pbed-form-group input[readonly] {
+        background: #F1F5F9;
+        color: #475569;
+        font-weight: 600;
+    }
+
+    .pbed-form-group input.calculated {
+        background: #ECFDF5;
+        color: #047857;
+        font-weight: 700;
+        border-color: #A7F3D0;
+    }
+
+    /* Branş tablosu */
+    .pbed-brans-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+    }
+
+    .pbed-brans-table thead {
+        background: linear-gradient(135deg, #4A5568 0%, #2D3748 100%);
+    }
+
+    .pbed-brans-table thead th {
+        color: white;
+        padding: 12px 10px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 12px;
+        border: 1px solid #2D3748;
+    }
+
+    .pbed-brans-table tbody td {
+        padding: 8px 10px;
+        text-align: center;
+        border: 1px solid #E2E8F0;
+        background: white;
+    }
+
+    .pbed-brans-table tbody td.brans-name {
+        font-weight: 600;
+        text-align: left;
+        padding-left: 14px;
+        color: #1E3A5F;
+    }
+
+    .pbed-brans-table tbody td.bedel {
+        font-weight: 700;
+        color: #047857;
+        background: #ECFDF5;
+        text-align: right;
+        padding-right: 14px;
+        font-family: 'Consolas', monospace;
+    }
+
+    .pbed-brans-table tbody input[type="number"],
+    .pbed-brans-table tbody input[type="text"] {
+        width: 100%;
+        padding: 5px 8px;
+        border: 1px solid #CBD5E1;
+        border-radius: 4px;
+        font-size: 13px;
+        text-align: center;
+        font-family: inherit;
+        background: white;
+    }
+
+    .pbed-brans-table tbody input:focus {
+        border-color: #2C5282;
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(44, 82, 130, 0.15);
+    }
+
+    .pbed-brans-table tfoot tr {
+        background: linear-gradient(135deg, #1E3A5F 0%, #2C5282 100%);
+    }
+
+    .pbed-brans-table tfoot td {
+        padding: 14px 12px;
+        color: white;
+        font-weight: 700;
+        font-size: 14px;
+        border: 1px solid #1E3A5F;
+    }
+
+    .pbed-brans-table tfoot td.toplam-label {
+        text-align: right;
+    }
+
+    .pbed-brans-table tfoot td.toplam-bedel {
+        text-align: right;
+        font-size: 16px;
+        padding-right: 14px;
+        font-family: 'Consolas', monospace;
+    }
+
+    /* Hizmet bölümleri editör */
+    .pbed-hizmet-bolumleri-wrap {
+        margin-top: 14px;
+        padding: 12px 14px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+    }
+
+    .pbed-hizmet-bolumleri-wrap h4 {
+        font-size: 13px;
+        color: #475569;
+        margin: 0 0 10px 0;
+        font-weight: 600;
+    }
+
+    .pbed-hizmet-bolumleri-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 8px;
+    }
+
+    .pbed-hizmet-bolum-card {
+        background: white;
+        border: 1.5px solid #CBD5E1;
+        border-radius: 6px;
+        padding: 8px 10px;
+        cursor: pointer;
+        transition: all 0.15s;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+
+    .pbed-hizmet-bolum-card:hover {
+        border-color: #94A3B8;
+        background: #F8FAFC;
+    }
+
+    .pbed-hizmet-bolum-card.selected {
+        border-color: #2C5282;
+        background: #EFF6FF;
+    }
+
+    .pbed-hizmet-bolum-card .ad {
+        font-size: 12px;
+        font-weight: 600;
+        color: #0F172A;
+    }
+
+    .pbed-hizmet-bolum-card .oran {
+        font-size: 11px;
+        color: #2C5282;
+        font-weight: 700;
+    }
+
+    .pbed-hizmet-bolum-card input[type="checkbox"] {
+        display: none;
+    }
+
+    /* İmzacılar */
+    .pbed-imzacilar-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .pbed-imzaci-card {
+        padding: 12px;
+        background: #F8FAFC;
+        border: 1px solid #E2E8F0;
+        border-radius: 8px;
+    }
+
+    .pbed-imzaci-card h5 {
+        margin: 0 0 8px 0;
+        font-size: 12px;
+        color: #475569;
+        font-weight: 700;
+        text-transform: uppercase;
+    }
+
+    /* Footer */
+    .pbed-footer {
+        background: white;
+        padding: 14px 25px;
+        border-top: 2px solid #E2E8F0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
+    }
+
+    .pbed-footer-group {
+        display: flex;
+        gap: 10px;
+    }
+
+    .pbed-footer button {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-family: inherit;
+    }
+
+    .pbed-btn-save { background: #16a34a; color: white; }
+    .pbed-btn-save:hover { background: #15803d; }
+
+    .pbed-btn-word { background: #2b579a; color: white; }
+    .pbed-btn-word:hover { background: #1e3f6f; }
+
+    .pbed-btn-recalc { background: #0891b2; color: white; }
+    .pbed-btn-recalc:hover { background: #0e7490; }
+
+    .pbed-btn-back { background: #6b7280; color: white; }
+    .pbed-btn-back:hover { background: #4b5563; }
+
+    /* Loading */
+    .pbed-loading-overlay {
+        position: absolute;
+        top: 0; left: 0; right: 0; bottom: 0;
+        background: rgba(255,255,255,0.95);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        flex-direction: column;
+        gap: 15px;
+    }
+    .pbed-loading-overlay.hidden { display: none; }
+    .pbed-spinner {
+        width: 50px; height: 50px;
+        border: 4px solid #E2E8F0;
+        border-top: 4px solid #2C5282;
+        border-radius: 50%;
+        animation: pbedSpin 0.9s linear infinite;
+    }
+    @keyframes pbedSpin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 900px) {
+        .pbed-form-grid,
+        .pbed-form-grid.triple,
+        .pbed-imzacilar-grid {
+            grid-template-columns: 1fr;
+        }
+        .pbed-hizmet-bolumleri-grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+</style>
+
+<div class="pbed-wrapper">
+    <div class="pbed-loading-overlay" id="pbed-loadingOverlay">
+        <div class="pbed-spinner"></div>
+        <span>Rapor yükleniyor...</span>
+    </div>
+
+    <div class="pbed-header">
+        <h1>📝 Proje Bedeli Rapor Editörü</h1>
+        <div class="pbed-header-info">
+            Rapor No: <span class="raporNo" id="pbed-raporNo">-</span>
+        </div>
+    </div>
+
+    <div class="pbed-main-content">
+        <div class="pbed-editor-container">
+            <div class="pbed-editor-toolbar">
+                <h2>📄 Rapor İçeriği</h2>
+                <span class="pbed-editor-status saved" id="pbed-status">✓ Kaydedildi</span>
+            </div>
+
+            <div class="pbed-editor-area">
+                <div class="pbed-editor-content">
+
+                    <!-- Genel Bilgiler -->
+                    <div class="pbed-section">
+                        <h3 class="pbed-section-title">📋 Genel Bilgiler</h3>
+                        <div class="pbed-form-grid full">
+                            <div class="pbed-form-group">
+                                <label for="pbed-isAdi">İşin Adı</label>
+                                <input type="text" id="pbed-isAdi">
+                            </div>
+                        </div>
+                        <div class="pbed-form-grid triple" style="margin-top: 14px;">
+                            <div class="pbed-form-group">
+                                <label for="pbed-toplamInsaatAlani">Toplam İnşaat Alanı (m²)</label>
+                                <input type="number" id="pbed-toplamInsaatAlani" step="0.01" min="0">
+                            </div>
+                            <div class="pbed-form-group">
+                                <label for="pbed-hesapYili">Hesap Yılı</label>
+                                <input type="text" id="pbed-hesapYili">
+                            </div>
+                            <div class="pbed-form-group">
+                                <label for="pbed-yapiSinifGrup">Yapı Sınıfı / Grubu</label>
+                                <input type="text" id="pbed-yapiSinifGrup" placeholder="Örn: 3 / B">
+                            </div>
+                        </div>
+                        <div class="pbed-form-grid" style="margin-top: 14px;">
+                            <div class="pbed-form-group">
+                                <label for="pbed-birimMaliyet">Birim Maliyet (TL/m²)</label>
+                                <input type="number" id="pbed-birimMaliyet" step="0.01" min="0">
+                            </div>
+                            <div class="pbed-form-group">
+                                <label for="pbed-toplamMaliyet">Toplam Yapı Maliyeti (TL)</label>
+                                <input type="number" id="pbed-toplamMaliyet" class="calculated" step="0.01" min="0" readonly>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Branş Bedelleri -->
+                    <div class="pbed-section">
+                        <h3 class="pbed-section-title">🏗️ Branş Bedelleri (Düzenlenebilir - Değişiklikler otomatik hesaplanır)</h3>
+                        <table class="pbed-brans-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 130px;">Branş</th>
+                                    <th style="width: 110px;">Hizmet Dalı<br>Katsayısı (%)</th>
+                                    <th style="width: 110px;">Hizmet Sınıfı</th>
+                                    <th style="width: 110px;">PID Oranı (%)</th>
+                                    <th style="width: 110px;">Hizmet Bölümü<br>Oranı (%)</th>
+                                    <th>Seçili Hizmet Bedeli (TL)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="pbed-bransTbody">
+                                <!-- 4 branş satırı dinamik dolacak -->
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="5" class="toplam-label">TOPLAM HİZMET BEDELİ</td>
+                                    <td class="toplam-bedel" id="pbed-genelToplam">0,00 TL</td>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        <!-- Hizmet Bölümleri Düzenleyici (sınırlı) -->
+                        <div class="pbed-hizmet-bolumleri-wrap">
+                            <h4>📋 Hizmet Bölümleri (Branş başına oran toplamı tabloda otomatik güncellenir)</h4>
+                            <div id="pbed-hizmetBolumleriContainer" style="display: flex; flex-direction: column; gap: 14px;">
+                                <!-- 4 branş için bölümler buraya gelir -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- İmzacılar -->
+                    <div class="pbed-section">
+                        <h3 class="pbed-section-title">✍️ İmzacılar</h3>
+                        <div class="pbed-imzacilar-grid" id="pbed-imzacilarGrid">
+                            <!-- 4 imzacı slotu -->
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="pbed-footer">
+        <div class="pbed-footer-group">
+            <button class="pbed-btn-save" id="pbed-kaydetBtn" title="Değişiklikleri Kaydet (Ctrl+S)">
+                💾 Kaydet
+            </button>
+            <button class="pbed-btn-recalc" id="pbed-recalcBtn" title="Tablodaki bedelleri yeniden hesapla">
+                🧮 Yeniden Hesapla
+            </button>
+        </div>
+        <div class="pbed-footer-group">
+            <button class="pbed-btn-word" id="pbed-wordBtn" title="Word Dosyası Olarak İndir">
+                📥 Word İndir
+            </button>
+            <button class="pbed-btn-back" id="pbed-kapatBtn" title="Geri Dön (ESC)">
+                ← Geri
+            </button>
+        </div>
+    </div>
+</div>
