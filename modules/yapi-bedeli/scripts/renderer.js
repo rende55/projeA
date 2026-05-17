@@ -954,7 +954,19 @@ function yapiFormOlustur(yapi) {
         <div class="form-row">
             <div class="form-group">
                 <label>Yapı Yaşı *</label>
-                <input type="number" id="yapiYasi_${yapi.id}" placeholder="Yıl olarak" required onchange="updateYipranmaPayYapi(${yapi.id})">
+                <select id="yapiYasi_${yapi.id}" required onchange="updateYipranmaPayYapi(${yapi.id})">
+                    <option value="">Seçiniz...</option>
+                    <option value="3">0-3 yaş</option>
+                    <option value="5">4-5 yaş</option>
+                    <option value="10">6-10 yaş</option>
+                    <option value="15">11-15 yaş</option>
+                    <option value="20">16-20 yaş</option>
+                    <option value="30">21-30 yaş</option>
+                    <option value="40">31-40 yaş</option>
+                    <option value="50">41-50 yaş</option>
+                    <option value="75">51-75 yaş</option>
+                    <option value="76">75 üstü yaş</option>
+                </select>
             </div>
             <div class="form-group">
                 <label>Yapı Sınıfı *</label>

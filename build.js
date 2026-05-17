@@ -84,8 +84,14 @@ const COPY_LIST = [
     'assets',
 ];
 
-// Build'e dahil edilecek veritabanı (temizlenmiş versiyon)
-const BUILD_DB = 'raporlar_build.db';
+// Build'e dahil edilecek tohum (seed) veritabanı.
+// Öncelik sırası:
+//   1) raporlar_build.db varsa onu kullan (kasıtlı temizlenmiş sürüm)
+//   2) yoksa mevcut raporlar.db'yi kullan (geliştirme verileri)
+// Build sırasında --use-dev-db verilirse her durumda raporlar.db kullanılır.
+const FORCE_DEV_DB = process.argv.includes('--use-dev-db');
+const BUILD_DB_PREFERRED = 'raporlar_build.db';
+const BUILD_DB_FALLBACK = 'raporlar.db';
 
 // Main process dosyaları (target: node)
 const MAIN_JS_FILES = [
@@ -112,11 +118,45 @@ const RENDERER_JS_FILES = [
     'modules/proje-bedeli/scripts/pb-reportGenerator.js',
 ];
 
+// Klasörü temizle. build-temp/node_modules junction olabilir; junction içine
+// inip silmemek için önce algılayıp sadece bağlantıyı kaldırıyoruz.
 function cleanDir(dir) {
     if (fs.existsSync(dir)) {
-        fs.rmSync(dir, { recursive: true, force: true });
+        for (const item of fs.readdirSync(dir)) {
+            const itemPath = path.join(dir, item);
+            try {
+                const lst = fs.lstatSync(itemPath);
+                if (lst.isSymbolicLink()) {
+                    fs.unlinkSync(itemPath);
+                    continue;
+                }
+            } catch (_) { /* yoksa zaten silinmiş */ }
+            fs.rmSync(itemPath, { recursive: true, force: true });
+        }
+    } else {
+        fs.mkdirSync(dir, { recursive: true });
     }
-    fs.mkdirSync(dir, { recursive: true });
+}
+
+// build-temp/node_modules için ana projedeki node_modules'a Windows junction kur.
+// Amaç: electron-builder'ın build-temp altında baştan `npm install` + native rebuild
+// yapmasını engellemek (sqlite3 zaten doğru electron sürümü için derlenmiş durumda).
+function linkNodeModules() {
+    const target = path.join(ROOT, 'node_modules');
+    const linkPath = path.join(BUILD_TEMP, 'node_modules');
+    if (!fs.existsSync(target)) {
+        console.error('  ⚠️ Ana projede node_modules bulunamadı, junction kurulamadı');
+        return false;
+    }
+    if (fs.existsSync(linkPath)) return true;
+    try {
+        fs.symlinkSync(target, linkPath, 'junction');
+        console.log('  node_modules junction oluşturuldu →', target);
+        return true;
+    } catch (err) {
+        console.error('  ⚠️ node_modules junction hatası:', err.message);
+        return false;
+    }
 }
 
 function copyRecursive(src, dest) {
@@ -178,8 +218,27 @@ const pkgPath = path.join(BUILD_TEMP, 'package.json');
 const pkg = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
 delete pkg.devDependencies;
 pkg.scripts = { start: 'electron .' };
+
+// electron-builder build-temp altında çalışacağı için electron sürümünü
+// build config'e elle yazıyoruz (devDeps silindiği ve build-temp/node_modules
+// olmadığı için aksi takdirde sürümü çıkaramıyor).
+let electronVersion;
+try {
+    const electronPkgPath = path.join(ROOT, 'node_modules', 'electron', 'package.json');
+    electronVersion = JSON.parse(fs.readFileSync(electronPkgPath, 'utf8')).version;
+} catch (err) {
+    console.error('  ⚠️ node_modules/electron bulunamadı, electronVersion sabitlenemedi:', err.message);
+}
+
 // extraResources: DB dosyasını ASAR dışında exe yanına kopyala
 if (pkg.build) {
+    if (electronVersion) {
+        pkg.build.electronVersion = electronVersion;
+    }
+    // node_modules junction üzerinden ana projedeki derlenmiş bağımlılıkları kullanıyoruz.
+    // Bu yüzden electron-builder'ın yeniden derleme/install adımını kapatıyoruz.
+    pkg.build.npmRebuild = false;
+    pkg.build.buildDependenciesFromSource = false;
     pkg.build.extraResources = [
         {
             from: 'extra/raporlar.db',
@@ -188,19 +247,37 @@ if (pkg.build) {
     ];
 }
 fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
-console.log('  package.json temizlendi (devDeps kaldırıldı, extraResources eklendi)');
+console.log(`  package.json temizlendi (devDeps kaldırıldı, extraResources eklendi${electronVersion ? `, electronVersion=${electronVersion}` : ''}, npmRebuild=false)`);
 
-// 2b. Temizlenmiş veritabanını ASAR dışına kopyalanmak üzere hazırla
-const buildDbSrc = path.join(ROOT, BUILD_DB);
-if (fs.existsSync(buildDbSrc)) {
-    // DB'yi ASAR dışında olacak şekilde extraResources'a kopyala
-    // electron-builder extraResources ile exe yanına kopyalayacak
+// Ana projedeki derlenmiş node_modules'ı junction ile bağla
+linkNodeModules();
+
+// 2b. Tohum (seed) veritabanını ASAR dışına kopyalanmak üzere hazırla.
+// Kaynak seçimi: --use-dev-db verildiyse her zaman dev DB; yoksa raporlar_build.db varsa o, değilse raporlar.db.
+let buildDbSrc;
+let buildDbLabel;
+const preferredPath = path.join(ROOT, BUILD_DB_PREFERRED);
+const fallbackPath = path.join(ROOT, BUILD_DB_FALLBACK);
+
+if (FORCE_DEV_DB && fs.existsSync(fallbackPath)) {
+    buildDbSrc = fallbackPath;
+    buildDbLabel = `${BUILD_DB_FALLBACK} (--use-dev-db)`;
+} else if (fs.existsSync(preferredPath)) {
+    buildDbSrc = preferredPath;
+    buildDbLabel = BUILD_DB_PREFERRED;
+} else if (fs.existsSync(fallbackPath)) {
+    buildDbSrc = fallbackPath;
+    buildDbLabel = `${BUILD_DB_FALLBACK} (raporlar_build.db bulunamadı, geliştirme DB'si kullanılıyor)`;
+}
+
+if (buildDbSrc) {
     const extraDir = path.join(BUILD_TEMP, 'extra');
     fs.mkdirSync(extraDir, { recursive: true });
     fs.copyFileSync(buildDbSrc, path.join(extraDir, 'raporlar.db'));
-    console.log('  raporlar_build.db → extra/raporlar.db kopyalandı');
+    const sizeKB = (fs.statSync(buildDbSrc).size / 1024).toFixed(1);
+    console.log(`  Seed DB: ${buildDbLabel} → extra/raporlar.db (${sizeKB} KB)`);
 } else {
-    console.log('  ⚠️ raporlar_build.db bulunamadı, DB dahil edilmeyecek');
+    console.log('  ⚠️ Ne raporlar_build.db ne de raporlar.db bulundu — build içine DB gömülmeyecek (uygulama ilk açılışta boş DB oluşturur)');
 }
 
 // 3. JS dosyalarını obfuscate et

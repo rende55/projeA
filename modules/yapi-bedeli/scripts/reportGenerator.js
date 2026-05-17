@@ -91,7 +91,7 @@ function sayiyiYaziyaCevir(sayi) {
 function ucBasamakYaziyaCevir(sayi) {
     const birler = ['', 'bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi', 'sekiz', 'dokuz'];
     const onlar = ['', 'on', 'yirmi', 'otuz', 'kırk', 'elli', 'altmış', 'yetmiş', 'seksen', 'doksan'];
-    const yuzler = ['', 'yüz', 'ikiyüz', 'üçyüz', 'dörtyüz', 'beşyüz', 'altıyüz', 'yediyüz', 'sekizyüz', 'dokuzyüz'];
+    const yuzler = ['', 'yüz', 'iki yüz', 'üç yüz', 'dört yüz', 'beş yüz', 'altı yüz', 'yedi yüz', 'sekiz yüz', 'dokuz yüz'];
     
     let sonuc = '';
     let yuz = Math.floor(sayi / 100);
@@ -130,6 +130,60 @@ function formatParaTR(deger) {
     const tamKisim = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, '.');
     // Kuruş kısmını virgül ile ekle
     return tamKisim + ',' + parts[1];
+}
+
+// Para formatla - Türkçe format KURUŞSUZ (sadece tam sayı)
+function formatParaTRKurusuz(deger) {
+    const sayi = parseFloat(deger) || 0;
+    const tamKisim = Math.round(sayi).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+    return tamKisim;
+}
+
+// Yapı alanını formatla (Ondalık yoksa .00 gösterme, binlik ayır)
+function formatYapiAlani(deger) {
+    const sayi = parseFloat(deger) || 0;
+    return sayi.toLocaleString('tr-TR', { maximumFractionDigits: 2 });
+}
+
+// Oran formatla (% 25 gibi boşluklu)
+function formatOran(deger) {
+    const oran = parseFloat(deger) || 0;
+    return '% ' + oran;
+}
+
+// Yapım tekniği kısaltmaları
+function kisaltYapimTeknigi(teknik) {
+    if (!teknik) return '';
+    const map = {
+        'Betonarme Karkas': 'B.Arme',
+        'Yığma Kagir': 'Yığma',
+        'Yığma Yarı Kagir': 'Yarı Kagir',
+        'Ahşap': 'Ahşap',
+        'Taş Duvarlı (Çamur Harçlı)': 'Taş Duv.',
+        'Kerpiç': 'Kerpiç',
+        'Diğer Basit Binalar': 'Basit B.',
+        'Çelik': 'Çelik'
+    };
+    return map[teknik] || teknik;
+}
+
+// Yapı yaşı aralığı hesapla
+function getYapiYasiAraligi(yasDegheri) {
+    if (!yasDegheri && yasDegheri !== 0) return '';
+    const yas = parseInt(yasDegheri, 10);
+    if (isNaN(yas)) return yasDegheri; // Zaten string formatındaysa (örn. 0-3 yaş) olduğu gibi döndür
+    
+    if (yas >= 0 && yas <= 3) return '0-3';
+    if (yas >= 4 && yas <= 5) return '4-5';
+    if (yas >= 6 && yas <= 10) return '6-10';
+    if (yas >= 11 && yas <= 15) return '11-15';
+    if (yas >= 16 && yas <= 20) return '16-20';
+    if (yas >= 21 && yas <= 30) return '21-30';
+    if (yas >= 31 && yas <= 40) return '31-40';
+    if (yas >= 41 && yas <= 50) return '41-50';
+    if (yas >= 51 && yas <= 75) return '51-75';
+    if (yas > 75) return '75 üstü';
+    return String(yas);
 }
 
 // Fotoğraf sayfaları oluştur (2x2 tablo formatında)
@@ -261,6 +315,11 @@ function olusturFotografSayfalari(fotograflar) {
 
 // Rapor oluştur - KT_Sablon_1.docx formatında
 function generateReport(raporData, outputPath, fotograflar = []) {
+    // Çoklu parsel modunda farklı rapor oluştur
+    if (raporData.cokluParsel || raporData.cokluParsel === 1 || raporData.cokluParsel === '1') {
+        return generateCokluParselReport(raporData, outputPath, fotograflar);
+    }
+    
     try {
         // Yapı verilerini parse et
         let yapilarData = [];
@@ -360,79 +419,51 @@ function generateReport(raporData, outputPath, fotograflar = []) {
                     }),
                     
                     // Taşınmaz Bilgileri Tablosu
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        rows: [
-                            new TableRow({
-                                children: [
-                                    new TableCell({ 
-                                        children: [new Paragraph({ 
-                                            alignment: AlignmentType.CENTER,
-                                            children: [new TextRun({ text: "İL", bold: true, size: 18 })]
-                                        })] 
-                                    }),
-                                    new TableCell({ 
-                                        children: [new Paragraph({ 
-                                            alignment: AlignmentType.CENTER,
-                                            children: [new TextRun({ text: "İLÇE", bold: true, size: 18 })]
-                                        })] 
-                                    }),
-                                    new TableCell({ 
-                                        children: [new Paragraph({ 
-                                            alignment: AlignmentType.CENTER,
-                                            children: [new TextRun({ text: "MAHALLE", bold: true, size: 18 })]
-                                        })] 
-                                    }),
-                                    new TableCell({ 
-                                        children: [new Paragraph({ 
-                                            alignment: AlignmentType.CENTER,
-                                            children: [new TextRun({ text: "ADA", bold: true, size: 18 })]
-                                        })] 
-                                    }),
-                                    new TableCell({ 
-                                        children: [new Paragraph({ 
-                                            alignment: AlignmentType.CENTER,
-                                            children: [new TextRun({ text: "PARSEL", bold: true, size: 18 })]
-                                        })] 
-                                    })
-                                ]
-                            }),
-                            new TableRow({
-                                children: [
-                                    new TableCell({ 
-                                        children: [new Paragraph({ 
-                                            alignment: AlignmentType.CENTER,
-                                            children: [new TextRun({ text: raporData.ili || 'Samsun', size: 18 })]
-                                        })] 
-                                    }),
-                                    new TableCell({ 
-                                        children: [new Paragraph({ 
-                                            alignment: AlignmentType.CENTER,
-                                            children: [new TextRun({ text: raporData.ilce || '', size: 18 })]
-                                        })] 
-                                    }),
-                                    new TableCell({ 
-                                        children: [new Paragraph({ 
-                                            alignment: AlignmentType.CENTER,
-                                            children: [new TextRun({ text: raporData.mahalle || '', size: 18 })]
-                                        })] 
-                                    }),
-                                    new TableCell({ 
-                                        children: [new Paragraph({ 
-                                            alignment: AlignmentType.CENTER,
-                                            children: [new TextRun({ text: raporData.ada || '', size: 18 })]
-                                        })] 
-                                    }),
-                                    new TableCell({ 
-                                        children: [new Paragraph({ 
-                                            alignment: AlignmentType.CENTER,
-                                            children: [new TextRun({ text: raporData.parsel || '', size: 18 })]
-                                        })] 
-                                    })
-                                ]
-                            })
-                        ]
-                    }),
+                    (function() {
+                        const basliklar = ["İL", "İLÇE", "MAHALLE", "ADA", "PARSEL"];
+                        const degerler = [
+                            raporData.ili || 'Samsun',
+                            raporData.ilce || '',
+                            raporData.mahalle || '',
+                            raporData.ada || '',
+                            raporData.parsel || ''
+                        ];
+                        
+                        if (raporData.yuzolcumu) {
+                            basliklar.push("YÜZÖLÇÜMÜ");
+                            degerler.push(raporData.yuzolcumu);
+                        }
+                        if (raporData.malik) {
+                            basliklar.push("MALİK");
+                            degerler.push(raporData.malik);
+                        }
+                        
+                        return new Table({
+                            width: { size: 100, type: WidthType.PERCENTAGE },
+                            rows: [
+                                new TableRow({
+                                    children: basliklar.map(baslik => 
+                                        new TableCell({ 
+                                            children: [new Paragraph({ 
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: baslik, bold: true, size: 22 })]
+                                            })] 
+                                        })
+                                    )
+                                }),
+                                new TableRow({
+                                    children: degerler.map(deger => 
+                                        new TableCell({ 
+                                            children: [new Paragraph({ 
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: String(deger), size: 22 })]
+                                            })] 
+                                        })
+                                    )
+                                })
+                            ]
+                        });
+                    })(),
                     
                     // Yapı Bilgileri Başlık - Bold, 12pt (24 half-points)
                     new Paragraph({
@@ -443,45 +474,49 @@ function generateReport(raporData, outputPath, fotograflar = []) {
                     }),
                     
                     // Yapı Bilgileri Tablosu - Çoklu yapı desteği
-                    new Table({
-                        width: { size: 100, type: WidthType.PERCENTAGE },
-                        rows: [
-                            // Başlık satırı
-                            new TableRow({
-                                children: [
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Y. NO", bold: true, size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPI ADI", bold: true, size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPI SINIFI", bold: true, size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `${raporData.hesapYili || ''} YILI BİRİM FİYATI`, bold: true, size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPI ALANI", bold: true, size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPI YAŞI", bold: true, size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPIM TEKNİĞİ", bold: true, size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YIPR PAYI", bold: true, size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "EKS. İM.", bold: true, size: 18 })] })] }),
-                                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPI BEDELİ", bold: true, size: 18 })] })] })
-                                ]
-                            }),
-                            // Her yapı için satır
-                            ...yapilarData.map(yapi => {
-                                // Yapı sınıfı + grup birleştir (örn: "5 A")
-                                const yapiSinifiGrup = [yapi.yapiSinifi, yapi.yapiGrubu].filter(s => s).join(' ');
-                                return new TableRow({
-                                    children: [
-                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapiNo || '', size: 18 })] })] }),
-                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapiAdi || '', size: 18 })] })] }),
-                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapiSinifiGrup, size: 18 })] })] }),
-                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formatParaTR(yapi.birimFiyat) + ' TL', size: 18 })] })] }),
-                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: parseFloat(yapi.yapiAlani || 0).toFixed(2), size: 18 })] })] }),
-                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (yapi.yapiYasi || '') + '', size: 18 })] })] }),
-                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapi.yapimTeknigi || '', size: 18 })] })] }),
-                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (yapi.yipranmaPay || '0') + '%', size: 18 })] })] }),
-                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: (yapi.eksikImalatOrani || '0') + '%', size: 18 })] })] }),
-                                        new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formatParaTR(yapi.yapiBedeli) + ' TL', size: 18 })] })] })
-                                    ]
-                                });
-                            })
-                        ]
-                    }),
+                    (function() {
+                        const isSingleYapi = yapilarData.length === 1;
+                        const showEksikImalat = yapilarData.some(y => parseFloat(y.eksikImalatOrani) > 0);
+                        
+                        const baslikSatiri = [];
+                        if (!isSingleYapi) baslikSatiri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Y. NO", bold: true, size: 22 })] })] }));
+                        baslikSatiri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPI ADI", bold: true, size: 22 })] })] }));
+                        baslikSatiri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPI SINIFI", bold: true, size: 22 })] })] }));
+                        baslikSatiri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: `${raporData.hesapYili || ''} YILI BİRİM FİYATI`, bold: true, size: 22 })] })] }));
+                        baslikSatiri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPI ALANI", bold: true, size: 22 })] })] }));
+                        baslikSatiri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPI YAŞI", bold: true, size: 22 })] })] }));
+                        baslikSatiri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPIM TEKNİĞİ", bold: true, size: 22 })] })] }));
+                        baslikSatiri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YIPR PAYI", bold: true, size: 22 })] })] }));
+                        if (showEksikImalat) baslikSatiri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "EKS. İM.", bold: true, size: 22 })] })] }));
+                        if (!isSingleYapi) baslikSatiri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPI BEDELİ", bold: true, size: 22 })] })] }));
+
+                        const yapiSatirlari = yapilarData.map(yapi => {
+                            const yapiSinifiGrup = [yapi.yapiSinifi, yapi.yapiGrubu].filter(s => s).join(' ');
+                            const yapiBedeli = parseFloat(yapi.yapiBedeli) || 0;
+                            
+                            const satirHucreleri = [];
+                            if (!isSingleYapi) satirHucreleri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(yapi.yapiNo || ''), size: 22 })] })] }));
+                            satirHucreleri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(yapi.yapiAdi || ''), size: 22 })] })] }));
+                            satirHucreleri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(yapiSinifiGrup), size: 22 })] })] }));
+                            satirHucreleri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(formatParaTRKurusuz(yapi.birimFiyat)) + ' TL', size: 22 })] })] }));
+                            satirHucreleri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(formatYapiAlani(yapi.yapiAlani)) + ' m²', size: 22 })] })] }));
+                            satirHucreleri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(getYapiYasiAraligi(yapi.yapiYasi)), size: 22 })] })] }));
+                            satirHucreleri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(kisaltYapimTeknigi(yapi.yapimTeknigi)), size: 22 })] })] }));
+                            satirHucreleri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(formatOran(yapi.yipranmaPay)), size: 22 })] })] }));
+                            if (showEksikImalat) satirHucreleri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(formatOran(yapi.eksikImalatOrani)), size: 22 })] })] }));
+                            if (!isSingleYapi) satirHucreleri.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(formatParaTRKurusuz(yapiBedeli)) + ' TL', size: 22 })] })] }));
+                            
+                            return new TableRow({ children: satirHucreleri });
+                        });
+
+                        return new Table({
+                            width: { size: 100, type: WidthType.PERCENTAGE },
+                            rows: [
+                                new TableRow({ children: baslikSatiri }),
+                                ...yapiSatirlari
+                            ]
+                        });
+                    })(),
                     
                     // Toplam Yapı Bedeli - Bold, 12pt (24 half-points)
                     new Paragraph({
@@ -498,8 +533,9 @@ function generateReport(raporData, outputPath, fotograflar = []) {
                         spacing: { after: 120 },
                         children: [
                             new TextRun({
-                                text: `Yalnız ${sayiyiYaziyaCevir(toplamYapiBedeli)} Türk Lirasıdır.`,
-                                size: 24
+                                text: `Yalnız ${sayiyiYaziyaCevir(toplamYapiBedeli).toLocaleUpperCase('tr-TR')} Türk Lirasıdır.`,
+                                size: 24,
+                                bold: true
                             })
                         ]
                     }),
@@ -521,32 +557,25 @@ function generateReport(raporData, outputPath, fotograflar = []) {
                             spacing: { after: 120 },
                             children: [
                                 new TextRun({
-                                    text: `Yalnız ${sayiyiYaziyaCevir(levazimBedeli)} Türk Lirasıdır.`,
-                                    size: 24
+                                    text: `Yalnız ${sayiyiYaziyaCevir(levazimBedeli).toLocaleUpperCase('tr-TR')} Türk Lirasıdır.`,
+                                    size: 24,
+                                    bold: true
                                 })
                             ]
                         })
                     ] : []),
                     
-                    // Son Paragraf - 12pt (24 half-points) - İki yana yasla
+                    // Son Paragraf ve Rapor Tarihi - 12pt (24 half-points) - İki yana yasla
                     new Paragraph({
                         alignment: AlignmentType.JUSTIFIED,
                         spacing: { before: 120, after: 120 },
                         children: [
                             new TextRun({
                                 text: asgariLevazimHesapla
-                                    ? `Söz konusu yapıların yapım tekniği, kullanım durumu, yaşı ve 02.12.1982 gün ve 17.886 sayılı Resmi Gazete'de yayınlanarak yürürlüğe giren "Yıpranma Paylarına İlişkin Oranları Gösterir Cetvel'e göre takdir edilen yıpranma payları dahil, arsa değeri hariç, ${formatTarih(raporData.resmiGazeteTarih)} tarih ve ${raporData.resmiGazeteSayili || ''} sayılı Resmi Gazete 'de yayımlanan Mimarlık Ve Mühendislik Hizmet Bedellerinin Hesabında Kullanılacak ${raporData.hesapYili || ''} Yılı Yapı Yaklaşık Birim Maliyetleri Hakkında Tebliğ ve 2015/1 sayılı Milli Emlak Genelgesi esas alınarak hazırlanan iş bu rapor tarafımızdan bir nüsha olarak tanzim ve imza edilmiştir.`
-                                    : `Söz konusu yapıların yapım tekniği, kullanım durumu, yaşı ve 02.12.1982 gün ve 17.886 sayılı Resmi Gazete'de yayınlanarak yürürlüğe giren "Yıpranma Paylarına İlişkin Oranları Gösterir Cetvel'e göre takdir edilen yıpranma payları dahil, arsa değeri hariç, ${formatTarih(raporData.resmiGazeteTarih)} tarih ve ${raporData.resmiGazeteSayili || ''} sayılı Resmi Gazete 'de yayımlanan Mimarlık Ve Mühendislik Hizmet Bedellerinin Hesabında Kullanılacak ${raporData.hesapYili || ''} Yılı Yapı Yaklaşık Birim Maliyetleri Hakkında Tebliğ esas alınarak hazırlanan iş bu rapor tarafımızdan bir nüsha olarak tanzim ve imza edilmiştir.`,
+                                    ? `Söz konusu yapıların yapım tekniği, kullanım durumu, yaşı ve 02.12.1982 gün ve 17.886 sayılı Resmi Gazete'de yayınlanarak yürürlüğe giren "Yıpranma Paylarına İlişkin Oranları Gösterir Cetvel'e göre takdir edilen yıpranma payları dahil, arsa değeri hariç, ${formatTarih(raporData.resmiGazeteTarih)} tarih ve ${raporData.resmiGazeteSayili || ''} sayılı Resmi Gazete 'de yayımlanan Mimarlık Ve Mühendislik Hizmet Bedellerinin Hesabında Kullanılacak ${raporData.hesapYili || ''} Yılı Yapı Yaklaşık Birim Maliyetleri Hakkında Tebliğ ve 2015/1 sayılı Milli Emlak Genelgesi esas alınarak hazırlanan iş bu rapor tarafımızdan bir nüsha olarak tanzim ve imza edilmiştir. ${formatTarih(raporData.raporTarihi)}`
+                                    : `Söz konusu yapıların yapım tekniği, kullanım durumu, yaşı ve 02.12.1982 gün ve 17.886 sayılı Resmi Gazete'de yayınlanarak yürürlüğe giren "Yıpranma Paylarına İlişkin Oranları Gösterir Cetvel'e göre takdir edilen yıpranma payları dahil, arsa değeri hariç, ${formatTarih(raporData.resmiGazeteTarih)} tarih ve ${raporData.resmiGazeteSayili || ''} sayılı Resmi Gazete 'de yayımlanan Mimarlık Ve Mühendislik Hizmet Bedellerinin Hesabında Kullanılacak ${raporData.hesapYili || ''} Yılı Yapı Yaklaşık Birim Maliyetleri Hakkında Tebliğ esas alınarak hazırlanan iş bu rapor tarafımızdan bir nüsha olarak tanzim ve imza edilmiştir. ${formatTarih(raporData.raporTarihi)}`,
                                 size: 24
                             })
-                        ]
-                    }),
-                    
-                    // Rapor Tarihi - 12pt (24 half-points)
-                    new Paragraph({
-                        spacing: { after: 120 },
-                        children: [
-                            new TextRun({ text: formatTarih(raporData.raporTarihi), size: 24 })
                         ]
                     }),
                     
@@ -658,4 +687,358 @@ function generateReport(raporData, outputPath, fotograflar = []) {
     }
 }
 
-module.exports = { generateReport, sayiyiYaziyaCevir, formatTarih };
+// Çoklu Parsel Raporu Oluştur
+function generateCokluParselReport(raporData, outputPath, fotograflar = []) {
+    try {
+        // Parsel verilerini parse et
+        let parsellerData = [];
+        if (raporData.parsellerJSON) {
+            try {
+                parsellerData = JSON.parse(raporData.parsellerJSON);
+            } catch (e) {
+                console.error('Parseller JSON parse hatası:', e);
+            }
+        }
+        
+        // Hesaplamalar
+        const toplamYapiBedeli = parseFloat(raporData.yapiBedeli) || 0;
+        const levazimBedeli = toplamYapiBedeli * 0.7 * 0.75;
+        const asgariLevazimHesapla = raporData.asgariLevazimHesapla === 1 || raporData.asgariLevazimHesapla === '1' || raporData.asgariLevazimHesapla === true;
+        
+        // Raportör bilgilerini parse et
+        const raportorAdlari = (raporData.raportorAdi || '').split(',').map(s => s.trim()).filter(s => s);
+        const raportorUnvanlari = (raporData.raportorUnvani || '').split(',').map(s => s.trim()).filter(s => s);
+        const raportorSayisi = Math.min(raportorAdlari.length, raportorUnvanlari.length, 4);
+        
+        // Fotoğraf sayfalarını oluştur
+        const fotografSayfalari = olusturFotografSayfalari(fotograflar);
+        
+        // Yazı Tipi Boyutu: 11 punto = 22 half-points
+        const fontSize = 22;
+        const fontSizeBold = 22;
+        
+        // Çoklu parsel tablosunda genel çapta eksik imalat sütunu gösterme kontrolü
+        let hasEksikImalat = false;
+        parsellerData.forEach(parsel => {
+            if (parsel.yapilar) {
+                if (parsel.yapilar.some(y => parseFloat(y.eksikImalatOrani) > 0)) {
+                    hasEksikImalat = true;
+                }
+            }
+        });
+        
+        const tableRows = [];
+        
+        const mainBaslikRowChildren = [
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "ADA", bold: true, size: fontSizeBold })] })] }),
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "PARSEL", bold: true, size: fontSizeBold })] })] }),
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Y.NO", bold: true, size: fontSizeBold })] })] }),
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPI ADI", bold: true, size: fontSizeBold })] })] }),
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "SINIFI", bold: true, size: fontSizeBold })] })] }),
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "B.FİYAT", bold: true, size: fontSizeBold })] })] }),
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "ALAN", bold: true, size: fontSizeBold })] })] }),
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YIPR.", bold: true, size: fontSizeBold })] })] })
+        ];
+        
+        if (hasEksikImalat) {
+            mainBaslikRowChildren.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "EKS.İM.", bold: true, size: fontSizeBold })] })] }));
+        }
+        mainBaslikRowChildren.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "YAPI BEDELİ", bold: true, size: fontSizeBold })] })] }));
+        
+        tableRows.push(new TableRow({ children: mainBaslikRowChildren }));
+        
+        let genelToplam = 0;
+        
+        // Her parsel için satırlar ekle
+        parsellerData.forEach(parsel => {
+            let araToplam = 0;
+            const yapilar = parsel.yapilar || [];
+            
+            yapilar.forEach((yapi, yapiIndex) => {
+                const yapiSinifiGrup = [yapi.yapiSinifi, yapi.yapiGrubu].filter(s => s).join(' ');
+                const yapiBedeli = parseFloat(yapi.yapiBedeli) || 0;
+                araToplam += yapiBedeli;
+                
+                const satirChildren = [
+                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapiIndex === 0 ? String(parsel.ada || '') : '', size: fontSize })] })] }),
+                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapiIndex === 0 ? String(parsel.parsel || '') : '', size: fontSize })] })] }),
+                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(yapi.yapiNo || ''), size: fontSize })] })] }),
+                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: String(yapi.yapiAdi || ''), size: fontSize })] })] }),
+                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: yapiSinifiGrup, size: fontSize })] })] }),
+                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formatParaTRKurusuz(yapi.birimFiyat), size: fontSize })] })] }),
+                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formatYapiAlani(yapi.yapiAlani), size: fontSize })] })] }),
+                    new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formatOran(yapi.yipranmaPay), size: fontSize })] })] })
+                ];
+                
+                if (hasEksikImalat) {
+                    satirChildren.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formatOran(yapi.eksikImalatOrani), size: fontSize })] })] }));
+                }
+                satirChildren.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formatParaTRKurusuz(yapiBedeli) + ' TL', size: fontSize })] })] }));
+                
+                tableRows.push(new TableRow({ children: satirChildren }));
+            });
+            
+            genelToplam += araToplam;
+            
+            // Ara toplam satırı
+            const araToplamChildren = [
+                new TableCell({ children: [new Paragraph({ text: '' })] }),
+                new TableCell({ children: [new Paragraph({ text: '' })] }),
+                new TableCell({ children: [new Paragraph({ text: '' })] }),
+                new TableCell({ children: [new Paragraph({ text: '' })] }),
+                new TableCell({ children: [new Paragraph({ text: '' })] }),
+                new TableCell({ children: [new Paragraph({ text: '' })] }),
+                new TableCell({ children: [new Paragraph({ text: '' })] }),
+                new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "Ara Toplam", bold: true, size: fontSize })] })] })
+            ];
+            
+            if (hasEksikImalat) { 
+                araToplamChildren.splice(7, 0, new TableCell({ children: [new Paragraph({ text: '' })] })); 
+            }
+            
+            araToplamChildren.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formatParaTRKurusuz(araToplam) + ' TL', bold: true, size: fontSize })] })] }));
+            
+            tableRows.push(new TableRow({ children: araToplamChildren }));
+        });
+        
+        // Genel toplam satırı
+        const genelToplamChildren = [
+            new TableCell({ children: [new Paragraph({ text: '' })] }),
+            new TableCell({ children: [new Paragraph({ text: '' })] }),
+            new TableCell({ children: [new Paragraph({ text: '' })] }),
+            new TableCell({ children: [new Paragraph({ text: '' })] }),
+            new TableCell({ children: [new Paragraph({ text: '' })] }),
+            new TableCell({ children: [new Paragraph({ text: '' })] }),
+            new TableCell({ children: [new Paragraph({ text: '' })] }),
+            new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: "GENEL TOPLAM", bold: true, size: fontSizeBold })] })] })
+        ];
+        
+        if (hasEksikImalat) {
+            genelToplamChildren.splice(7, 0, new TableCell({ children: [new Paragraph({ text: '' })] })); 
+        }
+        
+        genelToplamChildren.push(new TableCell({ children: [new Paragraph({ alignment: AlignmentType.CENTER, children: [new TextRun({ text: formatParaTRKurusuz(genelToplam) + ' TL', bold: true, size: fontSizeBold })] })] }));
+        
+        tableRows.push(new TableRow({ children: genelToplamChildren }));
+        
+        const doc = new Document({
+            sections: [{
+                children: [
+                    // Başlık - Ortalanmış, Bold, 14pt (28 half-points)
+                    new Paragraph({
+                        alignment: AlignmentType.CENTER,
+                        spacing: { after: 120 },
+                        children: [
+                            new TextRun({
+                                text: "KIYMET TAKDİR RAPORU",
+                                bold: true,
+                                size: 28
+                            })
+                        ]
+                    }),
+                    
+                    // Gerekçe Başlık - Bold, 12pt (24 half-points)
+                    new Paragraph({
+                        spacing: { before: 120, after: 120 },
+                        children: [
+                            new TextRun({ text: "Gerekçe:", bold: true, size: 24 })
+                        ]
+                    }),
+                    
+                    // Gerekçe paragrafı
+                    new Paragraph({
+                        alignment: AlignmentType.JUSTIFIED,
+                        spacing: { after: 120 },
+                        children: [
+                            new TextRun({
+                                text: `Bu rapor, ${raporData.ilgiliKurum || ''} ${formatTarih(raporData.resmiYaziTarihi)} tarih ${raporData.resmiYaziSayisi || ''} sayılı yazısına istinaden hazırlanmıştır.`,
+                                size: 24
+                            })
+                        ]
+                    }),
+                    
+                    // Açıklama paragrafı
+                    new Paragraph({
+                        alignment: AlignmentType.JUSTIFIED,
+                        spacing: { after: 120 },
+                        children: [
+                            new TextRun({
+                                text: asgariLevazimHesapla 
+                                    ? `Bahse konu taşınmazlar ile ilgili yerinde ve edinilen bilgiler ile ${raporData.hesapYili || ''} yılı fiyatlarına göre yapı bedeli ve Asgari Levazım Bedeli aşağıdaki şekilde hesaplanmıştır:`
+                                    : `Bahse konu taşınmazlar ile ilgili yerinde ve edinilen bilgiler ile ${raporData.hesapYili || ''} yılı fiyatlarına göre yapı bedeli aşağıdaki şekilde hesaplanmıştır:`,
+                                size: 24
+                            })
+                        ]
+                    }),
+                    
+                    // Yapı Bilgileri Başlık
+                    new Paragraph({
+                        spacing: { before: 120, after: 120 },
+                        children: [
+                            new TextRun({ text: "Yapı Bilgileri ve Hesaplamalar:", bold: true, size: 24 })
+                        ]
+                    }),
+                    
+                    // Çoklu Parsel Yapı Tablosu (10 punto)
+                    new Table({
+                        width: { size: 100, type: WidthType.PERCENTAGE },
+                        rows: tableRows
+                    }),
+                    
+                    // Toplam Yapı Bedeli
+                    new Paragraph({
+                        spacing: { before: 120, after: 120 },
+                        children: [
+                            new TextRun({ text: "TOPLAM YAPI BEDELİ: ", bold: true, size: 24 }),
+                            new TextRun({ text: formatParaTR(toplamYapiBedeli) + ' TL', size: 24 })
+                        ]
+                    }),
+                    
+                    // Yapı Bedeli Yazıyla
+                    new Paragraph({
+                        alignment: AlignmentType.JUSTIFIED,
+                        spacing: { after: 120 },
+                        children: [
+                            new TextRun({
+                                text: `Yalnız ${sayiyiYaziyaCevir(toplamYapiBedeli).toLocaleUpperCase('tr-TR')} Türk Lirasıdır.`,
+                                size: 24,
+                                bold: true
+                            })
+                        ]
+                    }),
+                    
+                    // Asgari Levazım (varsa)
+                    ...(asgariLevazimHesapla ? [
+                        new Paragraph({
+                            spacing: { before: 120, after: 120 },
+                            children: [
+                                new TextRun({ text: "TOPLAM ASGARİ LEVAZIM BEDELİ (Toplam Bedel x 0,7 x 0,75) : ", bold: true, size: 24 }),
+                                new TextRun({ text: formatParaTR(levazimBedeli) + ' TL', size: 24 })
+                            ]
+                        }),
+                        new Paragraph({
+                            alignment: AlignmentType.JUSTIFIED,
+                            spacing: { after: 120 },
+                            children: [
+                                new TextRun({
+                                    text: `Yalnız ${sayiyiYaziyaCevir(levazimBedeli).toLocaleUpperCase('tr-TR')} Türk Lirasıdır.`,
+                                    size: 24,
+                                    bold: true
+                                })
+                            ]
+                        })
+                    ] : []),
+                    
+                    // Son Paragraf
+                    new Paragraph({
+                        alignment: AlignmentType.JUSTIFIED,
+                        spacing: { before: 120, after: 120 },
+                        children: [
+                            new TextRun({
+                                text: asgariLevazimHesapla
+                                    ? `Söz konusu yapıların yapım tekniği, kullanım durumu, yaşı ve 02.12.1982 gün ve 17.886 sayılı Resmi Gazete'de yayınlanarak yürürlüğe giren "Yıpranma Paylarına İlişkin Oranları Gösterir Cetvel'e göre takdir edilen yıpranma payları dahil, arsa değeri hariç, ${formatTarih(raporData.resmiGazeteTarih)} tarih ve ${raporData.resmiGazeteSayili || ''} sayılı Resmi Gazete 'de yayımlanan Mimarlık Ve Mühendislik Hizmet Bedellerinin Hesabında Kullanılacak ${raporData.hesapYili || ''} Yılı Yapı Yaklaşık Birim Maliyetleri Hakkında Tebliğ ve 2015/1 sayılı Milli Emlak Genelgesi esas alınarak hazırlanan iş bu rapor tarafımızdan bir nüsha olarak tanzim ve imza edilmiştir. ${formatTarih(raporData.raporTarihi)}`
+                                    : `Söz konusu yapıların yapım tekniği, kullanım durumu, yaşı ve 02.12.1982 gün ve 17.886 sayılı Resmi Gazete'de yayınlanarak yürürlüğe giren "Yıpranma Paylarına İlişkin Oranları Gösterir Cetvel'e göre takdir edilen yıpranma payları dahil, arsa değeri hariç, ${formatTarih(raporData.resmiGazeteTarih)} tarih ve ${raporData.resmiGazeteSayili || ''} sayılı Resmi Gazete 'de yayımlanan Mimarlık Ve Mühendislik Hizmet Bedellerinin Hesabında Kullanılacak ${raporData.hesapYili || ''} Yılı Yapı Yaklaşık Birim Maliyetleri Hakkında Tebliğ esas alınarak hazırlanan iş bu rapor tarafımızdan bir nüsha olarak tanzim ve imza edilmiştir. ${formatTarih(raporData.raporTarihi)}`,
+                                size: 24
+                            })
+                        ]
+                    }),
+                    
+                    // Boş satır
+                    new Paragraph({ text: "" }),
+                    
+                    // Raportör Tablosu
+                    ...(raportorSayisi > 0 ? [
+                        new Table({
+                            width: { size: 100, type: WidthType.PERCENTAGE },
+                            rows: [
+                                new TableRow({
+                                    children: Array.from({ length: raportorSayisi }, (_, i) => 
+                                        new TableCell({
+                                            children: [new Paragraph({
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: raportorAdlari[i] || '', size: 22 })]
+                                            })]
+                                        })
+                                    )
+                                }),
+                                new TableRow({
+                                    children: Array.from({ length: raportorSayisi }, (_, i) => 
+                                        new TableCell({
+                                            children: [new Paragraph({
+                                                alignment: AlignmentType.CENTER,
+                                                children: [new TextRun({ text: raportorUnvanlari[i] || '', size: 22 })]
+                                            })]
+                                        })
+                                    )
+                                })
+                            ]
+                        })
+                    ] : [
+                        new Paragraph({
+                            spacing: { after: 120 },
+                            children: [
+                                new TextRun({ text: raporData.raportorAdi || '', size: 22 })
+                            ]
+                        }),
+                        new Paragraph({
+                            spacing: { after: 120 },
+                            children: [
+                                new TextRun({ text: raporData.raportorUnvani || '', size: 22 })
+                            ]
+                        })
+                    ])
+                ]
+            },
+            // Fotoğraf sayfalarını ekle (varsa)
+            ...fotografSayfalari
+            ]
+        });
+        
+        // Dosyayı oluştur ve kaydet
+        return Packer.toBuffer(doc).then(buffer => {
+            let finalPath = outputPath;
+            let counter = 1;
+            const MAX_ATTEMPTS = 10;
+            
+            while (fs.existsSync(finalPath) && counter <= MAX_ATTEMPTS) {
+                try {
+                    const fd = fs.openSync(finalPath, 'r+');
+                    fs.closeSync(fd);
+                    break;
+                } catch (err) {
+                    if (err.code === 'EBUSY' || err.code === 'EPERM') {
+                        const ext = path.extname(outputPath);
+                        const base = outputPath.replace(ext, '');
+                        finalPath = `${base}_${counter}${ext}`;
+                        counter++;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            
+            if (counter > MAX_ATTEMPTS) {
+                const errorMsg = `Maksimum ${MAX_ATTEMPTS} deneme yapıldı, tüm dosyalar açık veya kilitli.`;
+                return { success: false, error: errorMsg };
+            }
+            
+            try {
+                fs.writeFileSync(finalPath, buffer);
+                console.log('✅ Çoklu parsel raporu oluşturuldu:', finalPath);
+                return { success: true, path: finalPath };
+            } catch (writeError) {
+                console.error('Rapor kaydetme hatası:', writeError);
+                return { success: false, error: writeError.message };
+            }
+        }).catch(error => {
+            console.error('Rapor oluşturma hatası:', error);
+            return { success: false, error: error.message };
+        });
+        
+    } catch (error) {
+        console.error('Çoklu parsel rapor oluşturma hatası:', error);
+        return Promise.resolve({ success: false, error: error.message });
+    }
+}
+
+module.exports = { generateReport, generateCokluParselReport, sayiyiYaziyaCevir, formatTarih };

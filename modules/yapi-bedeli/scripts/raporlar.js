@@ -3,11 +3,14 @@ console.log('=== RAPORLAR.JS BAŞLADI ===');
 const { ipcRenderer } = require('electron');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const { getDbPath } = require('../../../shared/scripts/db-helper');
 
 console.log('Modüller yüklendi');
 
-// Veritabanı yolu - basit ve direkt
-const dbPath = path.join(process.cwd(), 'raporlar.db');
+// Veritabanı yolu — db-helper paketleme/portable senaryolarını yönetir.
+// process.cwd() kullanılmamalı: portable .exe %TEMP% altına açıldığında
+// cwd geçici klasörü gösterir ve veriler her çıkışta silinir.
+const dbPath = getDbPath();
 console.log('Veritabanı yolu:', dbPath);
 
 let db = new sqlite3.Database(dbPath, (err) => {

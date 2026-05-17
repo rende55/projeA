@@ -9,17 +9,49 @@ remoteMain.initialize();
 let mainWindow;
 let db;
 
-// ASAR uyumlu yol hesaplama
-// Production (ASAR): exe'nin bulunduğu klasör
-// Development: __dirname (proje kök dizini)
+// ASAR + portable uyumlu yol hesaplama
+// - Development: __dirname (proje kök dizini)
+// - Portable build (electron-builder): PORTABLE_EXECUTABLE_DIR
+//   (kullanıcının çalıştırdığı .exe'nin kalıcı klasörü).
+//   app.getPath('exe') portable modda %TEMP%\<rastgele>\ altındaki
+//   geçici klasörü gösterir ve her çıkışta silinir; oraya yazılan veri kaybolur.
+// - Diğer paketleme türleri (dir/installer): exe klasörü.
 function getAppRootPath() {
     if (app.isPackaged) {
+        if (process.env.PORTABLE_EXECUTABLE_DIR) {
+            return process.env.PORTABLE_EXECUTABLE_DIR;
+        }
         return path.dirname(app.getPath('exe'));
     }
     return __dirname;
 }
 
+// Paketlenmiş build içine gömülen tohum (seed) veritabanı,
+// extraResources `to: '../raporlar.db'` ile exe'nin (geçici) klasörüne çıkarılır.
+function getBundledSeedDbPath() {
+    if (!app.isPackaged) return null;
+    return path.join(path.dirname(app.getPath('exe')), 'raporlar.db');
+}
+
 const APP_ROOT = getAppRootPath();
+
+// İlk çalıştırmada gömülü tohum DB'yi kalıcı klasöre kopyala.
+// Mevcut bir raporlar.db varsa asla üstüne yazma — kullanıcının verisini kaybetmemek esastır.
+function seedDatabaseIfMissing() {
+    const targetDb = path.join(APP_ROOT, 'raporlar.db');
+    if (fs.existsSync(targetDb)) return; // kullanıcı verisi var, dokunma
+
+    const seed = getBundledSeedDbPath();
+    if (!seed || !fs.existsSync(seed)) return; // gömülü tohum yok, normal akış (boş DB oluşacak)
+
+    try {
+        fs.mkdirSync(path.dirname(targetDb), { recursive: true });
+        fs.copyFileSync(seed, targetDb);
+        console.log('🌱 İlk çalıştırma: gömülü raporlar.db kalıcı klasöre kopyalandı →', targetDb);
+    } catch (err) {
+        console.error('Seed DB kopyalama hatası:', err);
+    }
+}
 
 // VERİTABANI MİGRATION SİSTEMİ
 function migrateDatabase() {
@@ -178,6 +210,7 @@ function migrateDatabase() {
 }
 
 function createDatabase() {
+    seedDatabaseIfMissing();
     const dbPath = path.join(APP_ROOT, 'raporlar.db');
     console.log('📂 Veritabanı yolu:', dbPath);
     db = new sqlite3.Database(dbPath, (err) => {

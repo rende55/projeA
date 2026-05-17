@@ -462,7 +462,23 @@
                             <label for="yb-raportorSayisi">Raportör Sayısı *</label>
                             <input type="number" id="yb-raportorSayisi" min="1" max="5" value="1" required>
                         </div>
-                        <div class="yb-form-group"></div>
+                        <div class="yb-form-group">
+                            <label style="display: flex; align-items: center; cursor: pointer; margin-top: 24px;">
+                                <input type="checkbox" id="yb-cokluParsel" style="width: auto; margin-right: 10px;">
+                                <span style="font-weight: 600; color: #2A4C6E;">Çoklu Parsel Raporu</span>
+                            </label>
+                            <small style="display: block; margin-top: 4px; color: #666; font-size: 12px;">Birden fazla ada/parsel için işlemler yapmanızı sağlar</small>
+                            <div id="yb-cokluParselTipleri" style="display: none; margin-top: 10px; margin-left: 28px;">
+                                <label style="display: flex; align-items: center; cursor: pointer; margin-bottom: 6px;">
+                                    <input type="radio" name="yb-cokluParselTipi" value="tekRapor" checked style="width: auto; margin-right: 8px;">
+                                    <span style="font-size: 13px; color: #334155;">Tek Rapor (Aynı tabloda birleştirilir)</span>
+                                </label>
+                                <label style="display: flex; align-items: center; cursor: pointer;">
+                                    <input type="radio" name="yb-cokluParselTipi" value="ayriRaporlar" style="width: auto; margin-right: 8px;">
+                                    <span style="font-size: 13px; color: #334155;">Ayrı Raporlar (Peş peşe bağımsız raporlar)</span>
+                                </label>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- Raportör Bilgileri (Dinamik) -->
@@ -478,38 +494,87 @@
                 <div class="yb-tab-content" id="yb-tab-arsa">
                     <h2>Arsa Bilgileri</h2>
                     
-                    <div class="yb-form-row">
-                        <div class="yb-form-group">
-                            <label for="yb-ilce">İlçe *</label>
-                            <select id="yb-ilce" required>
-                                <option value="">İlçe Seçiniz</option>
-                            </select>
+                    <!-- Tekli Parsel Modu (varsayılan) -->
+                    <div id="yb-tekliParselModu">
+                        <div class="yb-form-row">
+                            <div class="yb-form-group">
+                                <label for="yb-ilce">İlçe *</label>
+                                <select id="yb-ilce" required>
+                                    <option value="">İlçe Seçiniz</option>
+                                </select>
+                            </div>
+                            <div class="yb-form-group">
+                                <label for="yb-mahalle">Mahalle *</label>
+                                <input type="text" id="yb-mahalle" placeholder="Mahalle adı" required>
+                            </div>
                         </div>
-                        <div class="yb-form-group">
-                            <label for="yb-mahalle">Mahalle *</label>
-                            <input type="text" id="yb-mahalle" placeholder="Mahalle adı" required>
+
+                        <div class="yb-form-row">
+                            <div class="yb-form-group">
+                                <label for="yb-ada">Ada *</label>
+                                <input type="text" id="yb-ada" placeholder="Ada numarası" required>
+                            </div>
+                            <div class="yb-form-group">
+                                <label for="yb-parsel">Parsel *</label>
+                                <input type="text" id="yb-parsel" placeholder="Parsel numarası" required>
+                            </div>
+                        </div>
+
+                        <div class="yb-form-row">
+                            <div class="yb-form-group">
+                                <label for="yb-yuzolcumu">Yüzölçümü (m²)</label>
+                                <input type="text" id="yb-yuzolcumu" placeholder="Örn: 150.50">
+                            </div>
+                            <div class="yb-form-group">
+                                <label for="yb-malik">Malik İsmi</label>
+                                <input type="text" id="yb-malik" placeholder="Malik adı soyadı">
+                            </div>
                         </div>
                     </div>
 
-                    <div class="yb-form-row">
-                        <div class="yb-form-group">
-                            <label for="yb-ada">Ada *</label>
-                            <input type="text" id="yb-ada" placeholder="Ada numarası" required>
+                    <!-- Çoklu Parsel Modu (gizli) -->
+                    <div id="yb-cokluParselModu" style="display: none;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <p style="color: #666; margin: 0; font-size: 13px;">Her parsel için ayrı ayrı bilgi giriniz. Yapılar, ilgili parselin altına eklenecektir.</p>
+                            <button type="button" id="yb-parselEkleBtn" style="padding: 10px 20px; background: linear-gradient(135deg, #007bff 0%, #0056b3 100%); color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer;">
+                                ➕ Yeni Parsel Ekle
+                            </button>
                         </div>
-                        <div class="yb-form-group">
-                            <label for="yb-parsel">Parsel *</label>
-                            <input type="text" id="yb-parsel" placeholder="Parsel numarası" required>
-                        </div>
-                    </div>
+                        <div id="yb-parselListesiContainer"></div>
 
-                    <div class="yb-form-row">
-                        <div class="yb-form-group">
-                            <label for="yb-yuzolcumu">Yüzölçümü (m²)</label>
-                            <input type="text" id="yb-yuzolcumu" placeholder="Örn: 150.50">
-                        </div>
-                        <div class="yb-form-group">
-                            <label for="yb-malik">Malik İsmi</label>
-                            <input type="text" id="yb-malik" placeholder="Malik adı soyadı">
+                        <!-- Çoklu parsel modunda hesaplama sonuçları ve fotoğraf alanı -->
+                        <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #D3DAE3;">
+                            <div class="yb-form-row">
+                                <div class="yb-form-group">
+                                    <label style="display: flex; align-items: center; cursor: pointer;">
+                                        <input type="checkbox" id="yb-cokluAsgariLevazimHesapla" checked style="width: auto; margin-right: 10px;">
+                                        <span>Asgari Levazım Bedeli Hesapla</span>
+                                    </label>
+                                </div>
+                                <div class="yb-form-group"></div>
+                            </div>
+
+                            <div class="yb-form-row" id="yb-genelFotografAlani">
+                                <div class="yb-form-group" style="grid-column: 1 / -1;">
+                                    <label for="yb-cokluFotograflar">📷 Rapora Eklenecek Fotoğraflar</label>
+                                    <input type="file" id="yb-cokluFotograflar" accept="image/*" multiple>
+                                    <small style="display: block; margin-top: 5px; color: #666;">
+                                        Seçilen fotoğraflar raporun son sayfasına eklenecektir.
+                                    </small>
+                                    <div id="yb-cokluFotografOnizleme" style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px;"></div>
+                                </div>
+                            </div>
+
+                            <div class="yb-form-row">
+                                <div class="yb-form-group">
+                                    <label>Hesaplanan Yapı Bedeli (TL)</label>
+                                    <input type="text" id="yb-cokluYapiBedeliHesaplanan" placeholder="Hesapla butonuna tıklayın" readonly>
+                                </div>
+                                <div class="yb-form-group">
+                                    <label>Asgari Levazım Bedeli (TL)</label>
+                                    <input type="text" id="yb-cokluLevazimBedeliHesaplanan" placeholder="Hesapla butonuna tıklayın" readonly>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

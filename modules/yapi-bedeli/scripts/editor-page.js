@@ -175,6 +175,22 @@ function renderRaporIcerigi(rapor) {
     const container = document.getElementById('ed-editorContent');
     if (!container) return;
     
+    const isCokluParsel = rapor.cokluParsel === 1 || rapor.cokluParsel === '1';
+    
+    if (isCokluParsel) {
+        renderCokluParselIcerigi(rapor, container);
+    } else {
+        renderTekliParselIcerigi(rapor, container);
+    }
+    
+    // Event listener'ları ekle
+    setupContentEventListeners();
+}
+
+/**
+ * Tekli parsel rapor içeriğini render et (mevcut davranış)
+ */
+function renderTekliParselIcerigi(rapor, container) {
     // Yapıları parse et
     let yapilar = [];
     try {
@@ -352,9 +368,197 @@ function renderRaporIcerigi(rapor) {
             </div>
         </div>
     `;
+}
+
+/**
+ * Çoklu parsel rapor içeriğini render et
+ */
+function renderCokluParselIcerigi(rapor, container) {
+    // Parselleri parse et
+    let parseller = [];
+    try {
+        if (rapor.parsellerJSON) {
+            parseller = JSON.parse(rapor.parsellerJSON);
+        }
+    } catch (e) {
+        console.error('Parseller parse edilemedi:', e);
+    }
     
-    // Event listener'ları ekle
-    setupContentEventListeners();
+    // Toplam yapı bedeli hesapla
+    let toplamYapiBedeli = 0;
+    parseller.forEach(parsel => {
+        (parsel.yapilar || []).forEach(yapi => {
+            toplamYapiBedeli += parseFloat(yapi.yapiBedeli) || 0;
+        });
+    });
+    
+    const asgariLevazimHesapla = rapor.asgariLevazimHesapla === 1;
+    const levazimBedeli = asgariLevazimHesapla ? toplamYapiBedeli * 0.7 * 0.75 : 0;
+    
+    // 10 sütunlu yapı tablosu: Ada/Parsel/Y.No/Yapı Adı/Sınıfı/B.Fiyat/Alan/Yıpr./Eks.İm./Yapı Bedeli
+    let yapiSatirlari = '';
+    let genelToplam = 0;
+    
+    parseller.forEach((parsel, pIdx) => {
+        const yapilar = parsel.yapilar || [];
+        let araToplam = 0;
+        
+        yapilar.forEach((yapi, yIdx) => {
+            const yapiSinifiGrup = [yapi.yapiSinifi, yapi.yapiGrubu].filter(s => s).join('');
+            const yapiBedeli = parseFloat(yapi.yapiBedeli) || 0;
+            araToplam += yapiBedeli;
+            
+            yapiSatirlari += `
+                <tr data-parsel-index="${pIdx}" data-yapi-index="${yIdx}" class="ed-cp-yapi-row">
+                    <td contenteditable="true" data-field="cp-yada-${pIdx}-${yIdx}">${yIdx === 0 ? (parsel.ada || '') : ''}</td>
+                    <td contenteditable="true" data-field="cp-yparsel-${pIdx}-${yIdx}">${yIdx === 0 ? (parsel.parsel || '') : ''}</td>
+                    <td contenteditable="true" data-field="cp-yapiNo-${pIdx}-${yIdx}">${yapi.yapiNo || ''}</td>
+                    <td contenteditable="true" data-field="cp-yapiAdi-${pIdx}-${yIdx}">${yapi.yapiAdi || ''}</td>
+                    <td contenteditable="true" data-field="cp-yapiSinifi-${pIdx}-${yIdx}">${yapiSinifiGrup}</td>
+                    <td contenteditable="true" data-field="cp-birimFiyat-${pIdx}-${yIdx}" class="ed-numeric">${formatPara(yapi.birimFiyat)}</td>
+                    <td contenteditable="true" data-field="cp-yapiAlani-${pIdx}-${yIdx}" class="ed-numeric">${parseFloat(yapi.yapiAlani || 0).toFixed(2)}</td>
+                    <td contenteditable="true" data-field="cp-yipranmaPay-${pIdx}-${yIdx}" class="ed-numeric">${yapi.yipranmaPay || '0'}</td>
+                    <td contenteditable="true" data-field="cp-eksikImalat-${pIdx}-${yIdx}" class="ed-numeric">${yapi.eksikImalatOrani || '0'}</td>
+                    <td data-field="cp-yapiBedeli-${pIdx}-${yIdx}" class="ed-calculated">${formatPara(yapiBedeli)}</td>
+                </tr>
+            `;
+        });
+        
+        genelToplam += araToplam;
+        
+        // Ara toplam satırı
+        yapiSatirlari += `
+            <tr class="ed-cp-aratoplam-row" data-parsel-index="${pIdx}" style="background: #e8f0fe; font-weight: bold;">
+                <td colspan="9" style="text-align: right; padding-right: 10px;">Ara Toplam (Parsel ${parsel.ada || ''}/${parsel.parsel || ''})</td>
+                <td data-field="cp-araToplam-${pIdx}" class="ed-calculated" style="font-weight: bold;">${formatPara(araToplam)}</td>
+            </tr>
+        `;
+    });
+    
+    // Genel toplam satırı
+    yapiSatirlari += `
+        <tr class="ed-cp-geneltoplam-row" style="background: #d4edda; font-weight: bold;">
+            <td colspan="9" style="text-align: right; padding-right: 10px; font-weight: bold;">GENEL TOPLAM</td>
+            <td id="ed-cpGenelToplam" class="ed-calculated" style="font-weight: bold;">${formatPara(genelToplam)}</td>
+        </tr>
+    `;
+    
+    container.innerHTML = `
+        <div data-coklu-parsel="true" style="display:none;"></div>
+        
+        <!-- Başlık -->
+        <div class="ed-editable-section">
+            <div class="ed-editable-field title" contenteditable="true">KIYMET TAKDİR RAPORU</div>
+        </div>
+        
+        <!-- Gerekçe -->
+        <div class="ed-editable-section">
+            <span class="ed-section-label">Gerekçe</span>
+            <div class="ed-editable-field heading" contenteditable="true">Gerekçe:</div>
+            <div class="ed-editable-field paragraph" contenteditable="true" data-field="gerekceMetni">
+                Bu rapor, <span class="ed-inline-edit" data-field="ilgiliKurum" contenteditable="true">${rapor.ilgiliKurum || ''}</span> 
+                <span class="ed-inline-edit" data-field="resmiYaziTarihi" contenteditable="true">${formatTarih(rapor.resmiYaziTarihi)}</span> tarih 
+                <span class="ed-inline-edit" data-field="resmiYaziSayisi" contenteditable="true">${rapor.resmiYaziSayisi || ''}</span> sayılı yazısına istinaden hazırlanmıştır.
+            </div>
+        </div>
+        
+        <!-- Açıklama -->
+        <div class="ed-editable-section">
+            <span class="ed-section-label">Açıklama</span>
+            <div class="ed-editable-field paragraph" contenteditable="true">
+                ${asgariLevazimHesapla 
+                    ? `Bahse konu taşınmazlar ile ilgili yerinde ve edinilen bilgiler ile <span class="ed-inline-edit" data-field="hesapYili" contenteditable="true">${rapor.hesapYili || ''}</span> yılı fiyatlarına göre yapı bedeli ve Asgari Levazım Bedeli aşağıdaki şekilde hesaplanmıştır:`
+                    : `Bahse konu taşınmazlar ile ilgili yerinde ve edinilen bilgiler ile <span class="ed-inline-edit" data-field="hesapYili" contenteditable="true">${rapor.hesapYili || ''}</span> yılı fiyatlarına göre yapı bedeli aşağıdaki şekilde hesaplanmıştır:`}
+            </div>
+        </div>
+        
+        <!-- Yapı Bilgileri - Çoklu Parsel -->
+        <div class="ed-editable-section">
+            <span class="ed-section-label">Yapı Bilgileri - Çoklu Parsel (Düzenlenebilir - Değişiklikler otomatik hesaplanır)</span>
+            <table class="ed-editor-table" id="ed-yapilarTable" style="font-size: 11px;">
+                <thead>
+                    <tr>
+                        <th>ADA</th>
+                        <th>PARSEL</th>
+                        <th>Y.NO</th>
+                        <th>YAPI ADI</th>
+                        <th>SINIFI</th>
+                        <th>B.FİYAT</th>
+                        <th>ALAN</th>
+                        <th>YIPR.</th>
+                        <th>EKS.İM.</th>
+                        <th>YAPI BEDELİ</th>
+                    </tr>
+                </thead>
+                <tbody id="ed-yapilarTbody">
+                    ${yapiSatirlari}
+                </tbody>
+            </table>
+            <div style="margin-top: 10px;">
+                <button type="button" id="ed-hesaplaBtn" class="ed-calc-btn">🧮 Yeniden Hesapla</button>
+            </div>
+        </div>
+        
+        <!-- Toplam Bedel -->
+        <div class="ed-editable-section">
+            <span class="ed-section-label">Toplam Bedel</span>
+            <div class="ed-editable-field heading">
+                TOPLAM YAPI BEDELİ: <span id="ed-toplamBedel" class="ed-calculated-value">${formatPara(toplamYapiBedeli)}</span> TL
+            </div>
+            <div class="ed-editable-field paragraph">
+                Yalnız <span id="ed-toplamYaziyla">${sayiyiYaziyaCevir(toplamYapiBedeli)}</span> Türk Lirasıdır.
+            </div>
+        </div>
+        
+        ${asgariLevazimHesapla ? `
+        <!-- Asgari Levazım Bedeli -->
+        <div class="ed-editable-section">
+            <span class="ed-section-label">Asgari Levazım Bedeli</span>
+            <div class="ed-editable-field heading">
+                TOPLAM ASGARİ LEVAZIM BEDELİ (Toplam Bedel x 0,7 x 0,75) : <span id="ed-levazimBedel" class="ed-calculated-value">${formatPara(levazimBedeli)}</span> TL
+            </div>
+            <div class="ed-editable-field paragraph">
+                Yalnız <span id="ed-levazimYaziyla">${sayiyiYaziyaCevir(levazimBedeli)}</span> Türk Lirasıdır.
+            </div>
+        </div>
+        ` : ''}
+        
+        <!-- Son Paragraf -->
+        <div class="ed-editable-section">
+            <span class="ed-section-label">Son Paragraf</span>
+            <div class="ed-editable-field paragraph" contenteditable="true">
+                ${asgariLevazimHesapla
+                    ? `Söz konusu yapıların yapım tekniği, kullanım durumu, yaşı ve 02.12.1982 gün ve 17.886 sayılı Resmi Gazete'de yayınlanarak yürürlüğe giren "Yıpranma Paylarına İlişkin Oranları Gösterir Cetvel'e göre takdir edilen yıpranma payları dahil, arsa değeri hariç, ${formatTarih(rapor.resmiGazeteTarih)} tarih ve ${rapor.resmiGazeteSayili || ''} sayılı Resmi Gazete 'de yayımlanan Mimarlık Ve Mühendislik Hizmet Bedellerinin Hesabında Kullanılacak ${rapor.hesapYili || ''} Yılı Yapı Yaklaşık Birim Maliyetleri Hakkında Tebliğ ve 2015/1 sayılı Milli Emlak Genelgesi esas alınarak hazırlanan iş bu rapor tarafımızdan bir nüsha olarak tanzim ve imza edilmiştir.`
+                    : `Söz konusu yapıların yapım tekniği, kullanım durumu, yaşı ve 02.12.1982 gün ve 17.886 sayılı Resmi Gazete'de yayınlanarak yürürlüğe giren "Yıpranma Paylarına İlişkin Oranları Gösterir Cetvel'e göre takdir edilen yıpranma payları dahil, arsa değeri hariç, ${formatTarih(rapor.resmiGazeteTarih)} tarih ve ${rapor.resmiGazeteSayili || ''} sayılı Resmi Gazete 'de yayımlanan Mimarlık Ve Mühendislik Hizmet Bedellerinin Hesabında Kullanılacak ${rapor.hesapYili || ''} Yılı Yapı Yaklaşık Birim Maliyetleri Hakkında Tebliğ esas alınarak hazırlanan iş bu rapor tarafımızdan bir nüsha olarak tanzim ve imza edilmiştir.`}
+            </div>
+        </div>
+        
+        <!-- Rapor Tarihi -->
+        <div class="ed-editable-section">
+            <span class="ed-section-label">Rapor Tarihi</span>
+            <div class="ed-editable-field" contenteditable="true" data-field="raporTarihi" style="text-align: center;">
+                ${formatTarih(rapor.raporTarihi)}
+            </div>
+        </div>
+        
+        <!-- İmza Alanları -->
+        <div class="ed-signature-area">
+            ${renderImzacilar(rapor)}
+        </div>
+        
+        <!-- Fotoğraflar Bölümü -->
+        <div class="ed-editable-section ed-photos-section">
+            <span class="ed-section-label">📷 Fotoğraflar</span>
+            <div class="ed-photos-toolbar">
+                <input type="file" id="ed-fotografEkle" accept="image/*" multiple style="display: none;">
+                <button type="button" id="ed-fotografEkleBtn" class="ed-add-btn">📷 Fotoğraf Ekle</button>
+                <span class="ed-photo-count">${fotograflar.length} fotoğraf</span>
+            </div>
+            <div id="ed-fotograflarContainer" class="ed-photos-grid">
+                ${renderFotograflar()}
+            </div>
+        </div>
+    `;
 }
 
 /**
@@ -390,9 +594,8 @@ function setupContentEventListeners() {
         yapilarTbody.addEventListener('input', (e) => {
             const cell = e.target.closest('td');
             if (cell && cell.classList.contains('ed-numeric')) {
-                // Sayısal alan değişti, hesapla
                 const row = cell.closest('tr');
-                if (row) {
+                if (row && !row.classList.contains('ed-cp-aratoplam-row') && !row.classList.contains('ed-cp-geneltoplam-row')) {
                     hesaplaSatir(row);
                 }
             }
@@ -548,11 +751,14 @@ function yeniYapiEkle() {
  * Satır hesapla
  */
 function hesaplaSatir(row) {
-    const birimFiyatCell = row.querySelector('[data-field="birimFiyat"]');
-    const alanCell = row.querySelector('[data-field="yapiAlani"]');
-    const yipranmaCell = row.querySelector('[data-field="yipranmaPay"]');
-    const eksikCell = row.querySelector('[data-field="eksikImalatOrani"]');
-    const bedelCell = row.querySelector('[data-field="yapiBedeli"]');
+    const isCokluParsel = !!document.querySelector('[data-coklu-parsel]');
+    
+    // Çoklu parsel modunda cp- prefix'li field'lar
+    const birimFiyatCell = row.querySelector('[data-field*="birimFiyat"]');
+    const alanCell = row.querySelector('[data-field*="yapiAlani"]');
+    const yipranmaCell = row.querySelector('[data-field*="yipranmaPay"]');
+    const eksikCell = row.querySelector('[data-field*="eksikImalat"]');
+    const bedelCell = row.querySelector('[data-field*="yapiBedeli"]');
     
     if (!birimFiyatCell || !alanCell || !bedelCell) return;
     
@@ -575,8 +781,16 @@ function hesaplaSatir(row) {
  * Yeniden hesapla
  */
 function yenidenHesapla() {
-    const rows = document.querySelectorAll('#ed-yapilarTbody tr');
-    rows.forEach(row => hesaplaSatir(row));
+    const isCokluParsel = !!document.querySelector('[data-coklu-parsel]');
+    
+    if (isCokluParsel) {
+        // Çoklu parselde sadece yapı satırlarını hesapla (ara toplam ve genel toplam satırlarını atla)
+        const rows = document.querySelectorAll('#ed-yapilarTbody tr.ed-cp-yapi-row');
+        rows.forEach(row => hesaplaSatir(row));
+    } else {
+        const rows = document.querySelectorAll('#ed-yapilarTbody tr');
+        rows.forEach(row => hesaplaSatir(row));
+    }
     
     if (window.showNotification) {
         window.showNotification('Hesaplama tamamlandı', 'success');
@@ -587,15 +801,49 @@ function yenidenHesapla() {
  * Toplamları güncelle
  */
 function guncelleToplamlar() {
-    const rows = document.querySelectorAll('#ed-yapilarTbody tr');
+    const isCokluParsel = !!document.querySelector('[data-coklu-parsel]');
     let toplam = 0;
     
-    rows.forEach(row => {
-        const bedelCell = row.querySelector('[data-field="yapiBedeli"]');
-        if (bedelCell) {
-            toplam += parseParaTR(bedelCell.textContent);
+    if (isCokluParsel) {
+        // Çoklu parselde: her parselin ara toplamını hesapla, sonra genel toplam
+        const parselIndexler = new Set();
+        document.querySelectorAll('#ed-yapilarTbody tr.ed-cp-yapi-row').forEach(row => {
+            parselIndexler.add(row.dataset.parselIndex);
+        });
+        
+        parselIndexler.forEach(pIdx => {
+            let araToplam = 0;
+            document.querySelectorAll(`#ed-yapilarTbody tr.ed-cp-yapi-row[data-parsel-index="${pIdx}"]`).forEach(row => {
+                const bedelCell = row.querySelector('[data-field*="yapiBedeli"]');
+                if (bedelCell) {
+                    araToplam += parseParaTR(bedelCell.textContent);
+                }
+            });
+            
+            // Ara toplam hücresini güncelle
+            const araToplamCell = document.querySelector(`[data-field="cp-araToplam-${pIdx}"]`);
+            if (araToplamCell) {
+                araToplamCell.textContent = formatPara(araToplam);
+            }
+            
+            toplam += araToplam;
+        });
+        
+        // Genel toplam
+        const genelToplamEl = document.getElementById('ed-cpGenelToplam');
+        if (genelToplamEl) {
+            genelToplamEl.textContent = formatPara(toplam);
         }
-    });
+    } else {
+        // Tekli parsel
+        const rows = document.querySelectorAll('#ed-yapilarTbody tr');
+        rows.forEach(row => {
+            const bedelCell = row.querySelector('[data-field="yapiBedeli"]');
+            if (bedelCell) {
+                toplam += parseParaTR(bedelCell.textContent);
+            }
+        });
+    }
     
     // Toplam bedeli güncelle
     const toplamEl = document.getElementById('ed-toplamBedel');
@@ -758,66 +1006,109 @@ function kaydet() {
     // Editörden verileri topla
     const guncelVeri = collectEditorData();
     
-    // Veritabanını güncelle
-    const sql = `UPDATE raporlar SET 
-        ili = ?, ilce = ?, mahalle = ?, ada = ?, parsel = ?,
-        ilgiliKurum = ?, resmiYaziSayisi = ?,
-        raportorAdi = ?, raportorUnvani = ?,
-        yapilarJSON = ?, fotograflarJSON = ?,
-        toplamYapiBedeli = ?, yapiBedeli = ?
-        WHERE id = ?`;
-    
-    db.run(sql, [
-        guncelVeri.ili,
-        guncelVeri.ilce,
-        guncelVeri.mahalle,
-        guncelVeri.ada,
-        guncelVeri.parsel,
-        guncelVeri.ilgiliKurum,
-        guncelVeri.resmiYaziSayisi,
-        guncelVeri.raportorAdi,
-        guncelVeri.raportorUnvani,
-        JSON.stringify(guncelVeri.yapilar),
-        JSON.stringify(fotograflar),
-        guncelVeri.toplamYapiBedeli,
-        guncelVeri.toplamYapiBedeli.toString()
-    , currentRaporId], (err) => {
-        if (err) {
-            console.error('Kaydetme hatası:', err);
-            if (window.showNotification) {
-                window.showNotification('Kaydetme hatası: ' + err.message, 'error');
+    if (guncelVeri.cokluParsel) {
+        // Çoklu parsel modunda kaydet
+        const sql = `UPDATE raporlar SET 
+            ili = ?, ilce = ?, mahalle = ?, ada = ?, parsel = ?,
+            ilgiliKurum = ?, resmiYaziSayisi = ?,
+            raportorAdi = ?, raportorUnvani = ?,
+            parsellerJSON = ?, yapilarJSON = ?, fotograflarJSON = ?,
+            toplamYapiBedeli = ?, yapiBedeli = ?,
+            cokluParsel = ?
+            WHERE id = ?`;
+        
+        db.run(sql, [
+            guncelVeri.ili,
+            guncelVeri.ilce,
+            guncelVeri.mahalle,
+            guncelVeri.ada,
+            guncelVeri.parsel,
+            guncelVeri.ilgiliKurum,
+            guncelVeri.resmiYaziSayisi,
+            guncelVeri.raportorAdi,
+            guncelVeri.raportorUnvani,
+            JSON.stringify(guncelVeri.parseller),
+            JSON.stringify(guncelVeri.parseller),
+            JSON.stringify(fotograflar),
+            guncelVeri.toplamYapiBedeli,
+            guncelVeri.toplamYapiBedeli.toString(),
+            1,
+            currentRaporId
+        ], (err) => {
+            if (err) {
+                console.error('Kaydetme hatası:', err);
+                if (window.showNotification) {
+                    window.showNotification('Kaydetme hatası: ' + err.message, 'error');
+                }
+                return;
             }
-            return;
-        }
+            
+            currentRaporData = { ...currentRaporData, ...guncelVeri, parsellerJSON: JSON.stringify(guncelVeri.parseller), fotograflarJSON: JSON.stringify(fotograflar) };
+            
+            isModified = false;
+            updateStatus();
+            
+            if (window.showNotification) {
+                window.showNotification('Çoklu parsel değişiklikleri kaydedildi', 'success');
+            }
+        });
+    } else {
+        // Tekli parsel modunda kaydet
+        const sql = `UPDATE raporlar SET 
+            ili = ?, ilce = ?, mahalle = ?, ada = ?, parsel = ?,
+            ilgiliKurum = ?, resmiYaziSayisi = ?,
+            raportorAdi = ?, raportorUnvani = ?,
+            yapilarJSON = ?, fotograflarJSON = ?,
+            toplamYapiBedeli = ?, yapiBedeli = ?
+            WHERE id = ?`;
         
-        // currentRaporData'yı güncelle
-        currentRaporData = { ...currentRaporData, ...guncelVeri, fotograflarJSON: JSON.stringify(fotograflar) };
-        
-        isModified = false;
-        updateStatus();
-        
-        if (window.showNotification) {
-            window.showNotification('Değişiklikler kaydedildi', 'success');
-        }
-    });
+        db.run(sql, [
+            guncelVeri.ili,
+            guncelVeri.ilce,
+            guncelVeri.mahalle,
+            guncelVeri.ada,
+            guncelVeri.parsel,
+            guncelVeri.ilgiliKurum,
+            guncelVeri.resmiYaziSayisi,
+            guncelVeri.raportorAdi,
+            guncelVeri.raportorUnvani,
+            JSON.stringify(guncelVeri.yapilar),
+            JSON.stringify(fotograflar),
+            guncelVeri.toplamYapiBedeli,
+            guncelVeri.toplamYapiBedeli.toString(),
+            currentRaporId
+        ], (err) => {
+            if (err) {
+                console.error('Kaydetme hatası:', err);
+                if (window.showNotification) {
+                    window.showNotification('Kaydetme hatası: ' + err.message, 'error');
+                }
+                return;
+            }
+            
+            currentRaporData = { ...currentRaporData, ...guncelVeri, fotograflarJSON: JSON.stringify(fotograflar) };
+            
+            isModified = false;
+            updateStatus();
+            
+            if (window.showNotification) {
+                window.showNotification('Değişiklikler kaydedildi', 'success');
+            }
+        });
+    }
 }
 
 /**
  * Editörden verileri topla
  */
 function collectEditorData() {
-    // Taşınmaz bilgileri
-    const ili = document.querySelector('[data-field="ili"]')?.textContent?.trim() || 'Samsun';
-    const ilce = document.querySelector('[data-field="ilce"]')?.textContent?.trim() || '';
-    const mahalle = document.querySelector('[data-field="mahalle"]')?.textContent?.trim() || '';
-    const ada = document.querySelector('[data-field="ada"]')?.textContent?.trim() || '';
-    const parsel = document.querySelector('[data-field="parsel"]')?.textContent?.trim() || '';
+    const isCokluParsel = !!document.querySelector('[data-coklu-parsel]');
     
-    // Gerekçe bilgileri
+    // Gerekçe bilgileri (her iki modda ortak)
     const ilgiliKurum = document.querySelector('[data-field="ilgiliKurum"]')?.textContent?.trim() || '';
     const resmiYaziSayisi = document.querySelector('[data-field="resmiYaziSayisi"]')?.textContent?.trim() || '';
     
-    // Raportör bilgileri
+    // Raportör bilgileri (her iki modda ortak)
     const raportorAdlari = [];
     const raportorUnvanlari = [];
     document.querySelectorAll('[data-field^="raportorAdi_"]').forEach(el => {
@@ -828,6 +1119,17 @@ function collectEditorData() {
         const unvan = el.textContent?.trim();
         raportorUnvanlari.push(unvan || '');
     });
+    
+    if (isCokluParsel) {
+        return collectCokluParselEditorData(ilgiliKurum, resmiYaziSayisi, raportorAdlari, raportorUnvanlari);
+    }
+    
+    // Tekli parsel - Taşınmaz bilgileri
+    const ili = document.querySelector('[data-field="ili"]')?.textContent?.trim() || 'Samsun';
+    const ilce = document.querySelector('[data-field="ilce"]')?.textContent?.trim() || '';
+    const mahalle = document.querySelector('[data-field="mahalle"]')?.textContent?.trim() || '';
+    const ada = document.querySelector('[data-field="ada"]')?.textContent?.trim() || '';
+    const parsel = document.querySelector('[data-field="parsel"]')?.textContent?.trim() || '';
     
     // Yapı bilgileri
     const yapilar = [];
@@ -853,6 +1155,7 @@ function collectEditorData() {
     });
     
     return {
+        cokluParsel: false,
         ili,
         ilce,
         mahalle,
@@ -863,6 +1166,87 @@ function collectEditorData() {
         raportorAdi: raportorAdlari.join(', '),
         raportorUnvani: raportorUnvanlari.join(', '),
         yapilar,
+        toplamYapiBedeli
+    };
+}
+
+/**
+ * Çoklu parsel editör verilerini topla
+ */
+function collectCokluParselEditorData(ilgiliKurum, resmiYaziSayisi, raportorAdlari, raportorUnvanlari) {
+    // Orijinal parseller verisini al (ilçe/mahalle gibi yapı tablosunda olmayan bilgiler için)
+    let orijinalParseller = [];
+    try {
+        if (currentRaporData?.parsellerJSON) {
+            orijinalParseller = JSON.parse(currentRaporData.parsellerJSON);
+        }
+    } catch (e) { }
+    
+    // Parsel index'lerini yapı tablosundan topla
+    const parselIndexler = new Set();
+    document.querySelectorAll('#ed-yapilarTbody tr.ed-cp-yapi-row').forEach(row => {
+        parselIndexler.add(row.dataset.parselIndex);
+    });
+    
+    const parseller = [];
+    let toplamYapiBedeli = 0;
+    
+    parselIndexler.forEach(pIdx => {
+        const pIdxNum = parseInt(pIdx);
+        const orijinal = orijinalParseller[pIdxNum] || {};
+        
+        // Ada/Parsel bilgisini yapı tablosunun ilk satırından al
+        const ilkSatir = document.querySelector(`#ed-yapilarTbody tr.ed-cp-yapi-row[data-parsel-index="${pIdx}"]`);
+        const ada = ilkSatir?.querySelector(`[data-field="cp-yada-${pIdx}-0"]`)?.textContent?.trim() || orijinal.ada || '';
+        const parselNo = ilkSatir?.querySelector(`[data-field="cp-yparsel-${pIdx}-0"]`)?.textContent?.trim() || orijinal.parsel || '';
+        
+        const parselData = {
+            ilce: orijinal.ilce || '',
+            mahalle: orijinal.mahalle || '',
+            ada: ada,
+            parsel: parselNo,
+            yuzolcumu: orijinal.yuzolcumu || '',
+            malik: orijinal.malik || '',
+            yapilar: []
+        };
+        
+        // Bu parselin yapılarını topla
+        document.querySelectorAll(`#ed-yapilarTbody tr.ed-cp-yapi-row[data-parsel-index="${pIdx}"]`).forEach(row => {
+            const yIdx = row.dataset.yapiIndex;
+            const yapi = {
+                yapiNo: row.querySelector(`[data-field="cp-yapiNo-${pIdx}-${yIdx}"]`)?.textContent?.trim() || '',
+                yapiAdi: row.querySelector(`[data-field="cp-yapiAdi-${pIdx}-${yIdx}"]`)?.textContent?.trim() || '',
+                yapiSinifi: row.querySelector(`[data-field="cp-yapiSinifi-${pIdx}-${yIdx}"]`)?.textContent?.trim() || '',
+                yapiGrubu: '',
+                birimFiyat: parseParaTR(row.querySelector(`[data-field="cp-birimFiyat-${pIdx}-${yIdx}"]`)?.textContent),
+                yapiAlani: parseFloat(row.querySelector(`[data-field="cp-yapiAlani-${pIdx}-${yIdx}"]`)?.textContent?.replace(',', '.')) || 0,
+                yipranmaPay: parseFloat(row.querySelector(`[data-field="cp-yipranmaPay-${pIdx}-${yIdx}"]`)?.textContent) || 0,
+                eksikImalatOrani: parseFloat(row.querySelector(`[data-field="cp-eksikImalat-${pIdx}-${yIdx}"]`)?.textContent) || 0,
+                yapiBedeli: parseParaTR(row.querySelector(`[data-field="cp-yapiBedeli-${pIdx}-${yIdx}"]`)?.textContent)
+            };
+            
+            parselData.yapilar.push(yapi);
+            toplamYapiBedeli += yapi.yapiBedeli;
+        });
+        
+        parseller.push(parselData);
+    });
+    
+    // İlk parselin bilgilerini ana alanlara yaz (geriye uyumluluk)
+    const ilkParsel = parseller[0] || {};
+    
+    return {
+        cokluParsel: true,
+        ili: currentRaporData?.ili || 'Samsun',
+        ilce: ilkParsel.ilce || '',
+        mahalle: ilkParsel.mahalle || '',
+        ada: ilkParsel.ada || '',
+        parsel: ilkParsel.parsel || '',
+        ilgiliKurum,
+        resmiYaziSayisi,
+        raportorAdi: raportorAdlari.join(', '),
+        raportorUnvani: raportorUnvanlari.join(', '),
+        parseller,
         toplamYapiBedeli
     };
 }
@@ -887,29 +1271,26 @@ function wordOlarakIndir() {
     const guncelVeri = collectEditorData();
     
     console.log('📷 Word export - fotograflar dizisi:', fotograflar?.length || 0);
-    if (fotograflar && fotograflar.length > 0) {
-        console.log('📷 İlk fotoğraf:', {
-            name: fotograflar[0].name,
-            hasData: !!fotograflar[0].data,
-            dataLength: fotograflar[0].data?.substring(0, 50) + '...'
-        });
-    }
     
     // Rapor verisini güncelle
     const raporData = {
         ...currentRaporData,
         ...guncelVeri,
-        yapilarJSON: JSON.stringify(guncelVeri.yapilar),
         yapiBedeli: guncelVeri.toplamYapiBedeli,
         fotograflarJSON: JSON.stringify(fotograflar)
     };
     
-    console.log('📷 Gönderilen fotograflarJSON uzunluğu:', raporData.fotograflarJSON?.length || 0);
+    if (guncelVeri.cokluParsel) {
+        raporData.cokluParsel = 1;
+        raporData.parsellerJSON = JSON.stringify(guncelVeri.parseller);
+    } else {
+        raporData.yapilarJSON = JSON.stringify(guncelVeri.yapilar);
+    }
     
-    // IPC ile Word export isteği gönder
-    ipcRenderer.send('export-word', {
-        raporId: currentRaporId,
-        raporData: raporData
+    // IPC ile Word export isteği gönder (fotoğraflarla birlikte)
+    ipcRenderer.send('export-word-with-photos', {
+        raporData: raporData,
+        fotograflar: fotograflar
     });
     
     if (window.showNotification) {

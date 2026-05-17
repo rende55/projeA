@@ -1,5 +1,60 @@
 # CHANGELOG
 
+## [04.03.2026 - 01:15] - Çoklu Parsel: Taşınmaz Bilgileri Tablosu Kaldırıldı
+
+### Yapılan İşlemler
+- Çoklu parsel modunda "Taşınmaz Bilgileri" tablosu hem editörden hem de Word rapor çıktısından kaldırıldı (zaten yapı tablosunda Ada/Parsel sütunları bu bilgiyi veriyor)
+- `collectCokluParselEditorData` güncellendi: parsel ilçe/mahalle bilgileri orijinal kayıtlı veriden korunuyor
+
+### Etkilenen Dosyalar
+- `modules/yapi-bedeli/scripts/editor-page.js`
+- `modules/yapi-bedeli/scripts/reportGenerator.js`
+
+---
+
+## [04.03.2026 - 01:10] - Editör Sayfası Çoklu Parsel Desteği
+
+### Yapılan İşlemler
+- **renderRaporIcerigi**: Çoklu parsel raporlarını algılayarak farklı tablo yapısı ile render ediyor (taşınmaz bilgileri tablosunda tüm parseller, 10 sütunlu yapı tablosu: Ada/Parsel/Y.No/Yapı Adı/Sınıfı/B.Fiyat/Alan/Yıpr./Eks.İm./Yapı Bedeli)
+- **Ara Toplam / Genel Toplam** satırları editörde de gösteriliyor ve hesaplamalarda güncelleniyor
+- **collectEditorData**: Çoklu parsel modunda `parseller` dizisini topluyor, tekli parselde eski davranış korunuyor
+- **kaydet**: Çoklu parsel modunda `parsellerJSON` ve `cokluParsel` alanlarını da DB'ye kaydediyor
+- **wordOlarakIndir**: Çoklu parsel modunda `cokluParsel` flag'i ve `parsellerJSON` verilerini Word export'a gönderiyor
+- **hesaplaSatir / yenidenHesapla / guncelleToplamlar**: Her iki modda doğru çalışacak şekilde güncellendi
+
+### Etkilenen Dosyalar
+- `modules/yapi-bedeli/scripts/editor-page.js`
+
+---
+
+## [03.03.2026 - 23:35] - Çoklu Parsel Rapor Sistemi Eklendi
+
+### Yeni Özellik
+- **Çoklu Parsel Raporu**: Genel Bilgiler sekmesinde "Çoklu Parsel Raporu" checkbox'ı ile aktifleşen yeni rapor modu
+- Tek raporda birden fazla ada/parsel ve yapıları hesaplanabiliyor
+- Her parsel için ayrı ayrı ilçe, mahalle, ada, parsel, yüzölçümü ve malik bilgisi girilebiliyor
+- Her parsele bağımsız olarak yapı eklenebiliyor (yapı numaraları her parselde 1'den başlıyor)
+- Yapı bilgileri: Yapı Adı, Yapı Sınıfı/Grubu, Yapım Tekniği, Yapı Yaşı, Yapı Alanı, Birim Fiyat, Yıpranma Payı, Eksik İmalat
+
+### Word Rapor Çıktısı (Çoklu Parsel)
+- 10 sütunlu tablo: Ada / Parsel / Y.No / Yapı Adı / Sınıfı / B.Fiyat / Alan / Yıpr. / Eks.İm. / Yapı Bedeli
+- Yazılar 10 punto (kısaltılmış sütun başlıkları)
+- Her parselin yapıları bittikten sonra **Ara Toplam** satırı
+- En altta **GENEL TOPLAM** satırı
+- Gerekçe, açıklama, toplam bedel, son paragraf, imza, fotoğraf bölümleri tekli raporla aynı
+- Taşınmaz bilgileri tablosunda tüm parseller ayrı satırlarda listeleniyor
+
+### Veritabanı
+- `raporlar` tablosuna `cokluParsel` (INTEGER DEFAULT 0) ve `parsellerJSON` (TEXT) kolonları eklendi (migration ile otomatik)
+
+### Etkilenen Dosyalar
+- `modules/yapi-bedeli/views/yapi-bedeli-content.html` (checkbox + çoklu parsel arsa modu UI)
+- `modules/yapi-bedeli/scripts/yapi-bedeli-page.js` (çoklu parsel mantığı, hesaplama, veri toplama, kaydetme, word export)
+- `modules/yapi-bedeli/scripts/reportGenerator.js` (generateCokluParselReport fonksiyonu)
+- `main.js` (DB migration + çoklu parsel dosya adı desteği)
+
+---
+
 ## [07.02.2026 - 19:00] - Portable Build Türkçe Karakter Düzeltmesi
 
 ### Düzeltilen Sorun
