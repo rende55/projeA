@@ -237,6 +237,7 @@
         <button type="button" class="ad-tab-button active" data-tab="donemler">💰 Birim Fiyat Dönemleri</button>
         <button type="button" class="ad-tab-button" data-tab="raportorler">👨‍💼 Raportörler</button>
         <button type="button" class="ad-tab-button" data-tab="kurumlar">🏢 Kurumlar</button>
+        <button type="button" class="ad-tab-button" data-tab="illerilceler">🌍 İl / İlçe</button>
         <button type="button" class="ad-tab-button" data-tab="pidoranlari">📊 PID Oranları</button>
     </div>
 
@@ -440,6 +441,105 @@
                     <!-- Dinamik içerik -->
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- İl / İlçe Tab -->
+    <div id="ad-tab-illerilceler" class="ad-tab-content">
+        <h2>İl / İlçe Yönetimi</h2>
+
+        <div class="ad-info-box">
+            🌍 Sisteme yüklü illeri ve seçili ilin ilçelerini buradan yönetebilirsiniz.
+            Yeni il yüklediğinizde o ilin tüm ilçeleri otomatik olarak eklenir.
+        </div>
+
+        <!-- ÜST: İl Yükleme / Yönetim Bölümü -->
+        <div class="ad-form-section" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+            <h3 style="margin-top: 0; color: #2A4C6E;">➕ İl Yükle</h3>
+            <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 15px; align-items: end;">
+                <div>
+                    <label style="display: block; margin-bottom: 5px; font-weight: 600;">İl Seçin *</label>
+                    <select id="ad-jsonIlSelect" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
+                        <option value="">İl Seçiniz...</option>
+                        <!-- Dinamik olarak JSON'dan doldurulur, sonunda "Aradığım il burada yok" seçeneği eklenir -->
+                    </select>
+                </div>
+                <div>
+                    <button type="button" class="ad-btn ad-btn-success" onclick="window.adPage.ilYukle()" style="width: 100%;">➕ İli ve İlçelerini Yükle</button>
+                </div>
+            </div>
+
+            <!-- Manuel il ekleme alanı (gizli, "aradığım il yok" seçilince görünür) -->
+            <div id="ad-manuelIlBolumu" style="display: none; margin-top: 15px; padding: 15px; background: #fff; border: 2px dashed #2A4C6E; border-radius: 6px;">
+                <label style="display: block; margin-bottom: 5px; font-weight: 600;">İl Adı (Manuel) *</label>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px;">
+                    <input type="text" id="ad-manuelIlAdi" placeholder="Örn: YENİ İL" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; text-transform: uppercase;">
+                    <button type="button" class="ad-btn ad-btn-success" onclick="window.adPage.manuelIlEkle()">➕ Manuel Ekle</button>
+                </div>
+                <div style="font-size: 12px; color: #666; margin-top: 6px;">
+                    💡 Listede olmayan veya yeni resmi gazete ile eklenen iller için kullanın. İlçeleri sonra aşağıdan ekleyebilirsiniz.
+                </div>
+            </div>
+        </div>
+
+        <h3 style="color: #2A4C6E; margin-top: 30px;">📋 Yüklü İller</h3>
+        <div class="ad-table-container">
+            <table class="ad-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>İl Adı</th>
+                        <th>İlçe Sayısı</th>
+                        <th>Varsayılan</th>
+                        <th>Durum</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="ad-illerBody">
+                    <!-- Dinamik içerik -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- ALT: Seçili İlin İlçeleri -->
+        <div id="ad-ilceYonetimBolumu" style="display: none; margin-top: 30px; padding: 20px; border: 2px solid #2A4C6E; border-radius: 8px; background-color: #f8f9fa;">
+            <h3 style="margin-top: 0; color: #2A4C6E;">📍 <span id="ad-seciliIlAdi"></span> - İlçeleri</h3>
+
+            <div class="ad-info-box">
+                💡 Eksik ilçeleri manuel olarak ekleyebilir, yanlış yazılan veya fazla olanları düzenleyip silebilirsiniz.
+            </div>
+
+            <!-- Yeni İlçe Ekleme Formu -->
+            <div class="ad-form-section" style="background: white; padding: 15px; border-radius: 6px; margin-bottom: 20px; border: 1px solid #ddd;">
+                <h4 style="margin-top: 0; color: #2A4C6E;">➕ Manuel İlçe Ekle</h4>
+                <div style="display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; font-weight: 600;">İlçe Adı *</label>
+                        <input type="text" id="ad-yeniIlceAdi" placeholder="Örn: ALAÇAM" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; text-transform: uppercase;">
+                    </div>
+                    <button type="button" class="ad-btn ad-btn-success" onclick="window.adPage.ilceEkle()">➕ İlçe Ekle</button>
+                </div>
+            </div>
+
+            <div class="ad-table-container">
+                <table class="ad-table">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>İlçe Adı</th>
+                            <th>Durum</th>
+                            <th>İşlemler</th>
+                        </tr>
+                    </thead>
+                    <tbody id="ad-ilcelerBody">
+                        <!-- Dinamik içerik -->
+                    </tbody>
+                </table>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <button type="button" class="ad-btn" style="background: #6c757d; color: white;" onclick="window.adPage.ilceYonetiminiKapat()">❌ Kapat</button>
+            </div>
         </div>
     </div>
 
