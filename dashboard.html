@@ -934,7 +934,7 @@
             <p>Proje Geliştirme Birimi</p>
             <p class="version">
                 <button type="button" class="version-link" id="versionInfoBtn" title="Sürüm yeniliklerini gör">
-                    Versiyon 2.1.0 • 2026
+                    Versiyon 2.2.0 • 2026
                     <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-left: 4px;"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
                 </button>
             </p>
@@ -946,41 +946,43 @@
         <div class="version-modal" role="dialog" aria-labelledby="versionModalTitle">
             <div class="version-modal-header">
                 <div class="version-modal-title-wrap">
-                    <span class="version-modal-badge">v2.1.0</span>
+                    <span class="version-modal-badge">v2.2.0</span>
                     <h2 id="versionModalTitle">🎉 Bu Sürümde Neler Var?</h2>
                 </div>
                 <button type="button" class="version-modal-close" id="versionModalClose" title="Kapat (ESC)">×</button>
             </div>
             <div class="version-modal-body">
-                <p class="version-modal-date">📅 Yayın Tarihi: 18.05.2026</p>
+                <p class="version-modal-date">📅 Yayın Tarihi: 25.08.2026</p>
 
                 <div class="version-modal-section">
                     <h3>✨ Yeni Özellikler</h3>
                     <ul>
-                        <li><strong>Proje Bedeli Rapor Editörü:</strong> Kayıtlı raporlar artık tıpkı Yapı Bedeli'ndeki gibi sonradan açılıp düzenlenebiliyor — alan, birim maliyet, branş bedelleri, hizmet bölümleri ve imzacılar üzerinde canlı hesaplama ile değişiklik yapılabilir.</li>
-                        <li><strong>Doğrudan Word'e Aktarma:</strong> Kayıtlı raporlar listesindeki <em>📥 Word</em> düğmesi ile rapor yeniden açılmadan tek tıkla <code>.docx</code> olarak <code>raporlar/</code> klasörüne üretilip otomatik açılır.</li>
-                        <li><strong>İmzacı Bilgileri Korunuyor:</strong> Proje Bedeli raporlarında imzacı sayısı, adı ve ünvanı artık veritabanına kaydediliyor; Word çıktısında doğru görüntüleniyor.</li>
+                        <li><strong>Hesaplamalar Modülü — Cephe Metrajı:</strong> Yeni modül aktif. Çok cepheli boya ve yalıtım metrajı hesaplanabiliyor; her cepheye kapı/pencere boşlukları, çıkmalar ve saçak tanımlanıyor, boya ile yalıtım alanları ayrı ayrı toplanıyor. Metrajlar kaydedilip sonradan açılabiliyor.</li>
+                        <li><strong>Farklı Döneme Kopyala:</strong> Kayıtlı bir yapı bedeli raporu, seçilen birim fiyat dönemine uyarlanarak <em>yeni bir rapor</em> olarak kopyalanabiliyor. Kaynak rapora dokunulmaz. Yapı yaşları yıl farkı kadar kaydırılıp yıpranma payları cetvelden yeniden okunuyor, kopyalamadan önce eski→yeni karşılaştırmalı önizleme gösteriliyor.</li>
+                        <li><strong>Modül Ana Sayfaları:</strong> Yapı Bedeli ve Proje Bedeli artık doğrudan forma değil, bir giriş ekranına açılıyor: yeni hesaplama, kayıtlı raporlar ve son raporlar listesi tek yerde. Listeden bir rapora tıklayınca editör doğrudan açılıyor.</li>
                     </ul>
                 </div>
 
                 <div class="version-modal-section">
                     <h3>🔧 Geliştirmeler</h3>
                     <ul>
-                        <li>Proje Bedeli için <strong>"Kayıtlı Raporlar"</strong> sayfasındaki <em>Görüntüle</em> alert'i kaldırıldı; yerine <em>Düzenle</em> / <em>Word</em> / <em>Sil</em> aksiyon düğmeleri eklendi.</li>
-                        <li>Editörde <kbd>Ctrl</kbd>+<kbd>S</kbd> ile hızlı kayıt, <kbd>ESC</kbd> ile güvenli çıkış (kaydedilmemiş değişiklik uyarısı).</li>
-                        <li>Branş tablosunda alan değiştikçe <strong>otomatik yeniden hesaplama</strong> (toplam maliyet → branş bedelleri → genel toplam).</li>
+                        <li><strong>Kayıtlı Raporlar</strong> listesine <em>Dönem</em> sütunu eklendi; yılda birden fazla dönem varsa <code>2022/2</code> biçiminde, Resmi Gazete sayısıyla birlikte gösteriliyor.</li>
+                        <li>Listeden rapor açmadan tek tıkla <em>📥 Word İndir</em> ve <em>📅 Döneme Kopyala</em> yapılabiliyor.</li>
+                        <li>Editörde <strong>dönem şeridi</strong> eklendi; yapı sınıfı/grubu değişince birim fiyat, yaş veya yapım tekniği değişince yıpranma payı seçili dönemden <strong>otomatik çekiliyor</strong>.</li>
                     </ul>
                 </div>
 
                 <div class="version-modal-section">
                     <h3>🗄️ Veritabanı</h3>
                     <ul>
-                        <li><code>projeBedeliRaporlari</code> tablosuna <code>raportorSayisi</code>, <code>raportorAdi</code>, <code>raportorUnvani</code> kolonları eklendi (migration otomatik çalışır, mevcut veriler korunur).</li>
+                        <li><code>metrajlar</code> tablosu eklendi (Cephe Metrajı kayıtları).</li>
+                        <li><code>raporlar</code> tablosuna <code>birimFiyatId</code> kolonu eklendi. Eski raporlar, Resmi Gazete sayısı ile — o tutmazsa yılda tek dönem varsa yıl ile — geriye dönük olarak kendi dönemine bağlandı.</li>
+                        <li>Eski editör sürümünün <code>2 C</code> gibi tek hücrede birleştirdiği yapı sınıfı/grubu değerleri otomatik ayrıştırıldı; böylece birim fiyat sorguları yeniden çalışıyor.</li>
                     </ul>
                 </div>
 
                 <div class="version-modal-note">
-                    💡 <strong>Not:</strong> Önceki sürümde kaydedilmiş raporlarda imzacı bilgisi yoktur. Word çıktısında görünmesi için editörden imzacıları doldurup tekrar kaydetmeniz gerekir.
+                    💡 <strong>Not:</strong> Bir raporun yılında birden fazla birim fiyat dönemi varsa ve Resmi Gazete sayısı kayıtlı değilse, dönem <em>Belirsiz</em> görünebilir. Bu raporlarda yaş kaydırma, raporda yazan hesap yılına göre hesaplanır.
                 </div>
             </div>
             <div class="version-modal-footer">

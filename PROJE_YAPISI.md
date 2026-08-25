@@ -100,17 +100,43 @@ modules/proje-bedeli/
 
 ---
 
+#### 3. Hesaplamalar Modülü
+
+**Konum**: `modules/hesaplama/`
+
+```
+hesaplama/
+├── views/
+│   ├── hesaplama-hub-content.html     # Modül giriş ekranı
+│   ├── cephe-metraj-content.html      # Cephe metrajı ekranı
+│   └── metraj-raporlar-content.html   # Kayıtlı metrajlar
+└── scripts/
+    ├── hesaplama-hub-page.js          # Hub mantığı (SPA)
+    ├── metraj-hesap.js                # Metraj hesabı - saf fonksiyonlar, DOM'suz
+    ├── cephe-metraj-page.js           # Cephe metrajı mantığı (SPA)
+    └── metraj-raporlar-page.js        # Metraj listesi (SPA)
+```
+
+**Amaç**: Cephe boya ve yalıtım metrajı hesaplama. Çok cepheli çalışır; her cepheye
+kapı/pencere boşlukları, çıkmalar ve saçak tanımlanır. Boya ve yalıtım alanları
+yüzey bazında ayrı toplanır, mermer denizlik alanı düşülür.
+
+**Not**: Hesap mantığı `metraj-hesap.js` içinde saf fonksiyon olarak durur; arayüzden
+bağımsız çalıştırılabilir ve test edilebilir.
+
+---
+
 ### Planlanan Modüller
 
-#### 3. Mevzuat Modülü
+#### 4. Mevzuat Modülü
 **Konum**: `modules/mevzuat/` (henüz oluşturulmadı)
 
 **Amaç**: Cari mevzuat yönetimi ve görüntüleme
 
-#### 4. Hesaplama Modülü
-**Konum**: `modules/hesaplama/` (henüz oluşturulmadı)
+#### 5. Birim Dönüşüm (Hesaplamalar modülü içinde)
+**Durum**: Hub'da kart yer tutucu olarak duruyor, geliştirilmedi
 
-**Amaç**: Gelişmiş hesap makinesi ve birim dönüşümleri
+**Amaç**: Uzunluk, alan, hacim ve ağırlık birimleri arasında dönüşüm
 
 ---
 
@@ -125,19 +151,29 @@ Tek pencere SPA navigasyonunu yöneten sınıf. Tüm sayfa geçişleri bu sını
 | Sayfa ID | Başlık | Template | Script |
 |----------|--------|----------|--------|
 | `dashboard` | Ana Sayfa | (özel) | - |
-| `yapi-bedeli` | Yapı Bedeli | `yapi-bedeli-content.html` | `yapi-bedeli-page.js` |
+| `yapi-bedeli` | Yapı Bedeli (hub) | `yapi-bedeli-hub-content.html` | `yapi-bedeli-hub-page.js` |
+| `yapi-bedeli-form` | Yeni Hesaplama | `yapi-bedeli-content.html` | `yapi-bedeli-page.js` |
 | `raporlar` | Kayıtlı Raporlar | `raporlar-content.html` | `raporlar-page.js` |
 | `editor` | Rapor Editörü | `editor-content.html` | `editor-page.js` |
 | `admin` | Yönetim Paneli | `admin-content.html` | `admin-page.js` |
-| `proje-bedeli` | Proje Bedeli | `proje-bedeli-content.html` | `proje-bedeli-page.js` |
+| `proje-bedeli` | Proje Bedeli (hub) | `proje-bedeli-hub-content.html` | `proje-bedeli-hub-page.js` |
+| `proje-bedeli-form` | Yeni Hesaplama | `proje-bedeli-content.html` | `proje-bedeli-page.js` |
 | `pb-raporlar` | PB Raporları | `pb-raporlar-content.html` | `pb-raporlar-page.js` |
+| `pb-editor` | PB Rapor Editörü | `pb-editor-content.html` | `pb-editor-page.js` |
+| `hesaplama` | Hesaplamalar (hub) | `hesaplama-hub-content.html` | `hesaplama-hub-page.js` |
+| `cephe-metraj` | Cephe Metrajı | `cephe-metraj-content.html` | `cephe-metraj-page.js` |
+| `metraj-raporlar` | Kayıtlı Metrajlar | `metraj-raporlar-content.html` | `metraj-raporlar-page.js` |
 
 **Navigasyon Akışı**:
 ```
 Dashboard
-├── Yapı Bedeli → Raporlar → Editör
-│                         → Admin Paneli
-└── Proje Bedeli → PB Raporlar
+├── Yapı Bedeli (hub) → Yeni Hesaplama
+│                     → Raporlar → Editör → Döneme Kopyala
+├── Proje Bedeli (hub) → Yeni Hesaplama
+│                      → PB Raporlar → PB Editör
+├── Hesaplamalar (hub) → Cephe Metrajı
+│                      → Kayıtlı Metrajlar
+└── Admin Paneli
 ```
 
 **Çalışma Prensibi**:
@@ -180,6 +216,9 @@ shared/
 | 7 | `pidOranlari` | PID oranları (maliyet aralığı + oran) | Proje Bedeli |
 | 8 | `hizmetDaliKatsayilari` | Hizmet dalı katsayıları (branş bazlı) | Proje Bedeli |
 | 9 | `projeBedeliRaporlari` | Proje bedeli raporları | Proje Bedeli |
+| 10 | `metrajlar` | Cephe metrajı kayıtları | Hesaplamalar |
+| 11 | `iller` | İl tanımları | Ortak |
+| 12 | `ilceler` | İlçe tanımları | Ortak |
 
 Migration sistemi `main.js` içinde tanımlıdır. Yeni tablolar ve sütunlar otomatik eklenir.
 
@@ -317,6 +356,20 @@ npm start
 
 ## Versiyon Geçmişi
 
+### v2.2.0 (25.08.2026)
+- Hesaplamalar modülü eklendi (Cephe Metrajı)
+- Farklı Döneme Kopyala: rapor başka birim fiyat dönemine uyarlanabiliyor
+- Modül hub sayfaları (Yapı Bedeli, Proje Bedeli, Hesaplamalar)
+- Kayıtlı Raporlar'a Dönem sütunu, Word İndir ve Döneme Kopyala aksiyonları
+- Editörde dönem bazlı otomatik birim fiyat / yıpranma payı güncelleme
+- `metrajlar` tablosu, `raporlar.birimFiyatId` kolonu ve sınıf/grup onarım migration'ı
+
+### v2.1.0 (18.05.2026)
+- Proje Bedeli rapor editörü
+- Kayıtlı raporlardan doğrudan Word çıktısı
+- Dashboard'da versiyon bilgi modalı
+- Çoklu parsel rapor sistemi (03.03.2026)
+
 ### v2.0.0 (22.11.2025)
 - Modüler yapıya geçiş
 - Proje A olarak yeniden adlandırma (KİTAR → Proje A)
@@ -337,8 +390,9 @@ npm start
 
 ### Kısa Vadeli
 1. Mevzuat modülü geliştirme
-2. Hesaplama modülü geliştirme
+2. Birim dönüşüm aracı (Hesaplamalar modülü içinde)
 3. Shared utilities geliştirme
+4. `docs/` klasöründeki 10 rehberin güncellenmesi (Ekim 2025'ten beri güncellenmedi)
 
 ### Uzun Vadeli
 1. Standalone exe build sistemi
@@ -348,6 +402,6 @@ npm start
 
 ---
 
-**Son Güncelleme**: 07.02.2026
-**Versiyon**: 2.0.0
+**Son Güncelleme**: 25.08.2026
+**Versiyon**: 2.2.0
 **Durum**: Aktif Geliştirme

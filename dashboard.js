@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
   • Alt+← - Geri git
   • Alt+Home - Ana sayfaya git
 
-Versiyon: 2.1.0
+Versiyon: 2.2.0
 `);
 });
 

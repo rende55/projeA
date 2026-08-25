@@ -2,7 +2,7 @@
 
 > Modüler yapıda proje geliştirme ve yönetim platformu
 
-[![Version](https://img.shields.io/badge/version-2.1.0-blue.svg)](package.json)
+[![Version](https://img.shields.io/badge/version-2.2.0-blue.svg)](package.json)
 [![Electron](https://img.shields.io/badge/electron-34.0.1-brightgreen.svg)](https://electronjs.org/)
 [![Node](https://img.shields.io/badge/node-%3E%3D14.0.0-green.svg)](https://nodejs.org/)
 [![License](https://img.shields.io/badge/license-Proprietary-red.svg)](LICENSE)
@@ -19,8 +19,8 @@
 |---|-------|-------|----------|
 | 1 | **Yapı Bedeli** | Aktif | Yapı değerleme raporları - 3 adımlı form, otomatik hesaplama, Word çıktısı |
 | 2 | **Proje Bedeli** | Aktif | Mimarlık/mühendislik proje bedeli hesaplama - 4 branş, PID oranları |
-| 3 | **Mevzuat** | Planlı | Cari mevzuat yönetimi ve görüntüleme |
-| 4 | **Hesaplama** | Planlı | Gelişmiş hesap makinesi |
+| 3 | **Hesaplamalar** | Aktif | Cephe metrajı - boya/yalıtım alanı hesaplama |
+| 4 | **Mevzuat** | Planlı | Cari mevzuat yönetimi ve görüntüleme |
 
 ---
 
@@ -88,37 +88,57 @@ proje-a/
 ├── main.js                          # Electron ana süreç + veritabanı + IPC
 ├── dashboard.html                   # Ana sayfa (SPA shell + navigasyon)
 ├── dashboard.js                     # Dashboard mantığı
-├── package.json                     # Proje yapılandırması (v2.0.0)
+├── package.json                     # Proje yapılandırması (v2.2.0)
 │
 ├── modules/                         # Modüller
 │   ├── yapi-bedeli/                 # Yapı Bedeli Modülü
 │   │   ├── views/
+│   │   │   ├── yapi-bedeli-hub-content.html # Modül giriş ekranı
+│   │   │   ├── yapi-bedeli-hub-content.html # Modül giriş ekranı
 │   │   │   ├── yapi-bedeli-content.html   # Ana form (3 sekmeli)
 │   │   │   ├── raporlar-content.html      # Kayıtlı raporlar
 │   │   │   ├── admin-content.html         # Yönetim paneli (4 sekmeli)
 │   │   │   └── editor-content.html        # Rapor editörü
 │   │   ├── scripts/
+│   │   │   ├── yapi-bedeli-hub-page.js    # Modül giriş ekranı (SPA)
 │   │   │   ├── yapi-bedeli-page.js        # Form mantığı (SPA)
 │   │   │   ├── raporlar-page.js           # Rapor listesi (SPA)
 │   │   │   ├── admin-page.js              # Admin mantığı (SPA)
 │   │   │   ├── editor-page.js             # Editör mantığı (SPA)
 │   │   │   ├── renderer.js                # Eski form mantığı
 │   │   │   ├── raporlar.js                # Eski rapor mantığı
+│   │   │   ├── donem-servisi.js           # Dönem sorguları + uyarlama (saf)
+│   │   │   ├── donem-kopyala.js           # Farklı döneme kopyalama modalı
 │   │   │   ├── admin.js                   # Eski admin mantığı
 │   │   │   └── reportGenerator.js         # Word rapor oluşturma
 │   │   ├── styles/
 │   │   ├── KT_Sablon_1.docx              # Rapor şablonu
 │   │   └── birimFiyatlar.json             # Birim fiyat verileri
 │   │
-│   └── proje-bedeli/                # Proje Bedeli Modülü
+│   ├── proje-bedeli/                # Proje Bedeli Modülü
+│   │   ├── views/
+│   │   │   ├── proje-bedeli-hub-content.html # Modül giriş ekranı
+│   │   │   ├── proje-bedeli-content.html  # Ana form (3 sekmeli)
+│   │   │   ├── pb-raporlar-content.html   # Kayıtlı raporlar
+│   │   │   └── pb-editor-content.html     # Rapor editörü
+│   │   ├── scripts/
+│   │   │   ├── proje-bedeli-hub-page.js   # Modül giriş ekranı (SPA)
+│   │   │   ├── proje-bedeli-page.js       # Form mantığı (SPA)
+│   │   │   ├── pb-raporlar-page.js        # Rapor listesi (SPA)
+│   │   │   ├── pb-editor-page.js          # Rapor editörü (SPA)
+│   │   │   └── pb-reportGenerator.js      # Word rapor oluşturma
+│   │   └── assets/
+│   │
+│   └── hesaplama/                    # Hesaplamalar Modülü
 │       ├── views/
-│       │   ├── proje-bedeli-content.html  # Ana form (3 sekmeli)
-│       │   └── pb-raporlar-content.html   # Kayıtlı raporlar
-│       ├── scripts/
-│       │   ├── proje-bedeli-page.js       # Form mantığı (SPA)
-│       │   ├── pb-raporlar-page.js        # Rapor listesi (SPA)
-│       │   └── pb-reportGenerator.js      # Word rapor oluşturma
-│       └── assets/
+│       │   ├── hesaplama-hub-content.html   # Modül giriş ekranı
+│       │   ├── cephe-metraj-content.html    # Cephe metrajı ekranı
+│       │   └── metraj-raporlar-content.html # Kayıtlı metrajlar
+│       └── scripts/
+│           ├── hesaplama-hub-page.js        # Hub mantığı (SPA)
+│           ├── metraj-hesap.js              # Metraj hesabı (saf fonksiyonlar)
+│           ├── cephe-metraj-page.js         # Cephe metrajı mantığı (SPA)
+│           └── metraj-raporlar-page.js      # Metraj listesi (SPA)
 │
 ├── shared/                          # Paylaşılan kaynaklar
 │   ├── scripts/
@@ -141,8 +161,12 @@ proje-a/
 Uygulama tek bir `BrowserWindow` içinde çalışır. `NavigationManager` sınıfı sayfa geçişlerini yönetir:
 
 ```
-Dashboard → Yapı Bedeli → Raporlar → Editör
-         → Proje Bedeli → PB Raporlar
+Dashboard → Yapı Bedeli (hub) → Yeni Hesaplama
+                              → Raporlar → Editör → Döneme Kopyala
+         → Proje Bedeli (hub) → Yeni Hesaplama
+                              → PB Raporlar → PB Editör
+         → Hesaplamalar (hub) → Cephe Metrajı
+                              → Kayıtlı Metrajlar
          → Admin Paneli
 ```
 
@@ -163,6 +187,9 @@ Dashboard → Yapı Bedeli → Raporlar → Editör
 | `pidOranlari` | PID oranları (Proje Bedeli) |
 | `hizmetDaliKatsayilari` | Hizmet dalı katsayıları (Proje Bedeli) |
 | `projeBedeliRaporlari` | Proje bedeli raporları |
+| `metrajlar` | Cephe metrajı kayıtları (Hesaplamalar) |
+| `iller` | İl tanımları |
+| `ilceler` | İlçe tanımları |
 
 ---
 
@@ -192,6 +219,25 @@ Maliyet = Yapı İnşaat Alanı × Birim Maliyet × Yapı Sınıfı Katsayısı
 Hizmet Bedeli = Maliyet × PID Oranı × Hizmet Dalı Katsayısı
 ```
 
+### Hesaplamalar Modülü (Cephe Metrajı)
+
+**Cephe Ön Yüzeyi:**
+```
+Cephe Ön Alanı = (Cephe Eni × Yükseklik) - Boşluk Alanları
+```
+
+**Şafak (Boşluk Yan Yüzeyi):**
+```
+Kapı / denizlikli pencere : Çevre = 2 × Boy + En      (alt yüzey boyanmaz)
+Denizliksiz pencere       : Çevre = 2 × (En + Boy)
+Şafak Alanı = Çevre × Gömme Derinliği × Adet
+```
+
+**Toplam Boya Alanı:**
+```
+Boya = Cephe Ön + Çıkma + Saçak + Şafak - Mermer Denizlik
+```
+
 ---
 
 ## Öne Çıkan Özellikler
@@ -215,8 +261,9 @@ Hizmet Bedeli = Maliyet × PID Oranı × Hizmet Dalı Katsayısı
 
 ## Gelecek Planları
 
+- [x] Hesaplamalar modülü (Cephe Metrajı)
 - [ ] Mevzuat modülü
-- [ ] Hesaplama modülü
+- [ ] Birim dönüşüm aracı
 - [ ] Excel çıktısı desteği
 - [ ] Toplu rapor oluşturma
 - [ ] Şablon yönetimi
@@ -238,7 +285,7 @@ Bu proje özel mülkiyettedir. Tüm hakları saklıdır.
 
 *Modüler Yapıda Profesyonel Proje Yönetimi*
 
-**Versiyon 2.0.0** | 2025-2026
+**Versiyon 2.2.0** | 2025-2026
 
 ---
 

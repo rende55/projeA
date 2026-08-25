@@ -9,6 +9,9 @@
 | 22.11.2025 | Modüler yapıya geçiş (v2.0.0) |
 | 2025-2026 | Dashboard, SPA navigasyon, Proje Bedeli modülü, Admin paneli |
 | 07.02.2026 | UI modernizasyonu (SVG ikonlar, modern design system) |
+| 03.03.2026 | Çoklu parsel rapor sistemi |
+| 18.05.2026 | Proje Bedeli rapor editörü + versiyon modalı (v2.1.0) |
+| 25.08.2026 | Hesaplamalar modülü, Farklı Döneme Kopyala, modül hub sayfaları (v2.2.0) |
 
 ---
 
@@ -20,8 +23,8 @@
 |-------|-------|-------|
 | **Yapı Bedeli** | Aktif | `modules/yapi-bedeli/` |
 | **Proje Bedeli** | Aktif | `modules/proje-bedeli/` |
+| **Hesaplamalar** | Aktif | `modules/hesaplama/` |
 | **Mevzuat** | Planlı | `modules/mevzuat/` |
-| **Hesaplama** | Planlı | `modules/hesaplama/` |
 
 ### Tamamlanan Özellikler
 - Proje adı: KİTAR → Proje A (v2.0.0)
@@ -31,7 +34,11 @@
 - Proje Bedeli modülü (4 branş, PID oranları, hizmet bedeli hesaplama)
 - Admin paneli (4 sekmeli: Dönemler, Raportörler, Kurumlar, PID Oranları)
 - Modern UI tasarımı (SVG ikonlar, Inter font, Slate renk paleti)
-- 9 veritabanı tablosu (raporlar, birimFiyatlar, raportorler, kurumlar, vb.)
+- Çoklu parsel raporu (tek raporda birden fazla ada/parsel ve yapı)
+- Modül hub sayfaları (her modül kendi giriş ekranına açılıyor)
+- Hesaplamalar modülü - Cephe Metrajı (boya/yalıtım alanı hesabı)
+- Farklı Döneme Kopyala (raporu başka birim fiyat dönemine uyarlama)
+- 12 veritabanı tablosu (raporlar, birimFiyatlar, raportorler, kurumlar, metrajlar, vb.)
 
 ---
 
@@ -54,7 +61,8 @@ projeA/
 ├── dashboard.js                     # Dashboard mantığı
 ├── modules/
 │   ├── yapi-bedeli/                 # Yapı Bedeli (views, scripts, styles)
-│   └── proje-bedeli/                # Proje Bedeli (views, scripts, assets)
+│   ├── proje-bedeli/                # Proje Bedeli (views, scripts, assets)
+│   └── hesaplama/                   # Hesaplamalar - Cephe Metrajı (views, scripts)
 ├── shared/
 │   └── scripts/navigation.js        # SPA navigasyon yöneticisi
 ├── assets/                          # Uygulama görselleri
@@ -112,7 +120,7 @@ projeA/
 
 ---
 
-**Son Güncelleme**: 07.02.2026
-**Versiyon**: 2.0.0
+**Son Güncelleme**: 25.08.2026
+**Versiyon**: 2.2.0
 **Durum**: Aktif Geliştirme
 **Konum**: `d:\02. yazilimisleri\projeA\`

@@ -1,5 +1,60 @@
 # CHANGELOG
 
+## [25.08.2026 - v2.2.0] - Hesaplamalar Modülü + Farklı Döneme Kopyala + Modül Hub Sayfaları
+
+### Yeni Modül: Hesaplamalar
+- **Cephe Metrajı**: Çok cepheli boya ve yalıtım metrajı hesaplama aracı
+- Her cephede kapı/pencere boşlukları, çıkmalar ve saçak tanımlanabiliyor
+- Şafak (kapı/pencere yan yüzeyi) çevresi boşluk tipine göre hesaplanıyor: kapıda ve mermer denizlikli pencerede alt yüzey boyanmadığı için `2*boy + en`, denizliksiz pencerede `2*(en + boy)`
+- Boya ve yalıtım alanları yüzey bazında ayrı ayrı toplanıyor, mermer denizlik alanı düşülüyor
+- Metrajlar kaydedilip sonradan açılabiliyor (Kayıtlı Metrajlar sayfası)
+- Hesap mantığı `metraj-hesap.js` içinde saf fonksiyon olarak, DOM'dan bağımsız
+- Dashboard'daki "Hesaplama" kartı "Yakında" durumundan aktife alındı
+
+### Yeni Özellik: Farklı Döneme Kopyala
+- Kaydedilmiş bir yapı bedeli raporu, seçilen birim fiyat dönemine uyarlanarak **yeni bir rapor** olarak kopyalanıyor; kaynak rapor değiştirilmiyor
+- Hem Kayıtlı Raporlar listesinden hem editörden açılıyor; tekli ve çoklu parsel raporlarının ikisini de destekliyor
+- Hedef dönemin birim fiyatları yapı sınıfı/grubu eşleşmesiyle çekiliyor
+- Yapı yaşları yıl farkı kadar kaydırılabiliyor, yıpranma payları cetvelden yeniden okunuyor
+- Kopyalamadan önce eski→yeni karşılaştırmalı önizleme ve uyarı listesi gösteriliyor (fiyatı tanımsız sınıf/grup, eksik bilgi)
+- Bedel formülü editördeki `hesaplaSatir()` ile birebir aynı: `birimFiyat * alan * (1 - yipranma/100) * (1 - eksikImalat/100)`
+- Sorgu ve hesap katmanı `donem-servisi.js` içinde DOM'dan bağımsız
+
+### Yeni: Modül Hub Sayfaları
+- Yapı Bedeli ve Proje Bedeli artık doğrudan forma değil, modül giriş ekranına açılıyor
+- Hub'da yeni hesaplama, kayıtlı raporlar ve son raporlar listesi bir arada; listeden rapora tıklayınca editör açılıyor
+- Form sayfaları `yapi-bedeli-form` / `proje-bedeli-form` route'larına ayrıldı, form başlığına "Modül Ana Sayfası" butonu eklendi
+
+### Geliştirmeler
+- **Kayıtlı Raporlar** listesine `Dönem` sütunu eklendi; yılda birden fazla dönem varsa `2022/2` biçiminde, Resmi Gazete sayısıyla gösteriliyor
+- Listeden rapor açmadan `📥 Word İndir` ve `📅 Döneme Kopyala` yapılabiliyor
+- Editöre dönem şeridi eklendi; yapı sınıfı/grubu değişince birim fiyat, yaş veya yapım tekniği değişince yıpranma payı seçili dönemden otomatik çekiliyor
+- Word export IPC dinleyicileri sayfa kapanışında kaldırılıyor (sayfa her açılışta birikmiyor)
+
+### Veritabanı
+- `metrajlar` tablosu eklendi (Cephe Metrajı kayıtları)
+- `raporlar` tablosuna `birimFiyatId` kolonu eklendi; eski raporlar Resmi Gazete sayısı ile, tutmazsa o yılda tek dönem varsa yıl ile geriye dönük eşleştirildi
+- Tek seferlik onarım: editörün eski sürümünün `2 C` gibi tek hücrede birleştirdiği yapı sınıfı/grubu değerleri ayrıştırıldı (idempotent — ayrılmış kayda ikinci kez dokunmaz)
+
+### Düzeltme
+- `pb-editor-page.js` obfuscation listesine eklendi (v2.1.0'da eklenmiş ama build listesine girmemişti; portable build'de karartılmadan paketleniyordu)
+
+### Etkilenen Dosyalar
+- `modules/hesaplama/` (YENİ - 4 script, 3 view)
+- `modules/yapi-bedeli/scripts/donem-servisi.js`, `donem-kopyala.js` (YENİ)
+- `modules/yapi-bedeli/scripts/yapi-bedeli-hub-page.js`, `views/yapi-bedeli-hub-content.html` (YENİ)
+- `modules/proje-bedeli/scripts/proje-bedeli-hub-page.js`, `views/proje-bedeli-hub-content.html` (YENİ)
+- `main.js` (metrajlar tablosu + birimFiyatId migration + sınıf/grup onarımı)
+- `shared/scripts/navigation.js` (hub, form ve hesaplama route'ları)
+- `modules/yapi-bedeli/scripts/raporlar-page.js`, `views/raporlar-content.html`
+- `modules/yapi-bedeli/scripts/editor-page.js`, `views/editor-content.html`
+- `modules/yapi-bedeli/scripts/yapi-bedeli-page.js`, `views/yapi-bedeli-content.html`
+- `modules/proje-bedeli/scripts/proje-bedeli-page.js`, `views/proje-bedeli-content.html`
+- `dashboard.html`, `dashboard.js` (Hesaplamalar kartı aktif + v2.2.0 versiyon modalı)
+- `build.js`, `package.json` (2.1.0 → 2.2.0)
+
+---
+
 ## [18.05.2026 - v2.1.0] - Proje Bedeli Rapor Editörü + Versiyon Modalı
 
 ### Yeni Özellik
