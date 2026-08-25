@@ -27,11 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 📦 Aktif Modüller:
   ✓ Yapı Bedeli
+  ✓ Proje Bedeli
+  ✓ Hesaplamalar
 
 ⏳ Planlanan Modüller:
-  • Proje Bedeli
   • Mevzuat
-  • Hesaplama
 
 🧭 Navigasyon:
   • ESC - Geri git
@@ -94,7 +94,7 @@ function openModule(moduleId) {
                 showNotification('Mevzuat modülü henüz geliştirilme aşamasında.');
                 break;
             case 'hesaplama':
-                showNotification('Hesaplama modülü henüz geliştirilme aşamasında.');
+                window.navigation.navigateTo('hesaplama');
                 break;
             case 'admin':
                 window.navigation.navigateTo('admin');

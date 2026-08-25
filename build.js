@@ -121,6 +121,10 @@ const RENDERER_JS_FILES = [
     'modules/proje-bedeli/scripts/pb-reportGenerator.js',
     'modules/yapi-bedeli/scripts/yapi-bedeli-hub-page.js',
     'modules/proje-bedeli/scripts/proje-bedeli-hub-page.js',
+    'modules/hesaplama/scripts/hesaplama-hub-page.js',
+    'modules/hesaplama/scripts/metraj-hesap.js',
+    'modules/hesaplama/scripts/cephe-metraj-page.js',
+    'modules/hesaplama/scripts/metraj-raporlar-page.js',
 ];
 
 // Klasörü temizle. build-temp/node_modules junction olabilir; junction içine

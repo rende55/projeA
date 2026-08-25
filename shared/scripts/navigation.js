@@ -87,6 +87,25 @@ class NavigationManager {
                 icon: '📝',
                 template: 'modules/proje-bedeli/views/pb-editor-content.html',
                 script: 'modules/proje-bedeli/scripts/pb-editor-page.js'
+            },
+            // --- Hesaplamalar modülü ---
+            'hesaplama': {
+                title: 'Hesaplamalar',
+                icon: '🧮',
+                template: 'modules/hesaplama/views/hesaplama-hub-content.html',
+                script: 'modules/hesaplama/scripts/hesaplama-hub-page.js'
+            },
+            'cephe-metraj': {
+                title: 'Cephe Metrajı',
+                icon: '📐',
+                template: 'modules/hesaplama/views/cephe-metraj-content.html',
+                script: 'modules/hesaplama/scripts/cephe-metraj-page.js'
+            },
+            'metraj-raporlar': {
+                title: 'Kayıtlı Metrajlar',
+                icon: '📋',
+                template: 'modules/hesaplama/views/metraj-raporlar-content.html',
+                script: 'modules/hesaplama/scripts/metraj-raporlar-page.js'
             }
         };
     }

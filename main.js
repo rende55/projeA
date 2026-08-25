@@ -758,6 +758,24 @@ function createDatabase() {
         }
     });
 
+    // Metrajlar tablosu (Hesaplamalar modülü - Cephe Metrajı)
+    db.run(`CREATE TABLE IF NOT EXISTS metrajlar (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        metrajTipi TEXT DEFAULT 'cephe',
+        isAdi TEXT,
+        aciklama TEXT,
+        cepheSayisi INTEGER,
+        verilerJSON TEXT,
+        toplamBoyaAlani REAL,
+        toplamYalitimAlani REAL,
+        olusturmaTarihi TEXT DEFAULT CURRENT_TIMESTAMP,
+        guncellemeTarihi TEXT,
+        aktif INTEGER DEFAULT 1
+    )`, (err) => {
+        if (err) console.error('metrajlar tablosu oluşturulamadı:', err);
+        else console.log('✅ metrajlar tablosu hazır.');
+    });
+
     // Proje Bedeli Raporları tablosu
     db.run(`CREATE TABLE IF NOT EXISTS projeBedeliRaporlari (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

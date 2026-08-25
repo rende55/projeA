@@ -1,0 +1,207 @@
+<!-- Kayıtlı Metrajlar - İçerik -->
+<style>
+    .mr-container {
+        max-width: 1200px;
+        margin: 20px auto;
+        padding: 24px;
+        background-color: #FFFFFF;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        border: 1px solid #E2E8F0;
+    }
+
+    .mr-header {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%);
+        color: white;
+        padding: 20px 28px;
+        border-radius: 16px 16px 0 0;
+        margin: -24px -24px 24px -24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .mr-header h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: -0.3px;
+    }
+
+    .mr-header h1 .header-icon {
+        width: 36px;
+        height: 36px;
+        background: rgba(139, 92, 246, 0.25);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .mr-header h1 .header-icon svg { width: 20px; height: 20px; color: #C4B5FD; }
+
+    .mr-nav-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .mr-nav-button {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255,255,255,0.9);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 38px;
+        font-family: inherit;
+    }
+
+    .mr-nav-button:hover {
+        background: rgba(255, 255, 255, 0.18);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .mr-main h2 {
+        color: #0F172A;
+        margin-bottom: 16px;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: -0.2px;
+    }
+
+    .mr-table-container {
+        overflow-x: auto;
+        border-radius: 10px;
+        border: 1px solid #E2E8F0;
+    }
+
+    .mr-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .mr-table th, .mr-table td {
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: 1px solid #E2E8F0;
+        font-size: 13px;
+    }
+
+    .mr-table th {
+        background: #F8FAFC;
+        color: #334155;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #E2E8F0;
+        white-space: nowrap;
+    }
+
+    .mr-table tbody tr:last-child td { border-bottom: none; }
+    .mr-table tbody tr:hover { background-color: #F8FAFC; }
+
+    .mr-table td.numeric {
+        text-align: right;
+        font-family: 'Consolas', monospace;
+        white-space: nowrap;
+    }
+
+    .mr-table td.actions { white-space: nowrap; }
+
+    .mr-btn {
+        padding: 6px 12px;
+        margin-right: 4px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 12px;
+        font-weight: 600;
+        display: inline-block;
+        font-family: inherit;
+    }
+
+    .mr-ac-button {
+        background-color: #DBEAFE;
+        color: #1D4ED8;
+        border: 1px solid #BFDBFE;
+    }
+    .mr-ac-button:hover { background-color: #BFDBFE; }
+
+    .mr-sil-button {
+        background-color: #FEE2E2;
+        color: #DC2626;
+        border: 1px solid #FECACA;
+    }
+    .mr-sil-button:hover { background-color: #FECACA; }
+
+    .mr-empty-message {
+        text-align: center;
+        padding: 48px;
+        color: #94A3B8;
+        font-size: 14px;
+        line-height: 1.7;
+    }
+
+    @media (max-width: 768px) {
+        .mr-header { flex-direction: column; align-items: flex-start; }
+    }
+</style>
+
+<div class="mr-container">
+    <header class="mr-header">
+        <h1>
+            <span class="header-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+            </span>
+            Kayıtlı Metrajlar
+        </h1>
+        <div class="mr-nav-buttons">
+            <button class="mr-nav-button" id="mr-yeniButton" title="Yeni Metraj">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                <span>Yeni Metraj</span>
+            </button>
+            <button class="mr-nav-button" id="mr-backButton" title="Geri">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                <span>Geri</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="mr-main">
+        <h2>Metraj Listesi</h2>
+        <div class="mr-table-container" id="mr-tableContainer">
+            <table class="mr-table" id="mr-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tarih</th>
+                        <th>İş Adı</th>
+                        <th>Açıklama</th>
+                        <th>Cephe</th>
+                        <th style="text-align:right">Boya (m²)</th>
+                        <th style="text-align:right">Yalıtım (m²)</th>
+                        <th>İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody id="mr-tableBody"></tbody>
+            </table>
+        </div>
+        <div id="mr-emptyMessage" class="mr-empty-message" style="display: none;">
+            Henüz kayıtlı metraj bulunmamaktadır.<br>
+            "Yeni Metraj" ile Cephe Metrajı aracını açabilirsiniz.
+        </div>
+    </main>
+</div>
