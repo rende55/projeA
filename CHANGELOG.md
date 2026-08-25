@@ -30,6 +30,7 @@
 - Listeden rapor açmadan `📥 Word İndir` ve `📅 Döneme Kopyala` yapılabiliyor
 - Editöre dönem şeridi eklendi; yapı sınıfı/grubu değişince birim fiyat, yaş veya yapım tekniği değişince yıpranma payı seçili dönemden otomatik çekiliyor
 - Word export IPC dinleyicileri sayfa kapanışında kaldırılıyor (sayfa her açılışta birikmiyor)
+- Word dosya adına dönem etiketi eklendi: `KT_Raporu_<konum>_<tarih>_[2026].docx`. Aynı taşınmazın farklı dönemlere kopyalanmış raporları, konum ve tarih aynı olduğu için tek bir dosya adına düşüyordu; artık dönem etiketiyle ayrışıyor. Yılda birden fazla dönem varsa `[2023_2]` biçimi kullanılır (dosya adında `/` kullanılamadığı için alt çizgi)
 
 ### Veritabanı
 - `metrajlar` tablosu eklendi (Cephe Metrajı kayıtları)

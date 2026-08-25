@@ -297,6 +297,25 @@ Word çıktısı üç yerden alınabilir:
 
 Dosya `raporlar/` klasörüne kaydedilir ve otomatik açılır.
 
+### Dosya Adı
+
+Kaydetme kutusunda önerilen ad şu biçimdedir:
+
+```
+KT_Raporu_<ilçe>_<mahalle>_<ada>_<parsel>_<tarih>_[<dönem>].docx
+```
+
+Sondaki dönem etiketi raporun dayandığı birim fiyat dönemini gösterir:
+
+| Etiket | Anlamı |
+|--------|--------|
+| `[2026]` | 2026 dönemi (o yılda tek tebliğ var) |
+| `[2023_2]` | 2023 yılının 2. dönemi |
+
+> **Neden gerekli**: Bir rapor farklı dönemlere kopyalandığında konum bilgisi aynı kalır ve kopyaların rapor tarihi kopyalama gününe çekilir. Dönem etiketi olmasa aynı taşınmazın tüm dönem raporları aynı dosya adına düşer ve birbirinin üzerine yazılır.
+
+Raporun dönemi belirlenemiyorsa etiket eklenmez.
+
 ### Rapor İçeriği
 
 | Bölüm | Açıklama |

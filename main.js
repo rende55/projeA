@@ -1160,6 +1160,34 @@ ipcMain.on('open-preview', (event, data) => {
 });
 
 // Word Export - Editörden (kayıtlı raporlardan)
+/**
+ * Rapor dosya adı için dönem etiketi üretir.
+ *
+ * Aynı taşınmazın farklı birim fiyat dönemlerine kopyalanmış raporları konum ve
+ * tarih aynı olduğu için aynı dosya adına düşüyordu (dönem kopyalama raporTarihi'ni
+ * bugüne çeker). Etiket bunları ayırır: o yılda tek dönem varsa "2026", birden
+ * fazlaysa "2023_2". Dosya adında "/" kullanılamadığı için listedeki "2023/2"
+ * biçimi yerine alt çizgi kullanılır.
+ *
+ * birimFiyatId yoksa raporda yazan hesap yılına düşer; o da yoksa boş döner ve
+ * dosya adına etiket eklenmez.
+ */
+function donemEtiketiGetir(rapor) {
+    return new Promise((resolve) => {
+        const yedek = (rapor && rapor.hesapYili) ? String(rapor.hesapYili).trim() : '';
+        if (!db || !rapor || !rapor.birimFiyatId) { resolve(yedek); return; }
+
+        db.get(`SELECT yil, donem FROM birimFiyatlar WHERE id = ?`, [rapor.birimFiyatId], (err, donem) => {
+            if (err || !donem) { resolve(yedek); return; }
+
+            db.get(`SELECT COUNT(*) AS adet FROM birimFiyatlar WHERE yil = ?`, [donem.yil], (e2, sayim) => {
+                const cokDonemli = !e2 && sayim && sayim.adet > 1;
+                resolve(cokDonemli ? `${donem.yil}_${donem.donem}` : String(donem.yil));
+            });
+        });
+    });
+}
+
 ipcMain.on('export-word', (event, data) => {
     console.log('📥 Word export başlatılıyor');
     console.log('📷 Gelen raporData anahtarları:', Object.keys(data.raporData || {}));
@@ -1223,7 +1251,7 @@ ipcMain.on('export-word', (event, data) => {
 });
 
 // Word Export - Fotoğraflarla birlikte (yapi-bedeli-page.js'den)
-ipcMain.on('export-word-with-photos', (event, data) => {
+ipcMain.on('export-word-with-photos', async (event, data) => {
     console.log('📥 Fotoğraflı Word export başlatılıyor');
     console.log(`📷 ${data.fotograflar?.length || 0} fotoğraf ekleniyor`);
     
@@ -1233,7 +1261,9 @@ ipcMain.on('export-word-with-photos', (event, data) => {
     // Dosya adı için tarih ve konum bilgisi
     const tarih = data.raporData.raporTarihi || new Date().toISOString().split('T')[0];
     const konum = `${data.raporData.ilce || ''}_${data.raporData.mahalle || ''}_${data.raporData.ada || ''}_${data.raporData.parsel || ''}`.replace(/\s+/g, '_');
-    const defaultFileName = `KT_Raporu_${konum}_${tarih}.docx`;
+    const donemEtiketi = await donemEtiketiGetir(data.raporData);
+    const donemEki = donemEtiketi ? `_[${donemEtiketi}]` : '';
+    const defaultFileName = `KT_Raporu_${konum}_${tarih}${donemEki}.docx`;
     
     dialog.showSaveDialog({
         title: 'Word Dosyası Kaydet',
