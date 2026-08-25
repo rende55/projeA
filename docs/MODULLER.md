@@ -1,880 +1,654 @@
-# Modüller ve Fonksiyon Referansı
+# Modül ve Fonksiyon Referansı
 
-## 📋 İçindekiler
+## İçindekiler
 
 - [Modül Listesi](#modül-listesi)
+- [Sayfa Modülü Sözleşmesi](#sayfa-modülü-sözleşmesi)
 - [main.js](#mainjs)
-- [renderer.js](#rendererjs)
-- [raporlar.js](#raporlarjs)
-- [reportGenerator.js](#reportgeneratorjs)
-- [Yardımcı Fonksiyonlar](#yardımcı-fonksiyonlar)
+- [shared/](#shared)
+- [Yapı Bedeli Modülü](#yapı-bedeli-modülü)
+- [Proje Bedeli Modülü](#proje-bedeli-modülü)
+- [Hesaplamalar Modülü](#hesaplamalar-modülü)
+- [SPA Öncesi Dosyalar](#spa-öncesi-dosyalar)
+- [Ortak Yardımcı Fonksiyonlar](#ortak-yardımcı-fonksiyonlar)
 
 ---
 
-## 📦 Modül Listesi
+## Modül Listesi
 
-```
-kitar/
-├── main.js              # Electron ana süreç
-├── renderer.js          # Ana form mantığı
-├── raporlar.js          # Rapor listesi mantığı
-└── reportGenerator.js   # Rapor oluşturma
-```
+### Uygulama Çekirdeği
+
+| Dosya | Satır | Açıklama |
+|-------|-------|----------|
+| `main.js` | ~1300 | Ana süreç: pencere, veritabanı şeması, migration, IPC |
+| `dashboard.html` | ~1000 | SPA kabuğu, dashboard, versiyon modalı |
+| `dashboard.js` | ~200 | Modül kartları, versiyon modalı, navigasyon başlatma |
+| `build.js` | ~340 | Obfuscation ve build hazırlığı |
+
+### Paylaşılan
+
+| Dosya | Satır | Açıklama |
+|-------|-------|----------|
+| `shared/scripts/navigation.js` | ~470 | NavigationManager - SPA çekirdeği |
+| `shared/scripts/db-helper.js` | ~35 | Veritabanı yolu çözümleme |
+
+### Yapı Bedeli Modülü
+
+| Dosya | Satır | Açıklama |
+|-------|-------|----------|
+| `yapi-bedeli-hub-page.js` | 131 | Modül giriş ekranı |
+| `yapi-bedeli-page.js` | 1904 | Rapor formu (3 sekme, çoklu yapı, çoklu parsel) |
+| `raporlar-page.js` | 297 | Kayıtlı rapor listesi |
+| `editor-page.js` | 1534 | Rapor editörü |
+| `admin-page.js` | 1547 | Yönetim paneli |
+| `donem-servisi.js` | 273 | Dönem sorguları ve uyarlama (saf) |
+| `donem-kopyala.js` | 522 | Farklı döneme kopyalama modalı |
+| `reportGenerator.js` | 1044 | Word raporu üretimi |
+
+### Proje Bedeli Modülü
+
+| Dosya | Satır | Açıklama |
+|-------|-------|----------|
+| `proje-bedeli-hub-page.js` | 128 | Modül giriş ekranı |
+| `proje-bedeli-page.js` | 1301 | Proje bedeli formu (4 branş) |
+| `pb-raporlar-page.js` | 184 | Kayıtlı rapor listesi |
+| `pb-editor-page.js` | 574 | Rapor editörü |
+| `pb-reportGenerator.js` | 412 | Word raporu üretimi |
+
+### Hesaplamalar Modülü
+
+| Dosya | Satır | Açıklama |
+|-------|-------|----------|
+| `hesaplama-hub-page.js` | 145 | Modül giriş ekranı |
+| `metraj-hesap.js` | 244 | Metraj hesabı (saf fonksiyonlar) |
+| `cephe-metraj-page.js` | 790 | Cephe metrajı ekranı |
+| `metraj-raporlar-page.js` | 146 | Kayıtlı metraj listesi |
 
 ---
 
-## 🚀 main.js
+## Sayfa Modülü Sözleşmesi
 
-### Açıklama
-Electron ana süreç dosyası. Uygulama yaşam döngüsünü yönetir, pencereler oluşturur ve veritabanını başlatır.
-
-### Dependencies
+Tüm SPA sayfaları aynı arayüzü dışa açar:
 
 ```javascript
-const { app, BrowserWindow, ipcMain } = require('electron');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const remoteMain = require('@electron/remote/main');
+module.exports = { onLoad, onUnload, hasUnsavedChanges };
 ```
 
-### Global Değişkenler
+### `onLoad(container, data, navigation)`
+
+Sayfa açıldığında çağrılır.
+
+| Parametre | Tip | Açıklama |
+|-----------|-----|----------|
+| `container` | HTMLElement | Sayfa içeriğinin basıldığı DOM düğümü |
+| `data` | Object \| null | `navigateTo()` ile geçirilen veri (örn. `{ raporId: 87 }`) |
+| `navigation` | NavigationManager | Navigasyon örneği |
+
+Tipik gövde:
 
 ```javascript
-let mainWindow;  // Ana pencere referansı
-let db;          // Veritabanı bağlantısı
-```
-
----
-
-### Fonksiyonlar
-
-#### `createDatabase()`
-
-Veritabanını oluşturur ve tabloları başlatır.
-
-**Parametreler**: Yok
-
-**Dönüş**: `void`
-
-**Kod**:
-```javascript
-function createDatabase() {
-    db = new sqlite3.Database(path.join(__dirname, 'raporlar.db'), (err) => {
-        if (err) {
-            console.error(err.message);
-        }
-        console.log('Veritabanı oluşturuldu.');
-    });
-
-    db.run(`CREATE TABLE IF NOT EXISTS raporlar (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        raporTarihi TEXT,
-        raporNo TEXT,
-        ...
-    )`, (err) => {
-        if (err) {
-            console.error(err.message);
-        }
-    });
+async function onLoad(container, data, navigation) {
+    nav = navigation;
+    db = new sqlite3.Database(getDbPath());
+    window.cmPage = { boslukEkle, boslukSil };   // template onclick köprüsü
+    if (data && data.metrajId) await metrajYukle(data.metrajId);
+    setupEventListeners();
+    renderAll();
 }
 ```
 
-**Kullanım**:
+### `onUnload()`
+
+Sayfadan ayrılırken çağrılır. Veritabanı bağlantısı kapatılır ve IPC dinleyicileri kaldırılır:
+
 ```javascript
-app.whenReady().then(() => {
-    createDatabase();
-});
-```
-
----
-
-#### `createWindow()`
-
-Ana uygulama penceresini oluşturur.
-
-**Parametreler**: Yok
-
-**Dönüş**: `void`
-
-**Kod**:
-```javascript
-function createWindow() {
-    mainWindow = new BrowserWindow({
-        width: 1200,
-        height: 800,
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-            enableRemoteModule: true
-        }
-    });
-
-    remoteMain.enable(mainWindow.webContents);
-    mainWindow.loadFile('index.html');
+async function onUnload() {
+    if (db) { db.close(); db = null; }
+    ipcRenderer.removeListener('word-export-success', wordBasarili);
+    ipcRenderer.removeListener('word-export-error', wordHatali);
 }
 ```
 
-**Özellikler**:
-- **Pencere Boyutu**: 1200x800
-- **Node Integration**: Aktif
-- **Context Isolation**: Devre dışı (⚠️ Güvenlik riski)
+### `hasUnsavedChanges()`
+
+Geri dönüşte uyarı gösterilip gösterilmeyeceğini belirler; `true` dönerse kullanıcıya onay sorulur.
+
+### `saveState()`
+
+İsteğe bağlıdır; navigasyondan önce form durumunu döndürür (`proje-bedeli-page.js` kullanır).
 
 ---
 
-### Event Handlers
+## main.js
 
-#### `app.whenReady()`
+Ana süreç. Uygulama açılışında sırasıyla: tohum veritabanını yerleştirir, şemayı oluşturur, migration'ları çalıştırır ve pencereyi açar.
 
-Uygulama hazır olduğunda çalışır.
+### `getAppRootPath()`
+
+Uygulama kök dizinini döndürür. Paketlenmiş portable çalışmada `PORTABLE_EXECUTABLE_DIR`, geliştirmede proje dizini.
+
+### `getBundledSeedDbPath()`
+
+Build içine gömülen tohum veritabanının yolunu döndürür (ASAR dışındaki `extraResources`).
+
+### `seedDatabaseIfMissing()`
+
+Kalıcı klasörde `raporlar.db` yoksa gömülü tohum veritabanını oraya kopyalar. Mevcut veritabanının üzerine yazmaz.
+
+### `createDatabase()`
+
+Tüm tabloları `CREATE TABLE IF NOT EXISTS` ile oluşturur ve varsayılan verileri (yıpranma cetveli, hizmet dalı katsayıları, il/ilçe tohumu) yükler.
+
+### `migrateDatabase()`
+
+Şema evrimini yönetir. Her açılışta çalışır, idempotenttir. İçindeki başlıca adımlar:
+
+| Adım | Yaptığı |
+|------|---------|
+| Çoklu yapı | `raporlar.yapilarJSON`, `toplamYapiBedeli` kolonları |
+| Çoklu parsel | `raporlar.cokluParsel`, `parsellerJSON` kolonları |
+| Proje Bedeli imzacıları | `projeBedeliRaporlari.raportorSayisi`, `raportorAdi`, `raportorUnvani` |
+| `birimFiyatId` | Kolonu ekler, ardından `birimFiyatIdDoldur()` çağrılır |
+| Sınıf/grup onarımı | `tamirEtSinifGrup()` çağrılır |
+
+#### `birimFiyatIdDoldur()`
+
+Eski raporları kendi birim fiyat dönemine bağlar:
+
+1. Raporun `resmiGazeteSayili` değeri bir dönemin künyesiyle birebir tutuyorsa o dönem atanır (kesin eşleşme)
+2. Tutmazsa ve raporun yılında **tek** dönem tanımlıysa yıl üzerinden eşleştirilir
+3. Yılda birden fazla dönem varsa kolon `NULL` bırakılır; kullanıcı kopyalama ekranında hedefi kendisi seçer
+
+#### `tamirEtSinifGrup()`
+
+Editörün eski bir sürümü yapı sınıfı ile grubunu tek alanda birleştiriyordu (`"2 C"`, `"2C"`) ve grup alanını boş bırakıyordu. Bu, birim fiyat sorgusunun anahtarını bozar. Fonksiyon `yapilarJSON` ve `parsellerJSON` içindeki bu kayıtları ayrıştırır:
 
 ```javascript
-app.whenReady().then(() => {
-    createDatabase();
-    createWindow();
-});
+const m = sinif.match(/^(\d+)\s*([A-Za-zÇĞİÖŞÜçğıöşü]+)$/);
+if (!m) return false;              // beklenmedik biçim - dokunma
+yapi.yapiSinifi = m[1];
+yapi.yapiGrubu = m[2].toUpperCase();
 ```
 
-#### `app.on('window-all-closed')`
+Yalnızca sınıf dolu **ve** grup boş olan kayıtlara dokunur; bu yüzden ikinci kez çalıştığında bir şey değiştirmez.
 
-Tüm pencereler kapatıldığında uygulamayı kapatır.
+### `createWindow()`
 
-```javascript
-app.on('window-all-closed', () => {
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
-});
-```
+Ana pencereyi oluşturur (`nodeIntegration: true`, `contextIsolation: false`) ve `dashboard.html` dosyasını yükler.
 
-#### `app.on('activate')`
+### IPC Handler'ları
 
-macOS'ta dock'tan tıklandığında pencereyi yeniden açar.
-
-```javascript
-app.on('activate', () => {
-    if (BrowserWindow.getAllWindows().length === 0) {
-        createWindow();
-    }
-});
-```
-
-#### `ipcMain.on('show-reports')`
-
-Kayıtlı raporlar penceresini açar.
-
-```javascript
-ipcMain.on('show-reports', (event) => {
-    const reportsWindow = new BrowserWindow({
-        width: 1000,
-        height: 700,
-        webPreferences: {
-            nodeIntegration: true,
-            contextIsolation: false,
-            enableRemoteModule: true
-        }
-    });
-
-    remoteMain.enable(reportsWindow.webContents);
-    reportsWindow.loadFile('raporlar.html');
-});
-```
+| Kanal | Yön | Açıklama |
+|-------|-----|----------|
+| `export-word` | Renderer → Main | Word raporu üretir, `raporlar/` klasörüne yazar, açar |
+| `export-word-with-photos` | Renderer → Main | Fotoğraflı Word raporu |
+| `export-word-from-preview` | Renderer → Main | Önizleme ekranından çıktı |
+| `open-editor` | Renderer → Main | Ayrı editör penceresi (SPA öncesi akış) |
+| `open-preview` | Renderer → Main | Önizleme penceresi |
+| `word-export-success` | Main → Renderer | Üretim başarılı, dosya yolu döner |
+| `word-export-error` | Main → Renderer | Üretim hatası |
 
 ---
 
-## 🖥️ renderer.js
+## shared/
 
-### Açıklama
-Ana form sayfasının (index.html) iş mantığını içerir. Form validasyonu, hesaplamalar, tab navigasyonu ve veritabanı kayıt işlemlerini yönetir.
+### `navigation.js` - NavigationManager
 
-### Dependencies
+SPA çekirdeği. Ayrıntılı anlatım için [MIMARI.md](./MIMARI.md#spa-navigasyon-sistemi).
 
-```javascript
-const { ipcRenderer } = require('electron');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-```
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `init(container, navBar, breadcrumb)` | Sistemi başlatır, klavye kısayollarını bağlar |
+| `navigateTo(pageName, data)` | Yeni sayfaya geçer; state kaydeder, unload eder, template+script yükler |
+| `goBack()` | Yığından bir önceki sayfaya döner; kaydedilmemiş değişiklik varsa onay sorar |
+| `goHome()` | Dashboard'a döner |
+| `loadPage(pageName, data)` | Template'i okur, script'i `require()` eder, `onLoad` çağırır |
+| `unloadCurrentPage()` | Aktif sayfanın `onUnload` fonksiyonunu çağırır |
+| `navigateToStackIndex(index)` | Breadcrumb'dan geçmişte bir noktaya döner |
 
-### Global Değişkenler
+### `db-helper.js`
 
-```javascript
-let db = new sqlite3.Database(path.join(__dirname, 'raporlar.db'));
-let currentTab = 0;
-const tabs = ['genel', 'arsa', 'yapi'];
-const samsunIlceleri = ['Atakum', 'Canik', 'İlkadım', ...];
-```
+| Fonksiyon | Dönüş | Açıklama |
+|-----------|-------|----------|
+| `getAppRootDir()` | string | Geliştirmede proje kökü, portable'da exe klasörü |
+| `getDbPath()` | string | `raporlar.db` tam yolu |
 
----
-
-### Veri Yapıları
-
-#### `yipranmaPayiTablosu`
-
-Resmi Gazete'ye göre yıpranma payı hesaplama tablosu.
+Veritabanı yolu asla elle yazılmaz:
 
 ```javascript
-const yipranmaPayiTablosu = {
-    'Betonarme Karkas': [
-        { maxYas: 5, oran: 5 },
-        { maxYas: 10, oran: 10 },
-        { maxYas: 20, oran: 20 },
-        { maxYas: 30, oran: 30 },
-        { maxYas: 40, oran: 40 },
-        { maxYas: 50, oran: 50 },
-        { maxYas: Infinity, oran: 60 }
-    ],
-    'Yığma Kagir': [...],
-    'Çelik Konstrüksiyon': [...],
-    'Ahşap': [...]
-};
+const { getDbPath } = require('../../../shared/scripts/db-helper');
+const db = new sqlite3.Database(getDbPath());
 ```
 
 ---
 
-### Fonksiyonlar
+## Yapı Bedeli Modülü
 
-#### `populateIlceler()`
+### `yapi-bedeli-page.js` - Rapor Formu
 
-İlçe seçim kutusunu Samsun ilçeleriyle doldurur.
+Üç sekmeli form: Genel Bilgiler, Arsa Bilgileri, Yapı Bilgileri.
 
-**Parametreler**: Yok
+**Sekme yönetimi**
 
-**Dönüş**: `void`
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `showTab(tabName)` | Sekme değiştirir |
+| `nextTab()` / `prevTab()` | İleri/geri gezinme |
 
-**Kod**:
-```javascript
-function populateIlceler() {
-    const ilceSelect = document.getElementById('ilce');
-    ilceSelect.innerHTML = '';
-    ilceSelect.disabled = false;
+**Veri doldurma**
 
-    samsunIlceleri.forEach(ilce => {
-        const option = document.createElement('option');
-        option.value = ilce;
-        option.textContent = ilce;
-        ilceSelect.appendChild(option);
-    });
-}
-```
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `populateIlceler()` | İlçe listesini veritabanından doldurur |
+| `populateHesapDonemleri()` | Birim fiyat dönemlerini listeler |
+| `loadYipranmaPaylari()` | Yıpranma cetvelini önbelleğe alır |
+| `kurumlariDoldur()` | Kurum/alt kurum listesini doldurur |
+| `loadRaportorler(index)` | Raportör seçim kutusunu doldurur |
+| `updateRaportorAlanlari()` | Raportör sayısına göre alanları çoğaltır |
 
-**Çağrılma**: `window.onload` event'inde
+**Çoklu yapı**
 
----
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `yeniYapiEkle()` | Forma yeni yapı satırı ekler |
+| `yapiSil(index)` | Yapı satırını siler |
+| `yapiSinifiDegisti(index)` | Sınıf/grup değişince birim fiyatı tetikler |
+| `birimFiyatGuncelle(index)` | Seçili dönemden birim fiyatı çeker |
+| `yipranmaPayiGuncelle(index)` | Yapım tekniği + yaşa göre oranı çeker |
 
-#### `hesaplaYipranmaPay(yapimTeknigi, yapiYasi)`
+**Çoklu parsel**
 
-Yapım tekniği ve yapı yaşına göre yıpranma payını hesaplar.
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `cokluParselModuDegistir()` | Çoklu parsel modunu açar/kapatır |
+| `yeniParselEkle()` | Yeni parsel bloğu ekler |
+| `parselSil(parselId)` | Parseli ve yapılarını siler |
+| `parselYapiEkle(parselId)` | Parsele yapı ekler (numaralandırma her parselde 1'den başlar) |
+| `parselYapiSil(yapiId)` | Parselden yapı siler |
 
-**Parametreler**:
-- `yapimTeknigi` (string): Yapım tekniği ('Betonarme Karkas', 'Yığma Kagir', vb.)
-- `yapiYasi` (string/number): Yapının yaşı (yıl)
+**Hesap ve kayıt**
 
-**Dönüş**: `number` - Yıpranma payı yüzdesi
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `hesapla()` | Tüm yapıların bedelini ve toplamı hesaplar |
+| `collectFormData()` | Form verisini tek nesnede toplar |
+| `kaydet()` | `raporlar` tablosuna yazar |
+| `wordRaporOlustur()` | IPC ile Word çıktısı ister |
+| `temizle()` | Formu sıfırlar |
 
-**Kod**:
-```javascript
-function hesaplaYipranmaPay(yapimTeknigi, yapiYasi) {
-    const tablo = yipranmaPayiTablosu[yapimTeknigi];
-    if (!tablo) return 0;
-    
-    const yas = parseInt(yapiYasi);
-    for (let i = 0; i < tablo.length; i++) {
-        if (yas <= tablo[i].maxYas) {
-            return tablo[i].oran;
-        }
-    }
-    return 0;
-}
-```
+**Fotoğraflar**
 
-**Örnek Kullanım**:
-```javascript
-const yipranma = hesaplaYipranmaPay('Betonarme Karkas', 15);
-// Dönüş: 20
-```
+`fotograflarDegisti()`, `fotografOnizlemeGuncelle()`, `fotografSil(index)`, `fotografAciklamaGuncelle(index, aciklama)` fonksiyonları fotoğrafları base64 olarak toplar ve önizler.
 
 ---
 
-#### `updateYipranmaPay()`
+### `raporlar-page.js` - Rapor Listesi
 
-Form alanlarından yapım tekniği ve yapı yaşını alarak yıpranma payını otomatik hesaplar ve form alanına yazar.
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `loadRaporlar()` | Raporları listeler (Dönem sütunu dahil) |
+| `donemHucresi(row)` | Dönem sütununun içeriğini üretir |
+| `duzenle(id)` | Raporu editörde açar |
+| `wordIndir(id)` | Rapor açılmadan doğrudan Word çıktısı üretir |
+| `donemeKopyala(id)` | Döneme kopyalama modalını açar |
+| `sil(id)` | Raporu siler (geri alınamaz) |
 
-**Parametreler**: Yok
+`donemHucresi()` üç durumu ayırır:
 
-**Dönüş**: `void`
-
-**Kod**:
-```javascript
-function updateYipranmaPay() {
-    const yapimTeknigi = document.getElementById('yapimTeknigi').value;
-    const yapiYasi = document.getElementById('yapiYasi').value;
-    
-    if (yapimTeknigi && yapiYasi) {
-        const yipranmaPay = hesaplaYipranmaPay(yapimTeknigi, yapiYasi);
-        document.getElementById('yipranmaPay').value = yipranmaPay;
-    }
-}
-```
+1. `birimFiyatId` doluysa dönem tablosundan kesin etiket (`2022/2` + Resmi Gazete sayısı)
+2. Değilse raporda yazan `hesapYili`
+3. O da yoksa `Belirsiz`
 
 ---
 
-#### `showTab(tabName)`
+### `editor-page.js` - Rapor Editörü
 
-Belirtilen tab'ı gösterir, diğerlerini gizler.
+Kaydedilmiş raporu canlı hesaplamayla düzenler. Tekli ve çoklu parsel raporlarını ayrı render eder.
 
-**Parametreler**:
-- `tabName` (string): Tab adı ('genel', 'arsa', 'yapi')
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `loadRapor(id)` | Raporu veritabanından yükler |
+| `renderRaporIcerigi(rapor)` | Rapor tipine göre uygun render'ı seçer |
+| `renderTekliParselIcerigi(rapor, container)` | Tekli parsel görünümü |
+| `renderCokluParselIcerigi(rapor, container)` | Çoklu parsel görünümü (ara toplam + genel toplam) |
+| `hesaplaSatir(row)` | Tek yapının bedelini hesaplar |
+| `yenidenHesapla()` | Tüm satırları ve toplamları günceller |
+| `collectEditorData()` | Düzenlenen veriyi toplar |
+| `kaydet()` | Değişiklikleri veritabanına yazar |
+| `wordOlarakIndir()` | Word çıktısı üretir |
+| `donemKopyalaAc()` | Döneme kopyalama modalını açar |
 
-**Dönüş**: `void`
+**Dönem farkındalığı**
 
-**Kod**:
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `donemVerileriniYukle(rapor)` | Raporun dönemine ait fiyat tablosu ve yıpranma cetvelini yükler |
+| `donemSeridiGuncelle(rapor)` | Başlıktaki dönem şeridini günceller |
+| `birimFiyatOtoGuncelle(row)` | Sınıf/grup değişince birim fiyatı dönemden çeker |
+| `yipranmaOtoGuncelle(row)` | Yaş veya yapım tekniği değişince oranı cetvelden çeker |
+| `vurgula(cell)` | Otomatik değişen hücreyi kısa süre vurgular |
+
+Bedel formülü:
+
 ```javascript
-function showTab(tabName) {
-    // Tüm tab içeriklerini gizle
-    document.querySelectorAll('.tab-content').forEach(content => {
-        content.classList.remove('active');
-    });
-    
-    // Tüm tab butonlarının active sınıfını kaldır
-    document.querySelectorAll('.tab-button').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    // Seçili tab'ı göster
-    document.getElementById(`tab-${tabName}`).classList.add('active');
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-    
-    currentTab = tabs.indexOf(tabName);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+bedel = birimFiyat × alan × (1 - yipranmaPay / 100) × (1 - eksikImalatOrani / 100)
 ```
 
 ---
 
-#### `nextTab()`
+### `donem-servisi.js` - Dönem Sorguları ve Uyarlama
 
-Bir sonraki tab'a geçer.
+DOM'a dokunmayan saf katman. Hem modal hem rapor listesi kullanır.
 
-**Parametreler**: Yok
+#### Sorgular
 
-**Dönüş**: `void`
+| Fonksiyon | Dönüş | Açıklama |
+|-----------|-------|----------|
+| `listeDonemler(db)` | Promise\<Array\> | Aktif dönemler, yeniden eskiye |
+| `donemGetir(db, birimFiyatId)` | Promise\<Object\> | Tek dönem kaydı |
+| `fiyatTablosuGetir(db, birimFiyatId)` | Promise\<Map\> | `"sinif\|grup"` → birim fiyat |
+| `yipranmaPaylariGetir(db)` | Promise\<Array\> | Yıpranma cetvelinin tamamı |
 
-**Kod**:
+#### Yardımcılar
+
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `fiyatAnahtari(sinif, grup)` | Tek biçimli arama anahtarı üretir; sınıfı trim eder, grubu büyük harfe çevirir |
+| `yipranmaBul(cache, yapimTeknigi, yas)` | Tekniğe ve yaşa uyan oranı bulur; bulunamazsa `null` |
+| `bedelHesapla(birimFiyat, alan, yipranma, eksikImalat)` | Editördeki formülün birebir aynısı |
+| `donemEtiketi(donem, tumDonemler)` | Yılda tek dönem varsa `2026`, birden fazlaysa `2022/2` |
+| `onizlemeTemizle(yapilar)` | Kaydetmeden önce `_onizleme` alanlarını temizler |
+
+#### Uyarlama
+
+**`raporuDonemeUyarla(yapilar, opts)`**
+
+| `opts` alanı | Tip | Açıklama |
+|--------------|-----|----------|
+| `fiyatlar` | Map | `fiyatTablosuGetir()` sonucu |
+| `yipranmaCache` | Array | `yipranmaPaylariGetir()` sonucu |
+| `yilFarki` | number | hedefYıl − kaynakYıl |
+| `yaslariKaydir` | boolean | Yaşlar yıl farkı kadar kaydırılsın mı |
+
+Dönüş: `{ yapilar, uyarilar, toplam }`
+
+Her yapı için sırasıyla: yaş kaydırılır → yıpranma cetvelden okunur → birim fiyat hedef dönemden çekilir → bedel yeniden hesaplanır. Girdi dizisi değiştirilmez, kopya üzerinde çalışılır. Her yapıya önizleme için `_onizleme` alanı eklenir (eski/yeni değerler); bu alan kaydetmeden önce temizlenir.
+
+**Uyarı türleri**
+
+| Tip | Ne zaman |
+|-----|----------|
+| `fiyat-bulunamadi` | Sınıf/grup hedef dönemde tanımlı değil - eski fiyat korunur |
+| `sinif-grup-eksik` | Yapıda sınıf veya grup boş - otomatik çekim yapılamaz |
+| `yipranma-bulunamadi` | Teknik + yeni yaş için cetvelde karşılık yok - mevcut oran korunur |
+
+**`parselleriDonemeUyarla(parseller, opts)`**
+
+Çoklu parsel raporları için her parselin yapılarını uyarlar; aynı dönüş yapısını kullanır.
+
+---
+
+### `donem-kopyala.js` - Kopyalama Modalı
+
 ```javascript
-function nextTab() {
-    if (currentTab < tabs.length - 1) {
-        // Mevcut tab'ı tamamlandı olarak işaretle
-        document.querySelector(`[data-tab="${tabs[currentTab]}"]`)
-            .classList.add('completed');
-        
-        currentTab++;
-        showTab(tabs[currentTab]);
-    }
-}
+const donemKopyala = require('./donem-kopyala');
+donemKopyala.ac(db, nav, raporId);
+```
+
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `ac(db, nav, raporId)` | Tek dışa açılan fonksiyon; modalı kurar ve gösterir |
+
+Modal kendi stilini (`dk-` önekli) bir kez `<style>` olarak ekler, DOM'unu `document.body`'ye basar. İçeride:
+
+- Hedef dönem seçimi (kaynağın kendi dönemi listede yer almaz)
+- Yaş kaydırma onay kutusu ve yıl farkı etiketi
+- Eski → yeni karşılaştırmalı önizleme tablosu, uyarı kutusu ve toplam karşılaştırması
+- Onaylandığında `kopyalaVeKaydet()` yeni satırı ekler ve editörü yeni id ile açar
+
+`kopyalaVeKaydet()` sütun listesini `PRAGMA table_info(raporlar)` ile okur; şemaya yeni sütun eklendiğinde kopyalama kodu değişmeden çalışmaya devam eder. Kaynak rapor hiçbir durumda değiştirilmez.
+
+---
+
+### `admin-page.js` - Yönetim Paneli
+
+Sekmeli panel: Birim Fiyat Dönemleri, Raportörler, Kurumlar, PID Oranları, İl/İlçe. Her sekme için listeleme, ekleme, düzenleme ve pasife alma işlemleri içerir. Ayrıntılı kullanım için [ADMIN_PANEL_REHBERI.md](./ADMIN_PANEL_REHBERI.md).
+
+---
+
+### `reportGenerator.js` - Word Raporu
+
+```javascript
+module.exports = { generateReport, generateCokluParselReport, sayiyiYaziyaCevir, formatTarih };
+```
+
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `generateReport(raporData, outputPath)` | Tekli parsel raporu üretir |
+| `generateCokluParselReport(raporData, outputPath)` | Çoklu parsel raporu üretir |
+| `sayiyiYaziyaCevir(sayi)` | Sayıyı Türkçe yazıya çevirir |
+| `formatTarih(tarih)` | Tarihi rapor biçimine getirir |
+
+**Çoklu parsel çıktısı**: 10 sütunlu tablo (Ada / Parsel / Y.No / Yapı Adı / Sınıfı / B.Fiyat / Alan / Yıpr. / Eks.İm. / Yapı Bedeli), 10 punto yazı, her parselin sonunda **Ara Toplam**, en altta **GENEL TOPLAM** satırı.
+
+---
+
+## Proje Bedeli Modülü
+
+### `proje-bedeli-page.js` - Proje Bedeli Formu
+
+Dört branş için hizmet bedeli hesaplar: mimarlık (`mim`), inşaat/statik (`ins`), mekanik (`mek`), elektrik (`elk`).
+
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `populateHesapDonemleri()` | Hesap yılı listesini doldurur |
+| `yapiSinifiDegisti()` | Sınıf/grup değişince birim maliyeti tetikler |
+| `birimMaliyetGuncelle()` | Seçili dönemden birim maliyeti çeker |
+| `hesaplaYapiMaliyeti()` | `alan × birimMaliyet` ile yaklaşık maliyeti bulur |
+| `getPidOrani(alan, sinif)` | Maliyet aralığı ve hizmet sınıfına göre PID oranını bulur |
+| `pidOraniGuncelle(brans)` | Branşın PID oranını günceller |
+| `bransHesapla(brans)` | Branşın proje ve hizmet bedelini hesaplar |
+| `hizmetBolumToggle(element, brans)` | Hizmet bölümü seçimini değiştirir |
+| `hizmetBolumToplamGuncelle(brans)` | Seçili bölümlerin oran toplamını günceller |
+| `projeTipiToggle(element, brans)` | Proje tipi seçimini değiştirir |
+| `bransMaliyetGuncelle()` | Tüm branşları yeniden hesaplar |
+| `raporKaydet()` | `projeBedeliRaporlari` tablosuna yazar (imzacı bilgileri dahil) |
+
+Hesap zinciri:
+
+```
+Toplam Maliyet = İnşaat Alanı × Birim Maliyet
+Proje Bedeli   = Toplam Maliyet × PID Oranı
+Hizmet Bedeli  = Proje Bedeli × Hizmet Dalı Katsayısı × Seçili Bölüm Oranı
+Genel Toplam   = Dört branşın hizmet bedeli toplamı
+```
+
+### `pb-editor-page.js` - Proje Bedeli Editörü
+
+Kayıtlı raporu açar; alan, birim maliyet, branş bedelleri, hizmet bölümleri ve imzacılar üzerinde canlı hesaplamayla düzenleme yapar. `Ctrl+S` ile hızlı kayıt, `ESC` ile kaydedilmemiş değişiklik uyarısı verir.
+
+### `pb-raporlar-page.js` - Rapor Listesi
+
+Kayıtlı proje bedeli raporlarını listeler; **Düzenle**, **Word** ve **Sil** aksiyonlarını sunar. Word aksiyonu raporu açmadan doğrudan `.docx` üretir.
+
+### `pb-reportGenerator.js`
+
+```javascript
+module.exports = { generateReport, sayiyiYaziyaCevir, formatPara, formatOran };
 ```
 
 ---
 
-#### `prevTab()`
+## Hesaplamalar Modülü
 
-Bir önceki tab'a döner.
+### `metraj-hesap.js` - Saf Hesap Katmanı
 
-**Parametreler**: Yok
+DOM'a dokunmaz; veri alır, hesaplanmış veri döndürür. Tüm ölçüler metre, alanlar metrekaredir.
 
-**Dönüş**: `void`
+#### Sabitler
 
-**Kod**:
-```javascript
-function prevTab() {
-    if (currentTab > 0) {
-        currentTab--;
-        showTab(tabs[currentTab]);
-    }
-}
+**`YUZEY_TIPLERI`** - özet tablosunun satırları ve varsayılan boya/yalıtım durumu:
+
+| Kod | Ad | Boya | Yalıtım |
+|-----|-----|------|---------|
+| `cepheOn` | Cephe ön yüzeyi | ✓ | ✓ |
+| `cikma` | Çıkma yüzeyleri | ✓ | ✓ |
+| `sacak` | Saçak yüzeyleri (alın + altı) | ✓ | - |
+| `safak` | Kapı/pencere yan yüzeyleri (şafak) | ✓ | - |
+| `denizlik` | Mermer denizlik (düşülen) | ✓ | - |
+
+**`CIKMA_YUZEYLERI`** - `alt`, `solYan`, `sagYan` (varsayılan işaretli), `ust`, `on`.
+
+#### Fonksiyonlar
+
+**`hesaplaBosluk(bosluk)`**
+
+Girdi: `{ tip, en, boy, adet, gommeDerinligi, denizlikVar, denizlikDerinligi }`
+
+Dönüş: `{ boslukAlani, safakAlani, denizlikUzunlugu, denizlikAlani }`
+
+Şafak çevresi, alt yüzeyin boyanıp boyanmadığına göre değişir:
+
+| Durum | Çevre |
+|-------|-------|
+| Kapı (alt yüzey zemindir) | `2 × boy + en` |
+| Pencere + mermer denizlik (alt yüzey kaplı) | `2 × boy + en` |
+| Pencere, denizliksiz (dört yüzey boyanır) | `2 × (en + boy)` |
+
+**`hesaplaCikma(cikma)`**
+
+Girdi: `{ en, derinlik, yukseklik, adet, yuzeyler }`
+
+Yalnızca işaretli yüzeyler toplanır:
+
 ```
+alt / üst      = en × derinlik
+solYan / sagYan = derinlik × yükseklik
+on             = en × yükseklik
+```
+
+Dönüş: `{ birimAlan, cikmaAlani, yuzeyAlanlari, seciliYuzeyler }`
+
+**`hesaplaSacak(sacak, cepheEni)`**
+
+```
+saçak altı = cepheEni × genislik
+saçak alın = cepheEni × alinYuksekligi
+```
+
+**`hesaplaCephe(cephe)`**
+
+Bir cephenin tüm satırlarını hesaplar. Cephe ön yüzeyi brüt alandan boşluklar düşülerek bulunur ve negatife inmez:
+
+```javascript
+const cepheOnAlani = Math.max(0, brutAlan - bosluklarAlani);
+```
+
+Dönüş: `{ brutAlan, bosluklarAlani, denizlikUzunlugu, bosluklar, cikmalar, sacak, yuzeyler }`
+
+`yuzeyler.denizlik` **eksi değerdir** (özet tablosunda düşülür).
+
+**`toplaOzet(yuzeyler, ayarlar)`**
+
+Yüzey alanlarından boya / yalıtım / toplam alan çıkarır. Ayarlarda ilgili kutu işaretli değilse o yüzey toplama katılmaz.
+
+**`varsayilanAyarlar()`**
+
+Her yüzey için varsayılan boya/yalıtım durumunu içeren nesne döndürür.
+
+**`hesaplaMetraj(state)`**
+
+Girdi: `{ ayarlar, cepheler }` — Dönüş: `{ cepheler, toplam }`
+
+Her cepheyi hesaplar, cephe bazlı özet ekler ve tüm cephelerin yüzey bazlı toplamını çıkarır.
+
+**`sayi(deger)`**
+
+Güvenli sayı dönüşümü: boş, geçersiz ve negatif değerler `0` kabul edilir.
 
 ---
 
-### Event Listeners
+### `cephe-metraj-page.js` - Cephe Metrajı Ekranı
 
-#### Form Submit
+Tüm veri tek bir `metrajState` nesnesinde tutulur; DOM'dan okuma yapılmaz.
 
-```javascript
-form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    
-    // Veri toplama
-    const raporTarihi = document.getElementById('raporTarihi').value;
-    const raporNo = document.getElementById('raporNo').value;
-    // ... diğer alanlar
-    
-    // Validasyon
-    if (!raporTarihi || !raporNo) {
-        alert("Rapor Tarihi ve Rapor No alanları zorunludur.");
-        return;
-    }
-    
-    // Yapı bedeli hesaplama
-    const yapiBedeli = parseFloat(yapiAlani) * parseFloat(birimFiyat) * 
-                       (1 - parseFloat(yipranmaPay) / 100) * 
-                       (1 - parseFloat(eksikImalatOrani) / 100);
-    
-    // Veritabanına kaydetme
-    db.run(`INSERT INTO raporlar (...) VALUES (?, ?, ...)`, 
-        [...values...], 
-        function(err) {
-            if (err) {
-                alert('Hata: ' + err.message);
-                return;
-            }
-            alert('Rapor başarıyla kaydedildi!');
-            form.reset();
-        }
-    );
-});
-```
+**Durum yönetimi**
 
-#### Hesapla Butonu
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `bosState()` | Boş metraj durumu üretir |
+| `yeniCephe(index)` | Yeni cephe nesnesi (varsayılan adlar: Kuzey, Güney, Doğu, Batı) |
+| `yeniBosluk()` / `yeniCikma()` | Yeni satır nesneleri |
+| `isaretle()` | Kaydedilmemiş değişiklik bayrağını kaldırır |
+
+**Düzenleme**
+
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `cepheSayisiUygula()` | Cephe sayısını değiştirir |
+| `cepheSec(index)` | Aktif cepheyi değiştirir |
+| `boslukEkle(cepheIdx)` / `boslukSil(cepheIdx, satirIdx)` | Boşluk satırı işlemleri |
+| `cikmaEkle(cepheIdx)` / `cikmaSil(cepheIdx, satirIdx)` | Çıkma satırı işlemleri |
+| `alanDegisti(e)` | Girdi değişiminde durumu günceller ve yeniden hesaplar |
+
+**Render**
+
+`renderAll()`, `renderAyarlar()`, `renderTabs()`, `renderCephePanel()`, `renderBoslukSatirlari()`, `renderCikmaSatirlari()`, `renderOzet()` fonksiyonları arayüzü durumdan yeniden çizer.
+
+**Kayıt**
+
+| Fonksiyon | Açıklama |
+|-----------|----------|
+| `guncelleHesaplar()` | `metraj-hesap.js` ile hesaplayıp özeti günceller |
+| `metrajYukle(id)` | Kayıtlı metrajı açar |
+| `kaydet()` | Yeni kayıt ekler veya mevcut kaydı günceller |
+| `temizle()` | Formu sıfırlar |
+
+Template'teki `onclick` işleyicileri için köprü:
 
 ```javascript
-hesaplaButton.addEventListener('click', () => {
-    const yapiAlani = parseFloat(document.getElementById('yapiAlani').value);
-    const birimFiyat = parseFloat(document.getElementById('birimFiyat').value);
-    const yipranmaPay = parseFloat(document.getElementById('yipranmaPay').value) || 0;
-    const eksikImalatOrani = parseFloat(document.getElementById('eksikImalatOrani').value) || 0;
-    
-    if (!yapiAlani || !birimFiyat) {
-        alert('Lütfen önce Yapı Alanı ve Birim Fiyat alanlarını doldurun!');
-        return;
-    }
-    
-    // Yapı bedeli hesaplama
-    const yapiBedeli = yapiAlani * birimFiyat * 
-                       (1 - yipranmaPay / 100) * 
-                       (1 - eksikImalatOrani / 100);
-    
-    // Levazım bedeli hesaplama
-    const levazimBedeli = yapiBedeli * 0.7 * 0.75;
-    
-    // Sonuçları gösterme
-    document.getElementById('yapiBedeliHesaplanan').value = 
-        yapiBedeli.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' TL';
-    document.getElementById('levazimBedeliHesaplanan').value = 
-        levazimBedeli.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",") + ' TL';
-    
-    alert(`Hesaplama Tamamlandı!\n\nYapı Bedeli: ${yapiBedeli.toFixed(2)} TL\nAsgari Levazım Bedeli: ${levazimBedeli.toFixed(2)} TL`);
-});
+window.cmPage = { boslukEkle, boslukSil, cikmaEkle, cikmaSil, cepheSec };
 ```
+
+### `metraj-raporlar-page.js`
+
+Kayıtlı metrajları listeler; kayıt açma ve silme işlemlerini sağlar.
+
+### `hesaplama-hub-page.js`
+
+Modül giriş ekranı: Cephe Metrajı ve Kayıtlı Metrajlar kartları, son metrajlar tablosu. "Birim Dönüşüm" kartı şimdilik devre dışı yer tutucudur.
 
 ---
 
-## 📋 raporlar.js
+## SPA Öncesi Dosyalar
 
-### Açıklama
-Kayıtlı raporlar sayfasının (raporlar.html) mantığını içerir. Raporları listeler, silme ve Word rapor oluşturma işlemlerini yönetir.
+Aşağıdaki dosyalar tek pencere navigasyonuna geçilmeden önceki, ayrı pencere açan akışa aittir. Halen depoda ve build listesinde bulunurlar; bazıları `open-editor` / `open-preview` IPC kanalları üzerinden ayrı pencere olarak açılabilir.
 
-### Dependencies
+| Dosya | Satır | SPA karşılığı |
+|-------|-------|---------------|
+| `renderer.js` | 1302 | `yapi-bedeli-page.js` |
+| `raporlar.js` | 172 | `raporlar-page.js` |
+| `admin.js` | 1291 | `admin-page.js` |
+| `editor.js` | 526 | `editor-page.js` |
+| `preview.js` | 95 | (SPA karşılığı yok; önizleme penceresi) |
 
-```javascript
-const { ipcRenderer } = require('electron');
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const { generateReport } = require('./reportGenerator');
-const { dialog } = require('electron').remote || require('@electron/remote');
-```
-
----
-
-### Ana Kod Akışı
-
-#### Raporları Listeleme
-
-```javascript
-db.all(`SELECT id, raporTarihi, ilce, mahalle, ada, parsel 
-        FROM raporlar`, [], (err, rows) => {
-    if (err) throw err;
-    
-    const tableBody = document.querySelector('#raporlarTable tbody');
-    rows.forEach(row => {
-        const tr = document.createElement('tr');
-        
-        // ID kolonu
-        const tdId = document.createElement('td');
-        tdId.textContent = row.id;
-        tr.appendChild(tdId);
-        
-        // Diğer kolonlar...
-        
-        // İşlem butonları
-        const tdIslemler = document.createElement('td');
-        
-        // Sil butonu
-        const btnSil = createSilButton(row);
-        
-        // Revize butonu
-        const btnRevize = createRevizeButton(row);
-        
-        // Rapor Oluştur butonu
-        const btnHesapla = createRaporButton(row);
-        
-        tdIslemler.appendChild(btnSil);
-        tdIslemler.appendChild(btnRevize);
-        tdIslemler.appendChild(btnHesapla);
-        tr.appendChild(tdIslemler);
-        
-        tableBody.appendChild(tr);
-    });
-});
-```
+> **Yeni geliştirme yaparken SPA dosyaları (`*-page.js`) kullanılmalıdır.** Bu dosyalar geriye dönük uyumluluk için korunmaktadır; bir düzeltme yapılırken SPA karşılığının da güncellenmesi gerekip gerekmediği kontrol edilmelidir.
 
 ---
 
-### Buton İşlemleri
+## Ortak Yardımcı Fonksiyonlar
 
-#### Sil Butonu
+Aşağıdaki yardımcılar birden fazla dosyada benzer biçimde yer alır. `shared/utils/` altında toplanmaları planlanmaktadır.
 
-```javascript
-btnSil.onclick = () => {
-    if (confirm(`Bu raporu silmek istediğinize emin misiniz? ID: ${row.id}`)) {
-        db.run(`DELETE FROM raporlar WHERE id = ?`, row.id, function(err) {
-            if (err) {
-                return console.log(err.message);
-            }
-            console.log(`Rapor silindi, ID: ${row.id}`);
-            tr.remove(); // Satırı DOM'dan kaldır
-        });
-    }
-};
-```
-
-#### Rapor Oluştur Butonu
-
-```javascript
-btnHesapla.onclick = () => {
-    // Tam rapor verilerini veritabanından al
-    db.get(`SELECT * FROM raporlar WHERE id = ?`, row.id, (err, raporData) => {
-        if (err) {
-            alert('Rapor verileri alınırken hata oluştu: ' + err.message);
-            return;
-        }
-        
-        if (!raporData) {
-            alert('Rapor bulunamadı!');
-            return;
-        }
-        
-        // Rapor dosyasının kaydedileceği yolu belirle
-        const tarih = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-        const dosyaAdi = `Rapor_${raporData.raporNo || row.id}_${tarih}.docx`;
-        const outputPath = path.join(__dirname, 'raporlar_cikti', dosyaAdi);
-        
-        // raporlar_cikti klasörünü oluştur (yoksa)
-        const fs = require('fs');
-        const outputDir = path.join(__dirname, 'raporlar_cikti');
-        if (!fs.existsSync(outputDir)) {
-            fs.mkdirSync(outputDir);
-        }
-        
-        // Rapor oluştur
-        const result = generateReport(raporData, outputPath);
-        
-        if (result.success) {
-            alert(`Rapor başarıyla oluşturuldu!\n\nDosya: ${dosyaAdi}\n\nKonum: ${outputDir}`);
-            
-            // Dosyayı aç
-            const { shell } = require('electron');
-            shell.openPath(outputPath);
-        } else {
-            alert('Rapor oluşturulurken hata oluştu: ' + result.error);
-        }
-    });
-};
-```
+| Fonksiyon | Bulunduğu yerler | Açıklama |
+|-----------|------------------|----------|
+| `sayiyiYaziyaCevir(sayi)` | `reportGenerator.js`, `pb-reportGenerator.js` | Sayıyı Türkçe yazıya çevirir |
+| `formatPara(deger)` | Editör, modal, rapor üreticileri | Binlik ayraçlı para biçimi |
+| `formatTarih(tarih)` | Listeler, rapor üreticileri | `YYYY-MM-DD` → `GG.AA.YYYY` |
+| `sayi(deger)` | `metraj-hesap.js`, `donem-servisi.js` | Güvenli sayı dönüşümü (virgül/nokta normalizasyonu) |
+| `kacir(metin)` | `donem-kopyala.js` | HTML kaçışı |
+| `guvenliParse(json, varsayilan)` | `donem-kopyala.js` | Bozuk JSON'da varsayılana düşer |
 
 ---
 
-## 📄 reportGenerator.js
-
-### Açıklama
-Word formatında rapor oluşturma modülü. `docx` kütüphanesini kullanarak programatik olarak Word belgesi oluşturur.
-
-### Dependencies
-
-```javascript
-const { 
-    Document, Paragraph, TextRun, Table, TableRow, TableCell, 
-    AlignmentType, WidthType, Packer, BorderStyle 
-} = require('docx');
-const fs = require('fs');
-const path = require('path');
-```
-
----
-
-### Fonksiyonlar
-
-#### `sayiyiYaziyaCevir(sayi)`
-
-Sayıyı Türkçe yazıya çevirir.
-
-**Parametreler**:
-- `sayi` (number): Çevrilecek sayı
-
-**Dönüş**: `string` - Türkçe yazı karşılığı
-
-**Kod**:
-```javascript
-function sayiyiYaziyaCevir(sayi) {
-    if (!sayi || isNaN(sayi)) return '';
-    
-    const birler = ['', 'bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi', 'sekiz', 'dokuz'];
-    const onlar = ['', 'on', 'yirmi', 'otuz', 'kırk', 'elli', 'altmış', 'yetmiş', 'seksen', 'doksan'];
-    const basamaklar = [
-        { deger: 1000000000, isim: 'milyar' },
-        { deger: 1000000, isim: 'milyon' },
-        { deger: 1000, isim: 'bin' }
-    ];
-    
-    let sonuc = '';
-    let kalan = Math.floor(sayi);
-    
-    if (kalan === 0) return 'sıfır';
-    
-    // Basamakları işle
-    for (let basamak of basamaklar) {
-        if (kalan >= basamak.deger) {
-            let bolum = Math.floor(kalan / basamak.deger);
-            
-            if (basamak.deger === 1000 && bolum === 1) {
-                sonuc += 'bin ';
-            } else {
-                sonuc += ucBasamakYaziyaCevir(bolum) + ' ' + basamak.isim + ' ';
-            }
-            
-            kalan = kalan % basamak.deger;
-        }
-    }
-    
-    if (kalan > 0) {
-        sonuc += ucBasamakYaziyaCevir(kalan);
-    }
-    
-    return sonuc.trim();
-}
-```
-
-**Örnekler**:
-```javascript
-sayiyiYaziyaCevir(1234567);
-// Dönüş: "bir milyon ikiyüz otuz dört bin beşyüz altmış yedi"
-
-sayiyiYaziyaCevir(1000);
-// Dönüş: "bin"
-
-sayiyiYaziyaCevir(0);
-// Dönüş: "sıfır"
-```
-
----
-
-#### `ucBasamakYaziyaCevir(sayi)`
-
-0-999 arası sayıyı yazıya çevirir (yardımcı fonksiyon).
-
-**Parametreler**:
-- `sayi` (number): 0-999 arası sayı
-
-**Dönüş**: `string` - Türkçe yazı
-
-**Kod**:
-```javascript
-function ucBasamakYaziyaCevir(sayi) {
-    const birler = ['', 'bir', 'iki', 'üç', 'dört', 'beş', 'altı', 'yedi', 'sekiz', 'dokuz'];
-    const onlar = ['', 'on', 'yirmi', 'otuz', 'kırk', 'elli', 'altmış', 'yetmiş', 'seksen', 'doksan'];
-    const yuzler = ['', 'yüz', 'ikiyüz', 'üçyüz', 'dörtyüz', 'beşyüz', 'altıyüz', 'yediyüz', 'sekizyüz', 'dokuzyüz'];
-    
-    let sonuc = '';
-    let yuz = Math.floor(sayi / 100);
-    let on = Math.floor((sayi % 100) / 10);
-    let bir = sayi % 10;
-    
-    if (yuz > 0) sonuc += yuzler[yuz] + ' ';
-    if (on > 0) sonuc += onlar[on] + ' ';
-    if (bir > 0) sonuc += birler[bir] + ' ';
-    
-    return sonuc.trim();
-}
-```
-
----
-
-#### `formatTarih(tarih)`
-
-Tarihi DD.MM.YYYY formatına çevirir.
-
-**Parametreler**:
-- `tarih` (string): ISO 8601 tarih string'i (YYYY-MM-DD)
-
-**Dönüş**: `string` - Formatlanmış tarih (DD.MM.YYYY)
-
-**Kod**:
-```javascript
-function formatTarih(tarih) {
-    if (!tarih) return '';
-    const d = new Date(tarih);
-    const gun = String(d.getDate()).padStart(2, '0');
-    const ay = String(d.getMonth() + 1).padStart(2, '0');
-    const yil = d.getFullYear();
-    return `${gun}.${ay}.${yil}`;
-}
-```
-
-**Örnek**:
-```javascript
-formatTarih('2024-10-26');
-// Dönüş: "26.10.2024"
-```
-
----
-
-#### `generateReport(raporData, outputPath)`
-
-Word formatında rapor oluşturur.
-
-**Parametreler**:
-- `raporData` (object): Veritabanından gelen rapor verisi
-- `outputPath` (string): Kaydedilecek dosya yolu
-
-**Dönüş**: `Promise<Object>` - `{ success: boolean, path?: string, error?: string }`
-
-**Kod** (özet):
-```javascript
-function generateReport(raporData, outputPath) {
-    try {
-        // Hesaplamalar
-        const yapiBedeli = parseFloat(raporData.yapiBedeli) || 0;
-        const levazimBedeli = yapiBedeli * 0.7 * 0.75;
-        
-        // Document oluştur
-        const doc = new Document({
-            sections: [{
-                children: [
-                    // Başlık
-                    new Paragraph({
-                        alignment: AlignmentType.CENTER,
-                        children: [
-                            new TextRun({
-                                text: "KIYMET TAKDİR RAPORU",
-                                bold: true,
-                                size: 32
-                            })
-                        ]
-                    }),
-                    
-                    // Tablolar
-                    new Table({...}),
-                    
-                    // Paragraflar
-                    new Paragraph({...})
-                ]
-            }]
-        });
-        
-        // Dosyayı kaydet
-        return Packer.toBuffer(doc).then(buffer => {
-            fs.writeFileSync(outputPath, buffer);
-            return { success: true, path: outputPath };
-        }).catch(error => {
-            return { success: false, error: error.message };
-        });
-        
-    } catch (error) {
-        return Promise.resolve({ success: false, error: error.message });
-    }
-}
-```
-
-**Export**:
-```javascript
-module.exports = { generateReport, sayiyiYaziyaCevir, formatTarih };
-```
-
----
-
-## 🛠️ Yardımcı Fonksiyonlar
-
-### Sayı Formatlama
-
-```javascript
-// Binlik ayırıcı ekleme
-function formatSayi(sayi) {
-    return sayi.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
-
-// Kullanım
-formatSayi(1234567.89);
-// Dönüş: "1,234,567.89"
-```
-
-### Validasyon
-
-```javascript
-// Boş alan kontrolü
-function validateRequired(value, fieldName) {
-    if (!value || value.trim() === '') {
-        alert(`${fieldName} alanı zorunludur!`);
-        return false;
-    }
-    return true;
-}
-
-// Sayısal değer kontrolü
-function validateNumeric(value, fieldName) {
-    if (isNaN(parseFloat(value))) {
-        alert(`${fieldName} sayısal bir değer olmalıdır!`);
-        return false;
-    }
-    return true;
-}
-```
-
----
-
-## 📊 Modül İlişkileri Diyagramı
-
-```
-┌─────────────┐
-│   main.js   │
-│  (Ana Süreç)│
-└─────┬───────┘
-      │
-      ├─────────────────────┬──────────────────┐
-      │                     │                  │
-      ▼                     ▼                  ▼
-┌────────────┐      ┌─────────────┐   ┌──────────────┐
-│ index.html │      │raporlar.html│   │ raporlar.db  │
-│            │      │             │   │  (SQLite)    │
-└─────┬──────┘      └──────┬──────┘   └──────────────┘
-      │                    │
-      ▼                    ▼
-┌────────────┐      ┌─────────────┐
-│renderer.js │      │ raporlar.js │
-│            │      │             │
-└────────────┘      └──────┬──────┘
-                           │
-                           ▼
-                    ┌──────────────────┐
-                    │reportGenerator.js│
-                    │                  │
-                    └──────┬───────────┘
-                           │
-                           ▼
-                    ┌──────────────────┐
-                    │  Rapor_X.docx    │
-                    │  (Word Dosyası)  │
-                    └──────────────────┘
-```
-
----
-
-**Son Güncelleme**: 2024
-
+*Son Güncelleme: 25.08.2026 | Versiyon 2.2.0*

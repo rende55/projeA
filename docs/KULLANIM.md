@@ -1,584 +1,529 @@
 # Kullanım Kılavuzu
 
-## 📋 İçindekiler
+## İçindekiler
 
 - [Uygulamayı Başlatma](#uygulamayı-başlatma)
-- [Ana Arayüz](#ana-arayüz)
-- [Rapor Oluşturma](#rapor-oluşturma)
+- [Dashboard ve Modül Hub'ları](#dashboard-ve-modül-hubları)
+- [Yapı Bedeli: Rapor Oluşturma](#yapı-bedeli-rapor-oluşturma)
+- [Çoklu Parsel Raporu](#çoklu-parsel-raporu)
 - [Kayıtlı Raporlar](#kayıtlı-raporlar)
-- [İpuçları ve Püf Noktaları](#i̇puçları-ve-püf-noktaları)
+- [Rapor Editörü](#rapor-editörü)
+- [Farklı Döneme Kopyalama](#farklı-döneme-kopyalama)
+- [Word Raporu](#word-raporu)
+- [Proje Bedeli Modülü](#proje-bedeli-modülü)
+- [Cephe Metrajı](#cephe-metrajı)
+- [İpuçları](#i̇puçları)
 - [Sık Sorulan Sorular](#sık-sorulan-sorular)
 
 ---
 
-## 🚀 Uygulamayı Başlatma
+## Uygulamayı Başlatma
 
 ### İlk Çalıştırma
 
-1. Proje dizininde terminal/command prompt açın
-2. Aşağıdaki komutu çalıştırın:
-
 ```bash
 npm start
 ```
 
-3. Uygulama penceresi açılacaktır
+İlk açılışta veritabanı (`raporlar.db`) otomatik oluşturulur ve varsayılan veriler (yıpranma cetveli, il/ilçe listesi, hizmet dalı katsayıları) yüklenir.
 
-### Başlatma Süresi
+### Portable Sürüm
 
-- **Normal**: 2-3 saniye
-- **İlk çalıştırma**: 5-10 saniye (veritabanı oluşturma)
-
----
-
-## 🖥️ Ana Arayüz
-
-### Pencere Düzeni
-
-```
-┌────────────────────────────────────────────┐
-│   📊 Kıymet Takdir Raporu                  │  ← Başlık
-├────────────────────────────────────────────┤
-│ [Genel Bilgiler] [Arsa Bilg.] [Yapı Bilg.]│  ← Tab Menüsü
-├────────────────────────────────────────────┤
-│                                            │
-│        Form Alanları                       │  ← İçerik Alanı
-│                                            │
-│                                            │
-├────────────────────────────────────────────┤
-│        [◀ Geri]  [İleri ▶]                │  ← Navigasyon
-└────────────────────────────────────────────┘
-```
-
-### Tab Sistemi
-
-Uygulama üç tab'dan oluşur:
-
-1. **📋 Genel Bilgiler**: Rapor ve kurum bilgileri
-2. **🏘️ Arsa Bilgileri**: Taşınmaz konum bilgileri
-3. **🏗️ Yapı Bilgileri**: Yapı detayları ve hesaplamalar
+Portable exe çalıştırıldığında veritabanı, exe'nin bulunduğu klasörde oluşur. Uygulamayı taşırken `raporlar.db` dosyasını da yanında taşıyın; aksi halde kayıtlarınıza erişemezsiniz.
 
 ---
 
-## 📝 Rapor Oluşturma
+## Dashboard ve Modül Hub'ları
+
+Uygulama açıldığında **Dashboard** karşılar. Her modül bir kartla temsil edilir:
+
+| Kart | Durum |
+|------|-------|
+| Yapı Bedeli | Aktif |
+| Proje Bedeli | Aktif |
+| Hesaplamalar | Aktif |
+| Mevzuat | Yakında |
+| Yönetici Paneli | Aktif |
+
+### Modül Hub Sayfası
+
+Bir modül kartına tıkladığınızda doğrudan forma değil, modülün **giriş ekranına (hub)** gidersiniz. Hub üç şey sunar:
+
+1. **Yeni Hesaplama** - boş formu açar
+2. **Kayıtlı Raporlar / Metrajlar** - tam listeye gider
+3. **Son kayıtlar tablosu** - en son kayıtlar; bir satıra tıklayınca kayıt doğrudan editörde açılır
+
+### Gezinme
+
+| Yol | İşlev |
+|-----|-------|
+| Üst çubuktaki geri oku | Bir önceki sayfa |
+| Üst çubuktaki ev simgesi | Dashboard |
+| Breadcrumb (konum yolu) | Tıklanan noktaya döner |
+| `ESC` veya `Alt` + `←` | Geri |
+| `Alt` + `Home` | Dashboard |
+| Form içindeki "Modül Ana Sayfası" | Modülün hub sayfası |
+
+Kaydedilmemiş değişiklik varken sayfadan ayrılmaya çalışırsanız uyarı alırsınız.
+
+---
+
+## Yapı Bedeli: Rapor Oluşturma
+
+**Yapı Bedeli → Yeni Hesaplama** ile üç sekmeli forma girilir.
 
 ### Adım 1: Genel Bilgiler
 
-#### Doldurulması Gereken Alanlar
+| Alan | Açıklama |
+|------|----------|
+| Rapor No | Rapor numarası |
+| Rapor Tarihi | Raporun düzenlendiği tarih |
+| Resmi Yazı Tarihi / Sayısı | Talep yazısının künyesi |
+| İlgili Kurum | Kurum ve alt kurum (yönetim panelinden tanımlanır) |
+| Hesap Yılı / Dönem | Kullanılacak birim fiyat dönemi |
+| Raportör Sayısı | 1-3 arası; her raportör için ad ve ünvan alanı açılır |
+| Çoklu Parsel Raporu | İşaretlenirse çoklu parsel moduna geçilir |
 
-| Alan | Tip | Zorunlu | Örnek |
-|------|-----|---------|-------|
-| Rapor Tarihi | Tarih | ✅ | 26.10.2024 |
-| Rapor No | Metin | ✅ | R-2024-001 |
-| Resmi Yazı Tarihi | Tarih | ✅ | 20.10.2024 |
-| Resmi Yazı Sayısı | Metin | ✅ | E.12345 |
-| İlgili Kurum | Metin | ✅ | Samsun Büyükşehir Belediyesi |
-| Hesap Yılı | Metin | ✅ | 2024 |
-| Resmi Gazete Tarihi | Tarih | ✅ | 15.01.2024 |
-| Resmi Gazete Sayısı | Metin | ✅ | 32768 |
-| Raportor Adı Soyadı | Metin | ✅ | Mehmet Yılmaz |
-| Raportor Ünvanı | Metin | ✅ | İnşaat Mühendisi |
-
-#### İpuçları
-
-💡 **Rapor No**: Kurumunuzun numaralandırma sistemine uygun bir format kullanın.
-  - Örnek: `R-2024-001`, `KT/2024/10/001`
-
-💡 **Resmi Gazete**: Yıl başında yayınlanan güncel tebliği kullanın.
-  - 2024 yılı için: 15.01.2024 tarih, 32768 sayılı
-
-#### Ekran Görüntüsü İçeriği
-
-```
-┌──────────────────────────────────────────┐
-│ Genel Bilgiler                           │
-├──────────────────────────────────────────┤
-│ Rapor Tarihi *     │ Rapor No *          │
-│ [2024-10-26]      │ [R-2024-001]        │
-├──────────────────────────────────────────┤
-│ Resmi Yazı Tarihi* │ Resmi Yazı Sayısı * │
-│ [2024-10-20]      │ [E.12345]           │
-├──────────────────────────────────────────┤
-│ İlgili Kurum *     │ Hesap Yılı *        │
-│ [Samsun Büyük...] │ [2024]              │
-└──────────────────────────────────────────┘
-```
-
-#### Sonraki Adıma Geçiş
-
-✅ Tüm zorunlu alanları doldurduktan sonra sağ alttaki **[İleri ▶]** butonuna tıklayın.
-
----
+> **Hesap dönemi seçimi kritiktir**: Birim fiyatlar bu seçime göre çekilir. Bir yılda birden fazla tebliğ yayınlanmışsa dönemler `2022/1`, `2022/2` biçiminde listelenir.
 
 ### Adım 2: Arsa Bilgileri
 
-#### Doldurulması Gereken Alanlar
+| Alan | Açıklama |
+|------|----------|
+| İl / İlçe | İl seçimi ilçe listesini filtreler |
+| Mahalle | Mahalle adı |
+| Ada / Parsel | Tapu bilgileri |
+| Yüzölçümü | Arsa alanı (m²) |
+| Malik | Arsa maliki |
 
-| Alan | Tip | Zorunlu | Örnek |
-|------|-----|---------|-------|
-| İlçe | Seçim | ✅ | Atakum |
-| Mahalle | Metin | ✅ | Kurupelit |
-| Ada | Metin | ✅ | 123 |
-| Parsel | Metin | ✅ | 45 |
-| Yüzölçümü (m²) | Sayı | ✅ | 150.50 |
-| Malik İsmi | Metin | ✅ | Ahmet Yılmaz |
+### Adım 3: Yapı Bilgileri
 
-#### İlçe Seçimi
+Bir raporda birden fazla yapı olabilir. **Yeni Yapı Ekle** ile satır eklenir.
 
-İlçe dropdown menüsünden Samsun'un 17 ilçesinden birini seçin:
+| Alan | Açıklama |
+|------|----------|
+| Yapı Adı | Örn. "İdari Bina", "Depo" |
+| Yapı Sınıfı / Grubu | Örn. 4. Sınıf B Grubu |
+| Yapım Tekniği | Betonarme Karkas, Çelik, Yığma Kagir, Ahşap, ... |
+| Yapı Yaşı | Yıl |
+| Yapı Alanı | m² |
+| Birim Fiyat | Sınıf/grup seçilince dönemden **otomatik** gelir |
+| Yıpranma Payı | Teknik ve yaş girilince cetvelden **otomatik** gelir |
+| Eksik İmalat Oranı | Varsa yüzde olarak |
+
+### Hesaplama
+
+**Hesapla** butonu tüm yapıların bedelini ve toplamı çıkarır:
 
 ```
-Samsun İlçeleri:
-├─ Atakum
-├─ Canik
-├─ İlkadım
-├─ Bafra
-├─ Tekkeköy
-├─ Vezirköprü
-├─ Havza
-├─ Çarşamba
-├─ Terme
-├─ Salıpazarı
-├─ Kavak
-├─ Ladik
-├─ 19 Mayıs
-├─ Asarcık
-├─ Yakakent
-├─ Ayvacık
-└─ Alacam
+Yapı Bedeli = Birim Fiyat × Alan × (1 - Yıpranma/100) × (1 - Eksik İmalat/100)
 ```
 
-#### İpuçları
+Asgari levazım bedeli isteniyorsa:
 
-💡 **Ada-Parsel**: Tapu kaydındaki bilgileri doğru girin.
+```
+Levazım Bedeli = Yapı Bedeli × 0,70 × 0,75
+```
 
-💡 **Yüzölçümü**: Ondalık ayırıcı olarak nokta (.) kullanın.
-  - Doğru: `150.50`
-  - Yanlış: `150,50`
+### Fotoğraf Ekleme
 
-💡 **Malik**: Tam ad soyad yazın.
+Yapı fotoğrafları eklenebilir; her fotoğrafa açıklama yazılabilir. Fotoğraflar Word çıktısının sonuna eklenir.
+
+> Fotoğraflar veritabanına gömülü olarak saklanır. Çok sayıda ve yüksek çözünürlüklü fotoğraf veritabanı dosyasını hızla büyütür.
+
+### Kaydetme
+
+**Raporu Kaydet** ile kayıt veritabanına yazılır. Kayıttan sonra rapor, Kayıtlı Raporlar listesinden veya hub'daki son raporlar tablosundan açılabilir.
 
 ---
 
-### Adım 3: Yapı Bilgileri ve Hesaplama
+## Çoklu Parsel Raporu
 
-#### Doldurulması Gereken Alanlar
+Tek raporda birden fazla ada/parsel değerlemek için Genel Bilgiler sekmesindeki **Çoklu Parsel Raporu** kutusu işaretlenir.
 
-| Alan | Tip | Zorunlu | Örnek |
-|------|-----|---------|-------|
-| Yapı No | Metin | ✅ | 1 |
-| Yapı Adı | Metin | ✅ | Müstakil Ev |
-| Yapı Maliki | Metin | ✅ | Ahmet Yılmaz |
-| Yapı Yaşı | Sayı | ✅ | 15 |
-| Yapı Sınıfı | Seçim | ✅ | 3. Sınıf |
-| Yapım Tekniği | Seçim | ✅ | Betonarme Karkas |
-| Yapı Alanı (m²) | Sayı | ✅ | 120.50 |
-| Birim Fiyat (TL/m²) | Sayı | ✅ | 15000 |
-| Eksik İmalat Oranı (%) | Sayı | ✅ | 10 |
-| Yıpranma Payı (%) | Sayı | 🔒 Otomatik | 20 |
+### Çalışma Biçimi
 
-#### Yapı Sınıfı Seçenekleri
+1. **Yeni Parsel Ekle** ile her parsel için ayrı blok açılır
+2. Her parsele kendi ilçe, mahalle, ada, parsel, yüzölçümü ve malik bilgisi girilir
+3. Her parsele bağımsız olarak yapı eklenir; **yapı numaraları her parselde 1'den başlar**
+4. Hesaplama tüm parselleri kapsar
+
+### Word Çıktısı
+
+Çoklu parsel raporunda tablo 10 sütunludur:
 
 ```
-1. Sınıf  - Lüks yapılar
-2. Sınıf  - Çok iyi kalite
-3. Sınıf  - İyi kalite
-4. Sınıf  - Orta kalite
-5. Sınıf  - Orta-düşük kalite
-6. Sınıf  - Düşük kalite
-7. Sınıf  - Basit yapılar
+Ada | Parsel | Y.No | Yapı Adı | Sınıfı | B.Fiyat | Alan | Yıpr. | Eks.İm. | Yapı Bedeli
 ```
 
-#### Yapım Tekniği Seçenekleri
-
-```
-Betonarme Karkas
-Yığma Kagir
-Çelik Konstrüksiyon
-Ahşap
-```
-
-#### Otomatik Hesaplamalar
-
-##### Yıpranma Payı
-
-Yapı yaşı ve yapım tekniği seçildiğinde **otomatik** hesaplanır.
-
-**Betonarme Karkas için:**
-- 0-5 yıl: %5
-- 6-10 yıl: %10
-- 11-20 yıl: %20
-- 21-30 yıl: %30
-- 31-40 yıl: %40
-- 41-50 yıl: %50
-- 50+ yıl: %60
-
-**Örnek**: 
-- Yapı Yaşı: 15 yıl
-- Yapım Tekniği: Betonarme Karkas
-- **Yıpranma Payı: %20** (otomatik)
-
-##### Yapı Bedeli Hesaplama
-
-**[🧮 Hesapla]** butonuna tıkladığınızda:
-
-**Formül**:
-```
-Yapı Bedeli = Yapı Alanı × Birim Fiyat × (1 - Yıpranma Payı/100) × (1 - Eksik İmalat Oranı/100)
-```
-
-**Örnek Hesaplama**:
-```
-Yapı Alanı: 120.50 m²
-Birim Fiyat: 15,000 TL/m²
-Yıpranma Payı: 20%
-Eksik İmalat Oranı: 10%
-
-Hesaplama:
-= 120.50 × 15,000 × (1 - 0.20) × (1 - 0.10)
-= 120.50 × 15,000 × 0.80 × 0.90
-= 1,806,750 × 0.80 × 0.90
-= 1,300,860 TL
-```
-
-##### Asgari Levazım Bedeli
-
-**Formül**:
-```
-Levazım Bedeli = Yapı Bedeli × 0.70 × 0.75
-```
-
-**Örnek**:
-```
-Yapı Bedeli: 1,300,860 TL
-Levazım Bedeli = 1,300,860 × 0.70 × 0.75
-               = 682,951.50 TL
-```
-
-#### İşlem Butonları
-
-```
-┌──────────────────────────────────────┐
-│ [🧮 Hesapla]                         │
-│ [💾 Raporu Kaydet]                   │
-│ [🗑️ Formu Temizle]                  │
-│ [📁 Kayıtlı Raporlar]                │
-└──────────────────────────────────────┘
-```
-
-##### 🧮 Hesapla
-- Yapı bedeli ve levazım bedelini hesaplar
-- Sonuçları form alanlarına yazar
-- Pop-up ile özet gösterir
-
-##### 💾 Raporu Kaydet
-- Formu submit eder
-- Veritabanına kaydeder
-- Başarı mesajı gösterir
-- Formu temizler
-
-##### 🗑️ Formu Temizle
-- Tüm form alanlarını sıfırlar
-- Onay ister
-- Hesaplanan değerleri temizler
-
-##### 📁 Kayıtlı Raporlar
-- Yeni pencere açar
-- Kayıtlı raporları listeler
+- Yazı boyutu 10 punto, sütun başlıkları kısaltılmıştır
+- Her parselin yapıları bittiğinde **Ara Toplam** satırı gelir
+- En altta **GENEL TOPLAM** satırı yer alır
+- Gerekçe, açıklama, imza ve fotoğraf bölümleri tekli raporla aynıdır
 
 ---
 
-### Adım 4: Raporu Kaydetme
+## Kayıtlı Raporlar
 
-1. **[💾 Raporu Kaydet]** butonuna tıklayın
-2. Validasyon kontrolü yapılır
-3. Başarılı ise:
-   ```
-   ✅ Rapor başarıyla kaydedildi!
-   ```
-4. Form otomatik temizlenir
-5. Yeni rapor girişi yapabilirsiniz
+**Yapı Bedeli → Kayıtlı Raporlar** listesi kayıtları yeniden eskiye sıralar.
 
----
+### Liste Sütunları
 
-## 📊 Kayıtlı Raporlar
+| Sütun | Açıklama |
+|-------|----------|
+| ID | Kayıt numarası |
+| Tarih | Rapor tarihi |
+| **Dönem** | Raporun dayandığı birim fiyat dönemi |
+| İlçe / Mahalle / Ada / Parsel | Taşınmaz bilgileri |
+| İşlemler | Aksiyon butonları |
 
-### Raporlar Penceresini Açma
+**Dönem sütunu** üç şekilde görünebilir:
 
-Ana formda **[📁 Kayıtlı Raporlar]** butonuna tıklayın.
+| Görünüm | Anlamı |
+|---------|--------|
+| `2026` + Resmi Gazete sayısı | Dönem kesin olarak biliniyor |
+| `2024` (sayısız) | Rapor dönemle eşleşmedi, yalnızca hesap yılı biliniyor |
+| `Belirsiz` | Ne dönem ne yıl bilgisi var |
 
-### Rapor Listesi
-
-```
-┌────┬──────────────┬─────────┬──────────┬─────┬────────┬────────────┐
-│ ID │ Rapor Tarihi │ İlçe    │ Mahalle  │ Ada │ Parsel │ İşlemler   │
-├────┼──────────────┼─────────┼──────────┼─────┼────────┼────────────┤
-│ 1  │ 2024-10-26   │ Atakum  │ Kurupelit│ 123 │ 45     │ [S][R][H]  │
-│ 2  │ 2024-10-25   │ Canik   │ Kale     │ 456 │ 78     │ [S][R][H]  │
-└────┴──────────────┴─────────┴──────────┴─────┴────────┴────────────┘
-```
+> Eski raporlar, uygulama güncellendiğinde Resmi Gazete sayısı veya yıl üzerinden kendi dönemine otomatik bağlanmıştır. Bir yılda birden fazla dönem varsa ve künye kayıtlı değilse dönem `Belirsiz` kalır.
 
 ### İşlem Butonları
 
-#### [Sil] - Kırmızı Buton
+| Buton | İşlev |
+|-------|-------|
+| **Düzenle** | Raporu editörde açar |
+| **Word İndir** | Raporu açmadan doğrudan `.docx` üretir, `raporlar/` klasörüne kaydeder ve açar |
+| **Döneme Kopyala** | Raporu başka bir birim fiyat dönemine uyarlar |
+| **Sil** | Raporu siler |
 
-- Raporu veritabanından siler
-- Onay ister
-- Geri alınamaz!
-
-**Kullanım**:
-```
-Tıkla → Onay ver → Silindi
-```
-
-#### [Revize Et] - Sarı Buton
-
-⚠️ **Şu anda aktif değil** (Gelecek özellik)
-
-Planlanan işlev:
-- Raporu ana forma yükler
-- Düzenleme yapılabilir
-- Güncelleme kaydedilir
-
-#### [Rapor Oluştur] - Mavi Buton
-
-- Seçili rapor için Word dosyası oluşturur
-- `raporlar_cikti/` klasörüne kaydeder
-- Dosyayı otomatik açar
-
-**Dosya Adı Formatı**:
-```
-Rapor_[RaporNo]_[Tarih].docx
-```
-
-**Örnek**:
-```
-Rapor_R-2024-001_20241026.docx
-```
+> **Silme geri alınamaz.** Silmeden önce yedek almanız önerilir.
 
 ---
 
-## 📄 Word Raporu
+## Rapor Editörü
+
+Editör, kaydedilmiş raporu canlı hesaplamayla düzenler. Tekli ve çoklu parsel raporları farklı düzende gösterilir.
+
+### Dönem Şeridi
+
+Başlıkta raporun hangi döneme ait olduğunu gösteren bir şerit bulunur. Bu dönem, otomatik güncellemelerin kaynağıdır.
+
+### Otomatik Güncelleme
+
+| Değiştirdiğiniz alan | Otomatik güncellenen |
+|----------------------|----------------------|
+| Yapı sınıfı / grubu | Birim fiyat (dönemin fiyat tablosundan) |
+| Yapı yaşı veya yapım tekniği | Yıpranma payı (cetvelden) |
+
+Otomatik değişen hücre kısa süre vurgulanır. Değeri elle de yazabilirsiniz; elle girilen değer korunur.
+
+### Düzenlenebilir Alanlar
+
+Yapı satırlarındaki tüm hesap alanları, gerekçe ve açıklama metinleri, imzacı bilgileri ve fotoğraflar düzenlenebilir. Bir alan değiştiğinde satır bedeli, ara toplamlar ve genel toplam anında yeniden hesaplanır.
+
+### Kısayollar
+
+| Kısayol | İşlev |
+|---------|-------|
+| `Ctrl` + `S` | Kaydet |
+| `ESC` | Çıkış (kaydedilmemiş değişiklik varsa uyarır) |
+
+---
+
+## Farklı Döneme Kopyalama
+
+Bir raporu başka bir birim fiyat dönemine göre yeniden değerlemek için kullanılır. **Kaynak rapor değiştirilmez**; sonuç yeni bir rapor olarak kaydedilir.
+
+### Nereden Açılır
+
+- Kayıtlı Raporlar listesinde **Döneme Kopyala** butonu
+- Rapor editöründe aynı isimli buton
+
+### Ekran
+
+```
+┌──────────────────────────────────────────────────────┐
+│  Farklı Döneme Kopyala                          [×]  │
+├──────────────────────────────────────────────────────┤
+│  Kaynak: Rapor #86 · 2026 yılı · 33157 R.G.          │
+│                                                      │
+│  Hedef Dönem: [2024 — 32466 sayılı R.G.  ▼]          │
+│  [✓] Yapı yaşlarını kaydır (-2)                      │
+│                                                      │
+│  NO  YAPI          S/G   YAŞ      YIPR.   B.FİYAT    │
+│  1   Düğün Salonu  4 B   20→18    %20     33.900→17.400 │
+│  ...                                                 │
+│                                                      │
+│  TOPLAM        48.734.097,80 → 24.734.174,55 TL      │
+├──────────────────────────────────────────────────────┤
+│                        [Vazgeç]  [Kopyala ve Aç]     │
+└──────────────────────────────────────────────────────┘
+```
+
+### Ne Yapar
+
+1. **Birim fiyat**: Her yapının sınıf/grubuna karşılık gelen fiyat hedef dönemden çekilir
+2. **Yaş kaydırma** (isteğe bağlı): Yapı yaşları iki dönem arasındaki yıl farkı kadar kaydırılır. 2026 raporu 2024'e kopyalanırken 20 yaşındaki yapı 18 olur
+3. **Yıpranma payı**: Yeni yaşa göre cetvelden yeniden okunur. Yaş aynı cetvel aralığında kalıyorsa oran değişmez
+4. **Bedel**: Formül yeniden uygulanır, toplam güncellenir
+
+Onaylanınca yeni rapor oluşturulur ve editörde açılır.
+
+### Uyarılar
+
+Modal, dönüştürülemeyen kalemler için uyarı listesi gösterir:
+
+| Uyarı | Anlamı | Sonuç |
+|-------|--------|-------|
+| Fiyat tanımlı değil | Sınıf/grup hedef dönemde yok | Eski fiyat korunur |
+| Sınıf/grup eksik | Yapıda bu bilgi boş | Otomatik çekim yapılamaz, eski fiyat korunur |
+| Yıpranma bulunamadı | Teknik + yeni yaş cetvelde yok | Mevcut oran korunur |
+
+Uyarı alan satırlar tabloda işaretlenir. Kopyalama yine de yapılabilir; ilgili değerleri editörde elle düzeltmeniz gerekir.
+
+> **Yaş kaydırma ne zaman kapatılmalı?** Yapının gerçek yaşı rapor yılından bağımsızsa (örneğin yapım yılı kesin biliniyorsa ve raporda o yıla göre yazılmışsa) kutuyu işaretlemeden kopyalayın; yaşlar olduğu gibi kalır.
+
+---
+
+## Word Raporu
+
+### Üretme
+
+Word çıktısı üç yerden alınabilir:
+
+1. Form ekranında hesaplama sonrası **Word Raporu Oluştur**
+2. Kayıtlı Raporlar listesinde **Word İndir**
+3. Editörde **Word Olarak İndir**
+
+Dosya `raporlar/` klasörüne kaydedilir ve otomatik açılır.
 
 ### Rapor İçeriği
 
-```
-╔══════════════════════════════════════╗
-║   KIYMET TAKDİR RAPORU               ║
-╚══════════════════════════════════════╝
-
-Gerekçe:
-Bu rapor, [İlgili Kurum] [Resmi Yazı Tarihi] 
-tarih [Resmi Yazı Sayısı] sayılı yazısına 
-istinaden hazırlanmıştır.
-
-───────────────────────────────────────
-Taşınmaz Bilgileri:
-───────────────────────────────────────
-┌────┬──────┬──────────┬─────┬────────┐
-│ İL │ İLÇE │ MAHALLE  │ ADA │ PARSEL │
-├────┼──────┼──────────┼─────┼────────┤
-│...│ ... │ ...      │ ... │ ...    │
-└────┴──────┴──────────┴─────┴────────┘
-
-───────────────────────────────────────
-Yapı Bilgileri:
-───────────────────────────────────────
-[Detaylı tablo...]
-
-───────────────────────────────────────
-Hesaplamalar:
-───────────────────────────────────────
-TOPLAM YAPI BEDELİ: 1,300,860.00 TL
-Yalnız bir milyon üçyüz bin sekizyüz 
-altmış Türk Lirasıdır.
-
-TOPLAM ASGARİ LEVAZIM BEDELİ: 682,951.50 TL
-Yalnız altıyüz seksen iki bin dokuzyüz 
-elli bir Türk Lirasıdır.
-
-───────────────────────────────────────
-[Resmi Gazete referansı paragraf]
-───────────────────────────────────────
-
-[Rapor Tarihi]
-
-[Raportor Adı]
-[Raportor Ünvanı]
-```
-
-### Raporu Açma
-
-Rapor oluşturulduktan sonra:
-1. Otomatik olarak varsayılan Word uygulamasında açılır
-2. Manuel açma: `raporlar_cikti/` klasöründen dosyayı bulun
-3. Yazdırın veya PDF olarak kaydedin
+| Bölüm | Açıklama |
+|-------|----------|
+| Başlık ve künye | Rapor no, tarih, ilgili kurum, talep yazısı |
+| Taşınmaz bilgileri | İl, ilçe, mahalle, ada, parsel, yüzölçümü, malik |
+| Yapı tablosu | Yapı bilgileri ve hesap sütunları |
+| Toplam bedel | Rakam ve Türkçe yazı ile |
+| Gerekçe ve açıklama | Serbest metin bölümleri |
+| İmza | Raportör ad ve ünvanları |
+| Fotoğraflar | Eklenmişse açıklamalarıyla |
 
 ---
 
-## 💡 İpuçları ve Püf Noktaları
+## Proje Bedeli Modülü
+
+Mimarlık ve mühendislik hizmet bedellerini dört branş için hesaplar: **mimarlık**, **inşaat (statik)**, **mekanik**, **elektrik**.
+
+### Kullanım
+
+1. **Proje Bedeli → Yeni Hesaplama**
+2. Genel bilgiler: iş adı, hesap yılı, yapı sınıfı/grubu, toplam inşaat alanı
+3. Birim maliyet sınıf/gruba göre otomatik gelir; yapı yaklaşık maliyeti hesaplanır
+4. Her branş sekmesinde hizmet bölümleri seçilir
+5. PID oranı, maliyet ve hizmet sınıfına göre otomatik bulunur
+6. Branş bedelleri ve genel toplam hesaplanır
+7. İmzacı bilgileri girilip rapor kaydedilir
+
+### Hesap Zinciri
+
+```
+Toplam Maliyet = İnşaat Alanı × Birim Maliyet
+Proje Bedeli   = Toplam Maliyet × PID Oranı
+Hizmet Bedeli  = Proje Bedeli × Hizmet Dalı Katsayısı × Seçili Bölüm Oranı
+Genel Toplam   = Dört branşın hizmet bedeli toplamı
+```
+
+### Kayıtlı Raporlar
+
+**Düzenle**, **Word** ve **Sil** aksiyonları vardır. Editörde alan, birim maliyet, branş bedelleri, hizmet bölümleri ve imzacılar canlı hesaplamayla düzenlenir.
+
+> Sürüm 2.1.0'dan önce kaydedilen proje bedeli raporlarında imzacı bilgisi bulunmaz. Word çıktısında görünmesi için editörden imzacıları doldurup yeniden kaydedin.
+
+---
+
+## Cephe Metrajı
+
+**Hesaplamalar → Cephe Metrajı** ile açılır. Boya ve yalıtım alanlarını cephe cephe hesaplar.
+
+### Adım 1: Ayarlar
+
+Üstteki ayar bölümünde her yüzey tipinin boyaya ve yalıtıma dahil olup olmadığı belirlenir:
+
+| Yüzey | Varsayılan Boya | Varsayılan Yalıtım |
+|-------|-----------------|--------------------|
+| Cephe ön yüzeyi | ✓ | ✓ |
+| Çıkma yüzeyleri | ✓ | ✓ |
+| Saçak yüzeyleri (alın + altı) | ✓ | — |
+| Kapı/pencere yan yüzeyleri (şafak) | ✓ | — |
+| Mermer denizlik (düşülen) | ✓ | — |
+
+### Adım 2: Cepheler
+
+Cephe sayısı belirlenir (varsayılan adlar: Kuzey, Güney, Doğu, Batı). Her cephe kendi sekmesinde düzenlenir.
+
+Cephe için **en** ve **yükseklik** girilir; brüt alan buradan hesaplanır.
+
+### Adım 3: Boşluklar (Kapı / Pencere)
+
+Her boşluk satırı için:
+
+| Alan | Açıklama |
+|------|----------|
+| Tip | Kapı veya pencere |
+| En / Boy | Boşluk ölçüleri (m) |
+| Adet | Aynı ölçüdeki boşluk sayısı |
+| Gömme Derinliği | Duvar içine gömme miktarı (şafak alanını belirler) |
+| Denizlik | Pencerede mermer denizlik var mı |
+| Denizlik Derinliği | Denizliğin derinliği (m) |
+
+**Şafak hesabı** boşluk tipine göre değişir:
+
+| Durum | Çevre |
+|-------|-------|
+| Kapı (altta zemin var) | `2 × boy + en` |
+| Pencere + mermer denizlik | `2 × boy + en` |
+| Pencere, denizliksiz | `2 × (en + boy)` |
+
+```
+Şafak Alanı = Çevre × Gömme Derinliği × Adet
+```
+
+### Adım 4: Çıkmalar
+
+Her çıkma için en, derinlik, yükseklik ve adet girilir; hangi yüzeylerin hesaba katılacağı seçilir:
+
+| Yüzey | Alan | Varsayılan |
+|-------|------|------------|
+| Alt | en × derinlik | ✓ |
+| Sol Yan | derinlik × yükseklik | ✓ |
+| Sağ Yan | derinlik × yükseklik | ✓ |
+| Üst | en × derinlik | — |
+| Ön | en × yükseklik | — |
+
+### Adım 5: Saçak
+
+Saçak varsa genişlik (duvardan çıkıntı) ve alın yüksekliği girilir:
+
+```
+Saçak Altı = Cephe Eni × Genişlik
+Saçak Alın = Cephe Eni × Alın Yüksekliği
+```
+
+### Özet
+
+Özet tablosu tüm cephelerin toplamını yüzey bazında gösterir:
+
+```
+Cephe Ön Alanı = (En × Yükseklik) - Boşluk Alanları
+Toplam Boya    = Cephe Ön + Çıkma + Saçak + Şafak - Mermer Denizlik
+Toplam Yalıtım = Ayarlarda yalıtıma dahil edilen yüzeyler
+```
+
+Özet, tüm cepheler veya yalnızca seçili cephe için görüntülenebilir.
+
+### Kaydetme
+
+İş adı girilerek metraj kaydedilir. **Hesaplamalar → Kayıtlı Metrajlar** listesinden açılıp düzenlenebilir.
+
+---
+
+## İpuçları
 
 ### Hızlı Form Doldurma
 
-1. **Tab Tuşu**: Alanlar arasında hızlı geçiş
-2. **Enter**: Sonraki alana geçiş (bazı alanlarda)
-3. **Shift + Tab**: Önceki alana dön
+- Alanlar arasında `Tab` ile ilerleyin
+- Sınıf/grup ve yapım tekniği seçimlerini önce yapın; birim fiyat ve yıpranma payı otomatik dolsun
+- Benzer raporlar için mevcut bir raporu döneme kopyalayıp editörde düzenlemek sıfırdan doldurmaktan hızlıdır
 
 ### Veri Girişi
 
-✅ **Doğru Pratikler**:
-- Ondalık sayılarda nokta (.) kullanın: `120.50`
-- Tarihleri takvimden seçin
-- Dropdownları kullanın (yazım hatası olmaz)
-- İleri-Geri butonlarıyla adım adım ilerleyin
-
-❌ **Yaygın Hatalar**:
-- Virgül kullanmak: `120,50` ❌
-- Tarihleri manuel yazmak: `26/10/2024` ❌
-- Zorunlu alanları boş bırakmak ❌
-- Hesapla butonuna basmadan kaydetmek ⚠️
+- Ondalık ayracı olarak hem virgül hem nokta kabul edilir
+- Yüzde alanlarına yalnızca sayı yazın (`%` işareti gerekmez)
+- Boş bırakılan sayısal alanlar 0 kabul edilir
 
 ### Yıpranma Payı Kontrolü
 
-Otomatik hesaplanan yıpranma payını kontrol edin:
-- Yapı yaşını doğru girin
-- Yapım tekniğini doğru seçin
-- Gerekirse manuel düzeltin (sadece gerekli durumlarda)
+Otomatik gelen oranı Resmi Gazete cetveliyle karşılaştırın. Yaş aralıkları sınırında (örneğin 15/16 yaş) oran belirgin değişir; yapı yaşının doğru girildiğinden emin olun.
 
-### Veritabanı Yedekleme
+### Yedekleme
 
-Önemli: Periyodik olarak `raporlar.db` dosyasını yedekleyin!
+Veritabanı tek dosyadır:
 
-```bash
-# Manuel yedekleme
-copy raporlar.db raporlar_backup_20241026.db
+```powershell
+Copy-Item raporlar.db "yedek/raporlar_$(Get-Date -Format 'yyyyMMdd').db"
 ```
+
+Uygulama kapalıyken yedek alın. Silinen raporlar geri alınamadığı için düzenli yedekleme önemlidir.
 
 ---
 
-## ❓ Sık Sorulan Sorular
+## Sık Sorulan Sorular
 
 ### Uygulama açılmıyor
 
-**Çözüm**:
-```bash
-# Bağımlılıkları kontrol edin
-npm install
+1. `npm install` çalıştırdınız mı?
+2. SQLite3 native modülü Electron sürümüyle uyumsuz olabilir: `npx electron-rebuild`
+3. `Ctrl` + `Shift` + `I` ile DevTools açıp Console'daki hatayı kontrol edin
 
-# Uygulamayı yeniden başlatın
-npm start
-```
+### Birim fiyat otomatik gelmiyor
 
-### Rapor kaydedilmiyor
+- Hesap dönemi seçili mi?
+- Yapı sınıfı **ve** grubu birlikte seçili mi? İkisi de gerekir
+- Seçilen dönemde o sınıf/grup için fiyat tanımlı mı? Yönetim panelinden kontrol edin
 
-**Kontrol Listesi**:
-- [ ] Tüm zorunlu alanlar dolu mu?
-- [ ] Rapor tarihi geçerli mi?
-- [ ] Rapor no benzersiz mi?
-- [ ] Veritabanı dosyası var mı?
+### Yıpranma payı gelmiyor
 
-### Word raporu oluşturulmuyor
+- Yapım tekniği seçili mi?
+- Yapı yaşı girili mi?
+- Yaş, cetveldeki aralıkların dışında olabilir (örneğin çok yüksek bir değer)
 
-**Kontrol Listesi**:
-- [ ] `raporlar_cikti` klasörü var mı?
-- [ ] Klasöre yazma izni var mı?
-- [ ] Disk alanı yeterli mi?
-- [ ] docx paketi kurulu mu?
+### Dönem sütununda "Belirsiz" yazıyor
 
-### Yıpranma payı yanlış
+Rapor kaydedilirken dönem bilgisi tutulmamış ve geriye dönük eşleştirme de yapılamamış demektir. Bu genellikle o yılda birden fazla tebliğ olduğunda görülür. Raporu editörde açıp doğru dönemle yeniden kaydedebilirsiniz.
 
-**Kontrol**:
-- Yapı yaşını kontrol edin
-- Yapım tekniğini kontrol edin
-- Resmi Gazete tablosunu doğrulayın
-- Manuel düzeltme yapın (gerekirse)
+### Kopyalanan raporda fiyat değişmedi
 
-### Hesaplama yanlış
+Uyarı listesini kontrol edin. Sınıf/grup bilgisi eksik olan veya hedef dönemde karşılığı bulunmayan yapılarda eski fiyat korunur; bu değerleri editörde elle düzeltmeniz gerekir.
 
-**Formülü Kontrol Edin**:
-```
-Yapı Bedeli = 
-    Yapı Alanı 
-    × Birim Fiyat 
-    × (1 - Yıpranma Payı / 100) 
-    × (1 - Eksik İmalat Oranı / 100)
-```
+### Word raporu oluşmuyor
 
-**Örnek Doğrulama**:
-- Excel'de manuel hesaplama yapın
-- Sonuçları karşılaştırın
+- `raporlar/` klasörü yazılabilir durumda mı?
+- Aynı adlı dosya Word'de açık olabilir; kapatıp tekrar deneyin
+- Çok sayıda yüksek çözünürlüklü fotoğraf işlemi uzatabilir; birkaç saniye bekleyin
 
-### Raporlar listesi boş görünüyor
+### Rapor listesi boş görünüyor
 
-**Çözüm**:
-1. Ana formdan rapor kaydedin
-2. Raporlar penceresini kapatıp yeniden açın
-3. Veritabanını kontrol edin:
-   ```bash
-   sqlite3 raporlar.db "SELECT * FROM raporlar;"
-   ```
+- Uygulamanın doğru `raporlar.db` dosyasını kullandığından emin olun. Portable sürümde veritabanı exe'nin yanındadır; exe'yi taşıdıysanız veritabanını da taşımanız gerekir
 
 ### Silinen rapor geri gelmedi
 
-⚠️ **Uyarı**: Silme işlemi geri alınamaz!
+Rapor silme kalıcıdır. Yalnızca yedekten geri yükleme mümkündür.
 
-**Önlem**: Düzenli yedekleme yapın.
+### Metraj kaydedilmiyor
 
-### Form temizlenmiyor
-
-**Çözüm**:
-1. **[🗑️ Formu Temizle]** butonunu kullanın
-2. Sayfa yenilemesi yapmayın (veri kaybolur)
-3. Uygulamayı yeniden başlatın (son çare)
+İş adı alanı boş olamaz. Kaydetmeden önce bir iş adı girin.
 
 ---
 
-## 🎯 İyi Pratikler
+## İyi Pratikler
 
 ### Rapor Numaralandırma
 
-Sistematik bir yapı kullanın:
-```
-Format: [Kod]-[Yıl]-[Sıra]
+Yıl bazlı sıralı bir düzen (örn. `2026/001`) raporların takibini kolaylaştırır.
 
-Örnekler:
-R-2024-001
-R-2024-002
-KT/2024/10/001
-```
+### Dönem Seçimi
 
-### Veri Tutarlılığı
+Raporu hangi tebliğe göre düzenlediğinizi Genel Bilgiler sekmesinde doğru seçin. Bu seçim yalnızca birim fiyatı değil, raporun künyesindeki Resmi Gazete referansını ve sonradan yapılacak dönem kopyalamalarını da belirler.
 
-- Malik ve Yapı Maliki aynı ise aynı yazımı kullanın
-- İlçe adlarını dropdown'dan seçin (yazım hatası olmasın)
-- Ada-Parsel bilgilerini tapu kaydından kopyalayın
+### Çoklu Parsel mi, Ayrı Raporlar mı?
 
-### Düzenli Yedekleme
+Aynı talep yazısına dayanan ve birlikte değerlendirilen parseller için çoklu parsel raporu kullanın. Farklı taleplere ait taşınmazları ayrı raporlarda tutmak takibi kolaylaştırır.
 
-**Önerilen Yedekleme Sıklığı**:
-- Günlük: 10+ rapor girişi varsa
-- Haftalık: Düzenli kullanımda
-- Aylık: Minimum
+### Fotoğraf Boyutu
 
-### Rapor Arşivleme
-
-`raporlar_cikti` klasöründeki dosyaları:
-- Klasörlere ayırın (yıl, ay, kurum)
-- Bulut yedekleme kullanın
-- Düzenli temizlik yapın (eski dosyaları arşivleyin)
+Fotoğrafları eklemeden önce makul bir çözünürlüğe küçültmek veritabanı boyutunu ve rapor üretim süresini belirgin şekilde azaltır.
 
 ---
 
-## 📞 Destek
-
-Sorun yaşarsanız:
-1. Bu dokümantasyonu kontrol edin
-2. [SORUN_GIDERME.md](./KURULUM.md#sorun-giderme) bölümüne bakın
-3. Destek ekibiyle iletişime geçin
-
----
-
-**Kolay Kullanımlar!** 🎉
-
-**Son Güncelleme**: 2024
-
+*Son Güncelleme: 25.08.2026 | Versiyon 2.2.0*
