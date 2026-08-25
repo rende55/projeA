@@ -181,7 +181,7 @@ Dashboard → Yapı Bedeli (hub) → Yeni Hesaplama
 | `raporlar` | Yapı bedeli raporları |
 | `birimFiyatlar` | Yıl bazlı birim fiyat dönemleri |
 | `birimFiyatDetay` | Yapı sınıfı/grup bazlı detay fiyatlar |
-| `raportorler` | Raportör bilgileri |
+| `raportorleri` | Raportör bilgileri |
 | `kurumlar` | Kurum ve alt kurum bilgileri |
 | `yipranmaPaylari` | Yıpranma payı cetvelleri |
 | `pidOranlari` | PID oranları (Proje Bedeli) |

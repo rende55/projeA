@@ -210,7 +210,7 @@ shared/
 | 1 | `raporlar` | Yapı bedeli raporları (29+ sütun) | Yapı Bedeli |
 | 2 | `birimFiyatlar` | Yıl/dönem bazlı birim fiyat ana kayıtları | Yapı Bedeli |
 | 3 | `birimFiyatDetay` | Yapı sınıfı ve grup bazlı detay fiyatlar | Yapı Bedeli |
-| 4 | `raportorler` | Raportör bilgileri (ad, unvan, sicil no) | Yapı Bedeli |
+| 4 | `raportorleri` | Raportör bilgileri (ad, soyad, ünvan) | Ortak |
 | 5 | `kurumlar` | Kurum ve alt kurum bilgileri | Yapı Bedeli |
 | 6 | `yipranmaPaylari` | Yıpranma payı cetvelleri (yapı tipi + yaş) | Yapı Bedeli |
 | 7 | `pidOranlari` | PID oranları (maliyet aralığı + oran) | Proje Bedeli |

@@ -1,488 +1,474 @@
 # Uygulama Mimarisi ve Yapısı
 
-## 📋 İçindekiler
+## İçindekiler
 
 - [Mimari Genel Bakış](#mimari-genel-bakış)
+- [SPA Navigasyon Sistemi](#spa-navigasyon-sistemi)
 - [Katmanlı Mimari](#katmanlı-mimari)
 - [Dosya Yapısı](#dosya-yapısı)
 - [Veri Akışı](#veri-akışı)
 - [Teknoloji Stack](#teknoloji-stack)
-- [Design Patterns](#design-patterns)
+- [Tasarım Kalıpları](#tasarım-kalıpları)
+- [Güvenlik Mimarisi](#güvenlik-mimarisi)
+- [Performans Karakteristikleri](#performans-karakteristikleri)
+- [Gelecek İyileştirmeler](#gelecek-i̇yileştirmeler)
 
 ---
 
-## 🏗️ Mimari Genel Bakış
+## Mimari Genel Bakış
 
-KİTAR uygulaması, Electron framework'ü üzerinde çalışan, **üç katmanlı (3-tier)** mimari yapısına sahip bir masaüstü uygulamasıdır.
+Proje A, **tek pencerede çalışan modüler bir Electron uygulamasıdır**. Tüm sayfalar aynı `BrowserWindow` içinde, sayfa yenilenmeden değiştirilir (SPA). Her modül kendi klasöründe, kendi görünüm ve script dosyalarıyla bağımsız durur.
 
 ```
-┌─────────────────────────────────────────┐
-│         PRESENTATION LAYER              │
-│    (HTML, CSS, UI Components)           │
-├─────────────────────────────────────────┤
-│         APPLICATION LAYER               │
-│    (Business Logic, Calculations)       │
-├─────────────────────────────────────────┤
-│         DATA LAYER                      │
-│    (SQLite Database, File System)       │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────┐
+│                    Electron Uygulaması                  │
+│                                                         │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │              Main Process (main.js)               │  │
+│  │  • Pencere yönetimi                               │  │
+│  │  • SQLite bağlantısı ve migration                 │  │
+│  │  • IPC handler'ları (Word export, dosya diyalog)  │  │
+│  └───────────────────────────────────────────────────┘  │
+│                          ▲                              │
+│                          │ IPC                          │
+│                          ▼                              │
+│  ┌───────────────────────────────────────────────────┐  │
+│  │       Renderer Process (tek BrowserWindow)        │  │
+│  │                                                   │  │
+│  │  dashboard.html  (SPA kabuğu)                     │  │
+│  │  └── NavigationManager                            │  │
+│  │      └── #page-container                          │  │
+│  │          └── aktif modül sayfası (template+script)│  │
+│  └───────────────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────────────┘
 ```
 
 ### Electron Process Modeli
 
-```
-┌──────────────────────────────────────────────┐
-│           MAIN PROCESS (Node.js)             │
-│  - Uygulama yaşam döngüsü                    │
-│  - Pencere yönetimi                          │
-│  - Veritabanı bağlantısı                     │
-│  - IPC iletişim                              │
-└──────────────────────────────────────────────┘
-                    │
-                    │ IPC
-                    │
-┌──────────────────────────────────────────────┐
-│        RENDERER PROCESSES (Chromium)         │
-│  ┌──────────────┐      ┌──────────────┐     │
-│  │  Ana Pencere │      │ Rapor Pencere│     │
-│  │  (index.html)│      │(raporlar.html)│    │
-│  └──────────────┘      └──────────────┘     │
-└──────────────────────────────────────────────┘
-```
+| Process | Dosya | Sorumluluk |
+|---------|-------|------------|
+| **Main** | `main.js` | Uygulama yaşam döngüsü, pencere oluşturma, veritabanı şeması ve migration, Word export IPC handler'ları |
+| **Renderer** | `dashboard.html` + modül script'leri | Tüm kullanıcı arayüzü, form mantığı, hesaplamalar, veritabanı sorguları |
+
+> **Not**: `nodeIntegration: true` ve `contextIsolation: false` kullanıldığı için renderer süreci doğrudan `require('sqlite3')` yapabilir; veritabanı sorgularının çoğu renderer tarafında çalışır. Ayrıntı için [Güvenlik Mimarisi](#güvenlik-mimarisi) bölümüne bakın.
 
 ---
 
-## 📚 Katmanlı Mimari
+## SPA Navigasyon Sistemi
 
-### 1. Presentation Layer (Sunum Katmanı)
+Uygulamanın omurgası `shared/scripts/navigation.js` içindeki **NavigationManager** sınıfıdır.
 
-#### Dosyalar
-- `index.html` - Ana form arayüzü
-- `raporlar.html` - Rapor listeleme arayüzü
-- `style.css` - Genel stil dosyası
+### Sayfa Kaydı
 
-#### Sorumluluklar
-- Kullanıcı arayüzü render'ı
-- Form validasyonu
-- Kullanıcı etkileşimleri
-- UI/UX yönetimi
-
-#### Teknolojiler
-- HTML5
-- CSS3 (Gradient, Flexbox, Grid)
-- Vanilla JavaScript
-
-### 2. Application Layer (Uygulama Katmanı)
-
-#### Dosyalar
-- `renderer.js` - Ana form iş mantığı
-- `raporlar.js` - Rapor yönetim mantığı
-- `reportGenerator.js` - Rapor oluşturma mantığı
-
-#### Sorumluluklar
-- İş kuralları (business rules)
-- Hesaplamalar
-- Veri validasyonu
-- Rapor oluşturma
-- Yıpranma payı hesaplama
-- Sayıyı yazıya çevirme
-
-#### Teknolojiler
-- JavaScript (ES6+)
-- Node.js API'leri
-- Electron IPC
-
-### 3. Data Layer (Veri Katmanı)
-
-#### Dosyalar
-- `main.js` - Veritabanı yönetimi
-- `raporlar.db` - SQLite veritabanı
-
-#### Sorumluluklar
-- Veritabanı bağlantısı
-- CRUD işlemleri
-- Veri kalıcılığı
-- Dosya sistemi erişimi
-
-#### Teknolojiler
-- SQLite3
-- Node.js File System (fs)
-- Path modülü
-
----
-
-## 📁 Dosya Yapısı
-
-```
-kitar/
-│
-├── main.js                     # Electron ana süreç
-├── index.html                  # Ana form UI
-├── renderer.js                 # Ana form mantığı
-├── raporlar.html               # Rapor listesi UI
-├── raporlar.js                 # Rapor listesi mantığı
-├── reportGenerator.js          # Rapor oluşturma modülü
-├── style.css                   # Genel stiller (kullanılmıyor)
-│
-├── package.json                # Proje yapılandırması
-├── package-lock.json           # Bağımlılık kilidi
-│
-├── raporlar.db                 # SQLite veritabanı
-│
-├── raporlar_cikti/             # Oluşturulan raporlar
-│   └── Rapor_X_YYYYMMDD.docx
-│
-├── KT_Sablon_1.docx           # Word şablonu (kullanılmıyor)
-├── KT_Sablon_1_backup.docx    # Yedek şablon
-├── KT_Sablon_1_Clean.docx     # Temiz şablon
-│
-├── Screenshot_1.jpg            # Uygulama ekran görüntüsü
-│
-├── node_modules/               # NPM bağımlılıkları
-│   ├── electron/
-│   ├── sqlite3/
-│   ├── docx/
-│   └── ...
-│
-└── docs/                       # Dokümantasyon
-    ├── README.md
-    ├── KURULUM.md
-    ├── MIMARI.md
-    ├── VERITABANI.md
-    ├── MODULLER.md
-    ├── KULLANIM.md
-    └── GELISTIRICI.md
-```
-
-### Dosya Detayları
-
-| Dosya | Satır Sayısı | Amaç |
-|-------|--------------|------|
-| `main.js` | ~126 | Electron main process |
-| `index.html` | ~510 | Ana form HTML |
-| `renderer.js` | ~292 | Form JavaScript mantığı |
-| `raporlar.html` | ~131 | Rapor listesi HTML |
-| `raporlar.js` | ~123 | Rapor listesi JavaScript |
-| `reportGenerator.js` | ~295 | Word rapor oluşturma |
-| `style.css` | ~82 | Genel CSS (eski) |
-
----
-
-## 🔄 Veri Akışı
-
-### 1. Rapor Oluşturma Akışı
-
-```
-┌──────────────┐
-│  Kullanıcı   │
-│  Form Doldur │
-└──────┬───────┘
-       │
-       ▼
-┌──────────────────┐
-│  renderer.js     │
-│  - Validasyon    │
-│  - Hesaplama     │
-└──────┬───────────┘
-       │
-       ▼
-┌──────────────────┐
-│  SQLite Insert   │
-│  (main.js)       │
-└──────┬───────────┘
-       │
-       ▼
-┌──────────────────┐
-│  raporlar.db     │
-│  Kayıt ID: X     │
-└──────────────────┘
-```
-
-### 2. Rapor Word Oluşturma Akışı
-
-```
-┌──────────────────┐
-│ Kullanıcı        │
-│ "Rapor Oluştur"  │
-└──────┬───────────┘
-       │
-       ▼
-┌──────────────────┐
-│  raporlar.js     │
-│  db.get(id)      │
-└──────┬───────────┘
-       │
-       ▼
-┌──────────────────┐
-│ reportGenerator  │
-│ .generateReport()│
-└──────┬───────────┘
-       │
-       ▼
-┌──────────────────┐
-│  docx Library    │
-│  Create Document │
-└──────┬───────────┘
-       │
-       ▼
-┌──────────────────┐
-│ raporlar_cikti/  │
-│ Rapor_X.docx     │
-└──────────────────┘
-```
-
-### 3. IPC İletişim Akışı
-
-```
-┌──────────────────────┐
-│  renderer.js         │
-│  (Ana Pencere)       │
-└──────┬───────────────┘
-       │
-       │ ipcRenderer.send('show-reports')
-       │
-       ▼
-┌──────────────────────┐
-│  main.js             │
-│  (Main Process)      │
-└──────┬───────────────┘
-       │
-       │ BrowserWindow.create()
-       │
-       ▼
-┌──────────────────────┐
-│  raporlar.html       │
-│  (Yeni Pencere)      │
-└──────────────────────┘
-```
-
----
-
-## 🛠️ Teknoloji Stack
-
-### Frontend Stack
-
-```
-┌─────────────────────────────────┐
-│  HTML5                          │
-│  ├─ Semantic Markup             │
-│  ├─ Form Elements               │
-│  └─ Data Attributes             │
-├─────────────────────────────────┤
-│  CSS3                           │
-│  ├─ Flexbox Layout              │
-│  ├─ Grid Layout                 │
-│  ├─ Gradient Backgrounds        │
-│  ├─ Animations                  │
-│  └─ Responsive Design           │
-├─────────────────────────────────┤
-│  JavaScript (ES6+)              │
-│  ├─ Arrow Functions             │
-│  ├─ Template Literals           │
-│  ├─ Destructuring               │
-│  ├─ Async/Await (Promise)       │
-│  └─ Event Handling              │
-└─────────────────────────────────┘
-```
-
-### Backend Stack
-
-```
-┌─────────────────────────────────┐
-│  Electron 34.0.1                │
-│  ├─ Main Process                │
-│  ├─ Renderer Process            │
-│  ├─ IPC Communication           │
-│  └─ Remote Module               │
-├─────────────────────────────────┤
-│  Node.js Runtime                │
-│  ├─ File System (fs)            │
-│  ├─ Path Module                 │
-│  └─ Buffer                      │
-├─────────────────────────────────┤
-│  SQLite3 5.1.7                  │
-│  ├─ CRUD Operations             │
-│  ├─ Prepared Statements         │
-│  └─ Error Handling              │
-└─────────────────────────────────┘
-```
-
-### Document Processing Stack
-
-```
-┌─────────────────────────────────┐
-│  docx 9.5.1                     │
-│  ├─ Document Creation           │
-│  ├─ Paragraph                   │
-│  ├─ Table                       │
-│  ├─ TextRun                     │
-│  └─ Packer                      │
-├─────────────────────────────────┤
-│  docxtemplater 3.67.0 (Hazır)  │
-│  ├─ Template Processing         │
-│  └─ Variable Replacement        │
-├─────────────────────────────────┤
-│  pizzip 3.2.0                   │
-│  └─ ZIP Operations              │
-└─────────────────────────────────┘
-```
-
----
-
-## 🎨 Design Patterns
-
-### 1. Module Pattern
-
-Her JavaScript dosyası kendi scope'unda çalışır:
+Her sayfa (route) bir template ve bir script ile tanımlanır:
 
 ```javascript
-// reportGenerator.js
-function sayiyiYaziyaCevir(sayi) { ... }
-function formatTarih(tarih) { ... }
-function generateReport(data, path) { ... }
-
-module.exports = { generateReport, sayiyiYaziyaCevir, formatTarih };
-```
-
-### 2. Event-Driven Pattern
-
-UI etkileşimleri event listener'larla yönetilir:
-
-```javascript
-// renderer.js
-document.querySelectorAll('.btn-next').forEach(btn => {
-    btn.addEventListener('click', nextTab);
-});
-
-form.addEventListener('submit', (event) => { ... });
-```
-
-### 3. Singleton Pattern
-
-Veritabanı bağlantısı singleton pattern kullanır:
-
-```javascript
-// main.js
-let db; // Global tek instance
-
-function createDatabase() {
-    db = new sqlite3.Database(path.join(__dirname, 'raporlar.db'));
+'cephe-metraj': {
+    title: 'Cephe Metrajı',
+    icon: '📐',
+    template: 'modules/hesaplama/views/cephe-metraj-content.html',
+    script: 'modules/hesaplama/scripts/cephe-metraj-page.js'
 }
 ```
 
-### 4. Factory Pattern
+### Kayıtlı Route'lar
 
-Rapor oluşturma factory pattern benzeri yapıdadır:
+| Route | Başlık | Modül |
+|-------|--------|-------|
+| `dashboard` | Ana Sayfa | - |
+| `yapi-bedeli` | Yapı Bedeli (hub) | Yapı Bedeli |
+| `yapi-bedeli-form` | Yeni Hesaplama | Yapı Bedeli |
+| `raporlar` | Kayıtlı Raporlar | Yapı Bedeli |
+| `editor` | Rapor Editörü | Yapı Bedeli |
+| `admin` | Yönetim Paneli | Yapı Bedeli |
+| `proje-bedeli` | Proje Bedeli (hub) | Proje Bedeli |
+| `proje-bedeli-form` | Yeni Hesaplama | Proje Bedeli |
+| `pb-raporlar` | PB Raporları | Proje Bedeli |
+| `pb-editor` | PB Rapor Editörü | Proje Bedeli |
+| `hesaplama` | Hesaplamalar (hub) | Hesaplamalar |
+| `cephe-metraj` | Cephe Metrajı | Hesaplamalar |
+| `metraj-raporlar` | Kayıtlı Metrajlar | Hesaplamalar |
 
-```javascript
-// reportGenerator.js
-function generateReport(raporData, outputPath) {
-    const doc = new Document({ ... });
-    return Packer.toBuffer(doc);
-}
+### Navigasyon Akışı
+
+```
+Dashboard
+├── Yapı Bedeli (hub) → Yeni Hesaplama
+│                     → Raporlar → Editör → Döneme Kopyala
+├── Proje Bedeli (hub) → Yeni Hesaplama
+│                      → PB Raporlar → PB Editör
+├── Hesaplamalar (hub) → Cephe Metrajı
+│                      → Kayıtlı Metrajlar
+└── Admin Paneli
 ```
 
-### 5. Observer Pattern
+**Hub deseni**: Modül kartına tıklanınca doğrudan forma değil, modülün giriş ekranına gidilir. Hub'da yeni kayıt, kayıtlı kayıtlar listesi ve son kayıtlar bir aradadır.
 
-Electron IPC observer pattern kullanır:
+### Sayfa Yükleme Süreci
+
+`navigateTo(pageName, data)` çağrıldığında sırayla:
+
+1. **State kaydı** – mevcut sayfanın `saveState()` fonksiyonu varsa çağrılır
+2. **Unload** – mevcut sayfanın `onUnload()` fonksiyonu çağrılır (DB bağlantısı kapatma, IPC listener temizliği)
+3. **Stack** – yeni sayfa geçmiş yığınına eklenir
+4. **Template** – HTML dosyası `fs.readFileSync()` ile okunup `container.innerHTML`'e yazılır
+5. **Script** – modül `require()` ile yüklenir (bir kez; sonraki ziyaretlerde önbellekten) ve `onLoad(container, data, navigation)` çağrılır
+6. **UI** – navigasyon çubuğu ve breadcrumb güncellenir
+
+Hata durumunda container'a "Sayfa Yüklenemedi" ekranı basılır ve geri dönüş butonu gösterilir.
+
+### Sayfa Modülü Sözleşmesi
+
+Her sayfa script'i şu arayüzü sağlar:
 
 ```javascript
-// main.js (Observer)
-ipcMain.on('show-reports', (event) => {
-    // Yeni pencere oluştur
-});
+async function onLoad(container, data, navigation) { }   // Zorunlu
+async function onUnload() { }                            // Önerilir
+async function saveState() { return {...}; }             // İsteğe bağlı
+function hasUnsavedChanges() { return false; }           // İsteğe bağlı
 
-// renderer.js (Subject)
-ipcRenderer.send('show-reports');
+module.exports = { onLoad, onUnload, saveState, hasUnsavedChanges };
 ```
+
+| Fonksiyon | Ne zaman çağrılır | Tipik kullanım |
+|-----------|-------------------|----------------|
+| `onLoad` | Sayfa açıldığında | DB bağlantısı açma, veri yükleme, event listener kurma, `window.<prefix>Page` global'ini tanımlama |
+| `onUnload` | Sayfadan ayrılırken | DB bağlantısını kapatma, `ipcRenderer.removeListener()` ile dinleyicileri kaldırma |
+| `saveState` | Navigasyondan önce | Form verisini saklama |
+| `hasUnsavedChanges` | Geri dönerken | Kaydedilmemiş değişiklik uyarısı |
+
+> **Önemli**: Sayfa script'leri `require()` önbelleğinde kaldığı için modül seviyesindeki değişkenler sayfa kapanınca sıfırlanmaz. `onLoad` içinde durumu yeniden kurmak, `onUnload` içinde temizlemek gerekir. IPC dinleyicileri `onUnload`'da kaldırılmazsa her açılışta birikir.
+
+### Geçmiş Yönetimi
+
+- `stack` dizisi ziyaret edilen sayfaları tutar; `goBack()` yığından çıkarır
+- `goHome()` dashboard'a döner ve yığını sıfırlar
+- Breadcrumb yığından üretilir; bir öğeye tıklanınca `navigateToStackIndex()` ile o noktaya dönülür
+- Klavye: `ESC` / `Alt+←` geri, `Alt+Home` ana sayfa
 
 ---
 
-## 🔐 Güvenlik Mimarisi
+## Katmanlı Mimari
 
-### Context Isolation: Disabled ⚠️
+### 1. Sunum Katmanı
+
+**Dosyalar**: `dashboard.html`, `modules/*/views/*.html`
+
+- Modül içerik dosyaları tam HTML belgesi değil, **parça (fragment)** olarak yazılır; `<style>` blokları içerir ve container'a enjekte edilir
+- Stil çakışmasını önlemek için her modül kendi CSS öneki kullanır: `yb-` (yapı bedeli), `pb-` (proje bedeli), `cm-` (cephe metraj), `hub-` (hub sayfaları), `dk-` (döneme kopyala), `ed-` (editör)
+- SVG ikonlar satır içi kullanılır; Inter font ve Slate renk paleti ortak tasarım dilini oluşturur
+
+### 2. Uygulama Katmanı
+
+**Dosyalar**: `shared/scripts/navigation.js`, `modules/*/scripts/*-page.js`
+
+- Sayfa script'leri form mantığını, olay yönetimini ve DOM güncellemesini üstlenir
+- `NavigationManager` sayfalar arası geçişi ve yaşam döngüsünü yönetir
+- Modal bileşenleri (`donem-kopyala.js`) kendi DOM'unu ve stilini oluşturup `document.body`'ye ekler; sayfa script'lerinden bağımsız kullanılabilir
+
+### 3. Saf Hesap Katmanı
+
+**Dosyalar**: `modules/yapi-bedeli/scripts/donem-servisi.js`, `modules/hesaplama/scripts/metraj-hesap.js`
+
+DOM'a dokunmayan, yalnızca veri alıp veri döndüren fonksiyonlar bu katmanda toplanır:
 
 ```javascript
-// main.js
-webPreferences: {
-    nodeIntegration: true,
-    contextIsolation: false,  // GÜVENLİK RİSKİ!
-    enableRemoteModule: true
-}
+// metraj-hesap.js - arayüzden bağımsız
+function hesaplaCephe(cephe) { /* ... */ return { brutAlan, yuzeyler, ... }; }
+
+// donem-servisi.js - DB sorguları + saf uyarlama
+function raporuDonemeUyarla(yapilar, opts) { /* ... */ return { yapilar, uyarilar, toplam }; }
 ```
 
-**Not**: Bu yapılandırma geliştirme kolaylığı için kullanılmış ancak production için güvenli değildir.
+**Faydası**: Hesap mantığı arayüz açmadan çalıştırılabilir ve doğrulanabilir; aynı mantık birden fazla ekrandan kullanılabilir (dönem uyarlaması hem listeden hem editörden çağrılır).
 
-### Önerilen İyileştirme
+### 4. Veri Katmanı
+
+**Dosyalar**: `main.js` (şema + migration), `shared/scripts/db-helper.js` (yol çözümleme), sayfa script'lerindeki sorgular
+
+- Şema oluşturma ve migration ana süreçte, uygulama açılışında çalışır
+- Sorgular çoğunlukla renderer tarafında, sayfa script'lerinde yürütülür
+- Veritabanı yolu her zaman `getDbPath()` üzerinden alınır (portable build uyumu için)
+
+---
+
+## Dosya Yapısı
+
+```
+projeA/
+├── main.js                      # Ana süreç: pencere, DB şeması, migration, IPC
+├── dashboard.html               # SPA kabuğu: dashboard + nav bar + #page-container
+├── dashboard.js                 # Modül kartları, versiyon modalı, navigasyon başlatma
+├── build.js                     # Obfuscation + build hazırlığı
+├── package.json
+│
+├── shared/
+│   └── scripts/
+│       ├── navigation.js        # NavigationManager (SPA çekirdeği)
+│       └── db-helper.js         # Veritabanı yolu çözümleme
+│
+├── modules/
+│   ├── yapi-bedeli/
+│   │   ├── views/               # hub, form, raporlar, editör, admin (HTML fragment)
+│   │   ├── scripts/
+│   │   │   ├── *-page.js        # Sayfa modülleri (SPA)
+│   │   │   ├── donem-servisi.js # Dönem sorguları + uyarlama (saf)
+│   │   │   ├── donem-kopyala.js # Döneme kopyalama modalı
+│   │   │   └── reportGenerator.js
+│   │   ├── styles/
+│   │   └── KT_Sablon_1.docx
+│   │
+│   ├── proje-bedeli/
+│   │   ├── views/               # hub, form, raporlar, editör
+│   │   └── scripts/             # *-page.js + pb-reportGenerator.js
+│   │
+│   └── hesaplama/
+│       ├── views/               # hub, cephe metrajı, kayıtlı metrajlar
+│       └── scripts/
+│           ├── metraj-hesap.js  # Metraj hesabı (saf)
+│           └── *-page.js
+│
+├── assets/                      # İkonlar ve görseller
+├── docs/                        # Dokümantasyon
+├── raporlar/                    # Üretilen Word raporları
+├── sehirler.json / ilceler.json # İl/ilçe tohum verisi
+└── raporlar.db                  # SQLite veritabanı
+```
+
+### Kritik Dosyalar
+
+| Dosya | Rol |
+|-------|-----|
+| `main.js` | Şema, migration ve Word export'un tek kaynağı |
+| `shared/scripts/navigation.js` | Yeni sayfa eklemek için değiştirilmesi gereken tek ortak dosya |
+| `shared/scripts/db-helper.js` | DB yolunu doğrudan yazmamak için daima kullanılmalı |
+| `build.js` | Yeni script dosyası eklendiğinde `RENDERER_JS_FILES` listesine eklenmelidir |
+
+---
+
+## Veri Akışı
+
+### 1. Rapor Oluşturma
+
+```
+Kullanıcı formu doldurur (yapi-bedeli-form)
+   ↓
+Sınıf/grup seçilir → birimFiyatDetay'dan birim fiyat çekilir
+   ↓
+Yapım tekniği + yaş girilir → yipranmaPaylari'ndan oran çekilir
+   ↓
+Bedel hesaplanır:
+   bedel = birimFiyat × alan × (1 - yipranma/100) × (1 - eksikImalat/100)
+   ↓
+Yapılar yapilarJSON'a serileştirilir (çoklu parselde parsellerJSON)
+   ↓
+INSERT INTO raporlar
+```
+
+### 2. Word Raporu Üretimi
+
+```
+Editör / rapor listesi → veri toplanır
+   ↓
+ipcRenderer.send('export-word', data)
+   ↓
+main.js: dosya yolu belirlenir (raporlar/ klasörü)
+   ↓
+reportGenerator.js: docx ile belge kurulur (tablolar, imza, fotoğraflar)
+   ↓
+Dosya yazılır → shell.openPath() ile açılır
+   ↓
+ipcRenderer → 'word-export-success' / 'word-export-error'
+```
+
+Çoklu parsel raporları için ayrı bir üretici kullanılır (`generateCokluParselReport`): 10 sütunlu tablo, her parsel sonunda ara toplam, en altta genel toplam.
+
+### 3. Farklı Döneme Kopyalama
+
+```
+Rapor listesi / editör → donem-kopyala.ac(db, nav, raporId)
+   ↓
+donem-servisi: hedef dönemin fiyat tablosu (Map) + yıpranma cetveli yüklenir
+   ↓
+raporuDonemeUyarla(): her yapı için
+   • yaş yıl farkı kadar kaydırılır (isteğe bağlı)
+   • yıpranma oranı cetvelden yeniden okunur
+   • birim fiyat sınıf/grup anahtarıyla hedef dönemden çekilir
+   • bedel yeniden hesaplanır
+   ↓
+Önizleme: eski → yeni karşılaştırma + uyarılar
+   ↓
+Onay → şemadan okunan kolonlarla YENİ satır INSERT edilir (kaynak korunur)
+   ↓
+Editör yeni rapor id'si ile açılır
+```
+
+### 4. IPC İletişimi
+
+Renderer'dan ana sürece gönderilen başlıca kanallar:
+
+| Kanal | Amaç |
+|-------|------|
+| `export-word` | Word raporu üretimi |
+| `export-word-with-photos` | Fotoğraflı Word raporu |
+| `export-word-from-preview` | Önizleme ekranından çıktı |
+| `open-editor` | Ayrı editör penceresi (eski akış) |
+| `open-preview` | Önizleme penceresi |
+
+Ana süreçten renderer'a dönen bildirimler: `word-export-success`, `word-export-error`.
+
+> Bu dinleyiciler sayfa `onUnload`'ında `ipcRenderer.removeListener()` ile kaldırılmalıdır; aksi halde sayfa her açıldığında yeni dinleyici eklenir ve tek işlem için birden fazla bildirim gösterilir.
+
+---
+
+## Teknoloji Stack
+
+### Frontend
+
+| Teknoloji | Kullanım |
+|-----------|----------|
+| HTML5 | Modül içerik fragment'ları |
+| CSS3 | Modül önekli stiller, flexbox/grid, glassmorphism |
+| Vanilla JS (ES6+) | async/await, template literal, destructuring, Map |
+| Inter (@fontsource) | Tipografi |
+| Satır içi SVG | İkonlar |
+
+### Backend / Runtime
+
+| Teknoloji | Kullanım |
+|-----------|----------|
+| Electron 34 | Masaüstü çerçevesi |
+| @electron/remote | Renderer'dan `app` API'sine erişim (DB yolu için) |
+| Node.js `fs` / `path` | Template okuma, dosya işlemleri |
+| sqlite3 | Veritabanı (native modül) |
+
+### Doküman İşleme
+
+| Kütüphane | Kullanım |
+|-----------|----------|
+| docx | Word belgesi oluşturma (tablo, paragraf, görsel) |
+| docxtemplater + pizzip | Şablon doldurma |
+| mammoth | HTML dönüşümü |
+
+### Build
+
+| Araç | Kullanım |
+|------|----------|
+| electron-builder | Portable exe |
+| javascript-obfuscator | Main (`target: node`) ve renderer (`target: browser-no-eval`) kodunun karartılması |
+
+---
+
+## Tasarım Kalıpları
+
+### 1. Modül Kalıbı
+
+Her sayfa script'i `module.exports` ile yaşam döngüsü fonksiyonlarını dışa açar; iç durum modül kapsamında kalır.
+
+### 2. Saf Fonksiyon Katmanı
+
+Hesap mantığı (`metraj-hesap.js`, `donem-servisi.js`) DOM'dan ayrılır. Girdi verisi alır, yeni veri döndürür; mevcut nesneleri değiştirmez:
+
+```javascript
+const y = Object.assign({}, yapi);   // kopya üzerinde çalışılır
+```
+
+### 3. Singleton
+
+`NavigationManager` tek örnek olarak oluşturulup `window.navigation` üzerinden paylaşılır.
+
+### 4. Şemadan Sürülen İşlem
+
+Rapor kopyalamada sütun listesi `PRAGMA table_info()` ile okunur; şema değiştiğinde kod güncellenmeden çalışmaya devam eder.
+
+### 5. Global Köprü
+
+Template içindeki `onclick` işleyicileri için sayfa script'i sınırlı bir global tanımlar:
+
+```javascript
+window.cmPage = { boslukEkle, boslukSil, cikmaEkle, cikmaSil, cepheSec };
+```
+
+### 6. Tek Yönlü Durum
+
+Cephe metrajı gibi karmaşık ekranlarda veri DOM'dan okunmaz; tek bir `metrajState` nesnesinde tutulur, değişiklikte arayüz yeniden çizilir.
+
+---
+
+## Güvenlik Mimarisi
+
+### Mevcut Durum
 
 ```javascript
 webPreferences: {
-    nodeIntegration: false,
-    contextIsolation: true,
-    preload: path.join(__dirname, 'preload.js')
+    nodeIntegration: true,
+    contextIsolation: false
 }
 ```
 
----
+Bu yapılandırma renderer sürecine tam Node.js erişimi verir. Uygulama tamamen yerel çalıştığı, uzak içerik yüklemediği ve tek kullanıcılı olduğu için mevcut kullanım senaryosunda risk sınırlıdır. Yine de:
 
-## 📊 Performans Karakteristikleri
+| Risk | Durum |
+|------|-------|
+| Uzak içerik yükleme | Yok - tüm içerik yerel dosyalardan |
+| Kullanıcı girdisinin DOM'a basılması | Rapor/metraj adları gibi alanlar HTML'e yazılıyor |
+| SQL enjeksiyonu | Sorgular parametreli (`?`) kullanıyor |
 
-### Bellek Kullanımı
-- **Başlangıç**: ~150 MB
-- **Çalışma**: ~200-250 MB
-- **Veritabanı**: <10 MB (1000 kayıt için)
+### Önerilen İyileştirmeler
 
-### İşlem Süreleri
-- **Uygulama başlatma**: 2-3 saniye
-- **Form kaydetme**: <100 ms
-- **Word rapor oluşturma**: 500-1000 ms
-- **Veritabanı sorgusu**: <50 ms
-
-### Ölçeklenebilirlik
-- **Maksimum kayıt**: 10,000+ (teorik)
-- **Eşzamanlı pencere**: 5-10
-- **Dosya boyutu**: Word rapor ~50 KB
+1. `contextIsolation: true` + `preload` script ile sınırlı API yüzeyi
+2. DB erişiminin tamamen ana sürece taşınması (IPC üzerinden)
+3. Content Security Policy tanımlanması
+4. Kullanıcı girdisi DOM'a basılırken kaçış uygulanması (bazı ekranlarda mevcut: `kacir()`)
 
 ---
 
-## 🔮 Gelecek Mimari İyileştirmeleri
+## Performans Karakteristikleri
 
-### 1. Modüler Yapı
-```
-src/
-├── main/
-│   ├── database.js
-│   ├── window-manager.js
-│   └── ipc-handlers.js
-├── renderer/
-│   ├── components/
-│   ├── utils/
-│   └── services/
-└── shared/
-    ├── constants.js
-    └── validators.js
-```
+### Sayfa Geçişleri
 
-### 2. State Management
-- Redux veya Zustand entegrasyonu
-- Merkezi state yönetimi
+Template dosyaları her geçişte diskten okunur; script'ler yalnızca ilk yüklemede `require()` edilir, sonrasında önbellekten gelir. Bu nedenle bir sayfaya ikinci gidiş belirgin şekilde hızlıdır.
 
-### 3. TypeScript Dönüşümü
-- Tip güvenliği
-- Better IDE support
-- Refactoring kolaylığı
+### Veritabanı
 
-### 4. Testing Infrastructure
-- Unit tests (Jest)
-- Integration tests (Spectron)
-- E2E tests
+- Kayıt sayısı tipik kullanımda küçüktür (yüzler mertebesi); sorgular indekssiz de hızlı çalışır
+- Asıl maliyet fotoğraflardan gelir: `fotograflarJSON` base64 veri taşıdığı için hem dosya boyutunu hem okuma süresini artırır
+- Rapor listesi tüm sütunları çektiği için (`SELECT *`) fotoğraflı kayıtlarda gereğinden fazla veri okunur
 
-### 5. CI/CD Pipeline
-- Automated builds
-- Automated testing
-- Version management
+### Word Üretimi
+
+Belge oluşturma ana süreçte yapılır; fotoğraf sayısı arttıkça süre uzar. İşlem sırasında arayüz bloke olmaz, sonuç IPC bildirimi ile döner.
+
+### Ölçeklenebilirlik Notları
+
+| Konu | Öneri |
+|------|-------|
+| Rapor listesi | Liste sorgusunda yalnızca gerekli sütunları seçmek |
+| Fotoğraflar | Dosya sisteminde saklayıp DB'de yol tutmak |
+| Büyük tablolar | `birimFiyatDetay.birimFiyatId` ve `raporlar.birimFiyatId` için indeks |
 
 ---
 
-**Son Güncelleme**: 2024
+## Gelecek İyileştirmeler
 
+### Kısa Vadeli
+
+1. **Mevzuat modülü** - dördüncü modül
+2. **Birim dönüşüm aracı** - Hesaplamalar modülü içinde (hub'da yer tutucu kart mevcut)
+3. **Shared utilities** - para/tarih biçimleme, sayıyı yazıya çevirme gibi tekrar eden yardımcıların `shared/utils/` altında toplanması
+
+### Orta Vadeli
+
+1. **Güvenlik sıkılaştırması** - `contextIsolation: true` ve preload API
+2. **DB erişiminin ana sürece taşınması** - renderer'dan doğrudan SQL yerine IPC servis katmanı
+3. **Yedekleme sistemi** - uygulama içinden tarihli yedek alma
+
+### Uzun Vadeli
+
+1. **Test altyapısı** - saf hesap katmanları (`metraj-hesap.js`, `donem-servisi.js`) hâlihazırda test edilebilir durumda; birim test koşumu eklenmesi
+2. **TypeScript'e geçiş** - özellikle veri modelleri için
+3. **Auto-update mekanizması**
+
+---
+
+*Son Güncelleme: 25.08.2026 | Versiyon 2.2.0*
