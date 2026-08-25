@@ -7,6 +7,8 @@ const { ipcRenderer } = require('electron');
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 const { getDbPath } = require('../../../shared/scripts/db-helper');
+const donemKopyala = require('./donem-kopyala');
+const donemServisi = require('./donem-servisi');
 
 // Veritabanı bağlantısı
 const dbPath = getDbPath();
@@ -20,6 +22,11 @@ let currentRaporId = null;
 let currentRaporData = null;
 let isModified = false;
 let fotograflar = []; // Fotoğraf listesi
+
+// Raporun kendi dönemine ait birim fiyatlar ve yıpranma cetveli.
+// Sınıf/grup veya yaş/teknik değişince otomatik güncelleme için kullanılır.
+let fiyatTablosu = new Map();
+let yipranmaCache = [];
 
 /**
  * Sayfa yüklendiğinde çağrılır
@@ -38,6 +45,9 @@ async function onLoad(container, data, navigation) {
         
         // Raporu yükle
         await loadRapor(currentRaporId);
+
+        // Otomatik fiyat/yıpranma güncellemesi için dönem verilerini yükle
+        await donemVerileriniYukle(currentRaporData);
     }
     
     // Event listener'ları kur
@@ -84,6 +94,7 @@ function setupEventListeners() {
     // Footer butonları
     document.getElementById('ed-kaydetBtn')?.addEventListener('click', kaydet);
     document.getElementById('ed-onIzlemeBtn2')?.addEventListener('click', onIzlemeAc);
+    document.getElementById('ed-donemKopyalaBtn')?.addEventListener('click', donemKopyalaAc);
     document.getElementById('ed-wordBtn')?.addEventListener('click', wordOlarakIndir);
     document.getElementById('ed-yazdirBtn')?.addEventListener('click', yazdir);
     document.getElementById('ed-kapatBtn')?.addEventListener('click', kapat);
@@ -163,9 +174,143 @@ function loadRapor(id) {
             }
             
             renderRaporIcerigi(row);
+            donemSeridiGuncelle(row);
             resolve();
         });
     });
+}
+
+/**
+ * Raporun dönemine ait birim fiyat tablosunu ve yıpranma cetvelini yükle.
+ * Sınıf/grup ya da yaş/teknik değiştiğinde bunlardan okunur.
+ */
+async function donemVerileriniYukle(rapor) {
+    try {
+        yipranmaCache = await donemServisi.yipranmaPaylariGetir(db);
+    } catch (e) {
+        console.error('Yıpranma cetveli yüklenemedi:', e);
+        yipranmaCache = [];
+    }
+
+    fiyatTablosu = new Map();
+    if (!rapor || !rapor.birimFiyatId) {
+        console.warn('Raporun birim fiyat dönemi belirsiz; birim fiyat otomatik çekilemeyecek.');
+        return;
+    }
+
+    try {
+        fiyatTablosu = await donemServisi.fiyatTablosuGetir(db, rapor.birimFiyatId);
+        console.log(`💰 ${fiyatTablosu.size} birim fiyat yüklendi (dönem #${rapor.birimFiyatId})`);
+    } catch (e) {
+        console.error('Birim fiyatlar yüklenemedi:', e);
+    }
+}
+
+/**
+ * Satırdaki sınıf/grup değişince birim fiyatı raporun döneminden çek.
+ * Tekli ve çoklu parsel tablolarının ikisinde de çalışır.
+ */
+function birimFiyatOtoGuncelle(row) {
+    const sinifCell = row.querySelector('[data-field="yapiSinifi"], [data-field^="cp-yapiSinifi-"]');
+    const grupCell = row.querySelector('[data-field="yapiGrubu"], [data-field^="cp-yapiGrubu-"]');
+    const fiyatCell = row.querySelector('[data-field*="birimFiyat"]');
+    if (!sinifCell || !grupCell || !fiyatCell) return;
+
+    const sinif = sinifCell.textContent.trim();
+    const grup = grupCell.textContent.trim();
+    if (!sinif || !grup) return;   // ikisi de girilmeden arama yapma
+
+    const etiket = `${sinif} ${grup.toUpperCase()}`;
+
+    if (!currentRaporData || !currentRaporData.birimFiyatId) {
+        bildir(`Raporun birim fiyat dönemi belirsiz olduğu için ${etiket} fiyatı otomatik çekilemedi.`, 'warning');
+        return;
+    }
+
+    const yeniFiyat = fiyatTablosu.get(donemServisi.fiyatAnahtari(sinif, grup));
+    if (yeniFiyat === undefined) {
+        bildir(`${etiket} için ${currentRaporData.hesapYili} döneminde birim fiyat tanımlı değil. Mevcut fiyat korundu.`, 'warning');
+        return;
+    }
+
+    const eskiFiyat = parseParaTR(fiyatCell.textContent);
+    if (Math.abs(eskiFiyat - yeniFiyat) < 0.005) return;   // zaten güncel
+
+    fiyatCell.textContent = formatPara(yeniFiyat);
+    vurgula(fiyatCell);
+    hesaplaSatir(row);
+    isModified = true;
+    updateStatus();
+
+    bildir(`${etiket}: birim fiyat ${formatPara(yeniFiyat)} TL olarak güncellendi.`, 'success');
+}
+
+/**
+ * Satırdaki yaş/yapım tekniği değişince yıpranma payını cetvelden çek.
+ * Çoklu parsel tablosunda yaş/teknik sütunu olmadığı için orada devreye girmez.
+ */
+function yipranmaOtoGuncelle(row) {
+    const yasCell = row.querySelector('[data-field="yapiYasi"]');
+    const teknikCell = row.querySelector('[data-field="yapimTeknigi"]');
+    const yiprCell = row.querySelector('[data-field*="yipranmaPay"]');
+    if (!yasCell || !teknikCell || !yiprCell) return;
+
+    const teknik = teknikCell.textContent.trim();
+    const yas = parseInt(yasCell.textContent.trim(), 10);
+    if (!teknik || isNaN(yas)) return;
+
+    const oran = donemServisi.yipranmaBul(yipranmaCache, teknik, yas);
+    if (oran === null) {
+        bildir(`"${teknik}" için ${yas} yaşına uygun yıpranma oranı bulunamadı. Mevcut oran korundu.`, 'warning');
+        return;
+    }
+
+    const eskiOran = parseFloat(yiprCell.textContent) || 0;
+    if (eskiOran === oran) return;   // zaten güncel
+
+    yiprCell.textContent = oran;
+    vurgula(yiprCell);
+    hesaplaSatir(row);
+    isModified = true;
+    updateStatus();
+
+    bildir(`${teknik} / ${yas} yaş: yıpranma payı %${oran} olarak güncellendi.`, 'success');
+}
+
+/**
+ * Otomatik değişen hücreyi kısa süre vurgula.
+ */
+function vurgula(cell) {
+    cell.classList.remove('ed-oto-guncel');
+    void cell.offsetWidth;              // animasyonu yeniden tetikle
+    cell.classList.add('ed-oto-guncel');
+    setTimeout(() => cell.classList.remove('ed-oto-guncel'), 1600);
+}
+
+function bildir(mesaj, tip) {
+    if (window.showNotification) window.showNotification(mesaj, tip);
+}
+
+/**
+ * Başlıktaki hesap dönemi şeridini doldur (salt okunur bilgi).
+ * Dönem yalnızca "Farklı Döneme Kopyala" akışıyla değişir.
+ */
+function donemSeridiGuncelle(rapor) {
+    const serit = document.getElementById('ed-donemSerit');
+    const metin = document.getElementById('ed-donemMetin');
+    if (!serit || !metin) return;
+
+    if (!rapor || !rapor.hesapYili) {
+        serit.style.display = 'none';
+        return;
+    }
+
+    let yazi = `Hesap dönemi: ${rapor.hesapYili}`;
+    if (rapor.resmiGazeteSayili) {
+        yazi += ` (${formatTarih(rapor.resmiGazeteTarih)} tarih, ${rapor.resmiGazeteSayili} sayılı R.G.)`;
+    }
+    metin.textContent = yazi;
+    serit.style.display = 'inline-block';
 }
 
 /**
@@ -266,13 +411,14 @@ function renderTekliParselIcerigi(rapor, container) {
         
         <!-- Yapı Bilgileri -->
         <div class="ed-editable-section">
-            <span class="ed-section-label">Yapı Bilgileri (Düzenlenebilir - Değişiklikler otomatik hesaplanır)</span>
+            <span class="ed-section-label">Yapı Bilgileri — Sınıf/grup değişince birim fiyat, yaş/teknik değişince yıpranma payı dönemden otomatik çekilir</span>
             <table class="ed-editor-table" id="ed-yapilarTable">
                 <thead>
                     <tr>
                         <th>NO</th>
                         <th>YAPI ADI</th>
                         <th>SINIF</th>
+                        <th>GRUP</th>
                         <th>BİRİM FİYAT (TL)</th>
                         <th>ALAN (m²)</th>
                         <th>YAŞ</th>
@@ -284,12 +430,12 @@ function renderTekliParselIcerigi(rapor, container) {
                 </thead>
                 <tbody id="ed-yapilarTbody">
                     ${yapilar.map((yapi, index) => {
-                        const yapiSinifiGrup = [yapi.yapiSinifi, yapi.yapiGrubu].filter(s => s).join(' ');
                         return `
                             <tr data-yapi-index="${index}">
                                 <td contenteditable="true" data-field="yapiNo">${yapi.yapiNo || ''}</td>
                                 <td contenteditable="true" data-field="yapiAdi">${yapi.yapiAdi || ''}</td>
-                                <td contenteditable="true" data-field="yapiSinifi">${yapiSinifiGrup}</td>
+                                <td contenteditable="true" data-field="yapiSinifi">${yapi.yapiSinifi || ''}</td>
+                                <td contenteditable="true" data-field="yapiGrubu">${yapi.yapiGrubu || ''}</td>
                                 <td contenteditable="true" data-field="birimFiyat" class="ed-numeric">${formatPara(yapi.birimFiyat)}</td>
                                 <td contenteditable="true" data-field="yapiAlani" class="ed-numeric">${parseFloat(yapi.yapiAlani || 0).toFixed(2)}</td>
                                 <td contenteditable="true" data-field="yapiYasi">${yapi.yapiYasi || ''}</td>
@@ -404,7 +550,6 @@ function renderCokluParselIcerigi(rapor, container) {
         let araToplam = 0;
         
         yapilar.forEach((yapi, yIdx) => {
-            const yapiSinifiGrup = [yapi.yapiSinifi, yapi.yapiGrubu].filter(s => s).join('');
             const yapiBedeli = parseFloat(yapi.yapiBedeli) || 0;
             araToplam += yapiBedeli;
             
@@ -414,7 +559,8 @@ function renderCokluParselIcerigi(rapor, container) {
                     <td contenteditable="true" data-field="cp-yparsel-${pIdx}-${yIdx}">${yIdx === 0 ? (parsel.parsel || '') : ''}</td>
                     <td contenteditable="true" data-field="cp-yapiNo-${pIdx}-${yIdx}">${yapi.yapiNo || ''}</td>
                     <td contenteditable="true" data-field="cp-yapiAdi-${pIdx}-${yIdx}">${yapi.yapiAdi || ''}</td>
-                    <td contenteditable="true" data-field="cp-yapiSinifi-${pIdx}-${yIdx}">${yapiSinifiGrup}</td>
+                    <td contenteditable="true" data-field="cp-yapiSinifi-${pIdx}-${yIdx}">${yapi.yapiSinifi || ''}</td>
+                    <td contenteditable="true" data-field="cp-yapiGrubu-${pIdx}-${yIdx}">${yapi.yapiGrubu || ''}</td>
                     <td contenteditable="true" data-field="cp-birimFiyat-${pIdx}-${yIdx}" class="ed-numeric">${formatPara(yapi.birimFiyat)}</td>
                     <td contenteditable="true" data-field="cp-yapiAlani-${pIdx}-${yIdx}" class="ed-numeric">${parseFloat(yapi.yapiAlani || 0).toFixed(2)}</td>
                     <td contenteditable="true" data-field="cp-yipranmaPay-${pIdx}-${yIdx}" class="ed-numeric">${yapi.yipranmaPay || '0'}</td>
@@ -429,7 +575,7 @@ function renderCokluParselIcerigi(rapor, container) {
         // Ara toplam satırı
         yapiSatirlari += `
             <tr class="ed-cp-aratoplam-row" data-parsel-index="${pIdx}" style="background: #e8f0fe; font-weight: bold;">
-                <td colspan="9" style="text-align: right; padding-right: 10px;">Ara Toplam (Parsel ${parsel.ada || ''}/${parsel.parsel || ''})</td>
+                <td colspan="10" style="text-align: right; padding-right: 10px;">Ara Toplam (Parsel ${parsel.ada || ''}/${parsel.parsel || ''})</td>
                 <td data-field="cp-araToplam-${pIdx}" class="ed-calculated" style="font-weight: bold;">${formatPara(araToplam)}</td>
             </tr>
         `;
@@ -438,7 +584,7 @@ function renderCokluParselIcerigi(rapor, container) {
     // Genel toplam satırı
     yapiSatirlari += `
         <tr class="ed-cp-geneltoplam-row" style="background: #d4edda; font-weight: bold;">
-            <td colspan="9" style="text-align: right; padding-right: 10px; font-weight: bold;">GENEL TOPLAM</td>
+            <td colspan="10" style="text-align: right; padding-right: 10px; font-weight: bold;">GENEL TOPLAM</td>
             <td id="ed-cpGenelToplam" class="ed-calculated" style="font-weight: bold;">${formatPara(genelToplam)}</td>
         </tr>
     `;
@@ -482,7 +628,8 @@ function renderCokluParselIcerigi(rapor, container) {
                         <th>PARSEL</th>
                         <th>Y.NO</th>
                         <th>YAPI ADI</th>
-                        <th>SINIFI</th>
+                        <th>SINIF</th>
+                        <th>GRUP</th>
                         <th>B.FİYAT</th>
                         <th>ALAN</th>
                         <th>YIPR.</th>
@@ -598,6 +745,24 @@ function setupContentEventListeners() {
                 if (row && !row.classList.contains('ed-cp-aratoplam-row') && !row.classList.contains('ed-cp-geneltoplam-row')) {
                     hesaplaSatir(row);
                 }
+            }
+        });
+
+        // Sınıf/grup ya da yaş/teknik değişince ilgili değeri veritabanından çek.
+        // Hücreden çıkılınca (focusout) tetiklenir; her tuş vuruşunda değil.
+        yapilarTbody.addEventListener('focusout', (e) => {
+            const cell = e.target.closest ? e.target.closest('td') : null;
+            if (!cell) return;
+
+            const row = cell.closest('tr');
+            if (!row) return;
+            if (row.classList.contains('ed-cp-aratoplam-row') || row.classList.contains('ed-cp-geneltoplam-row')) return;
+
+            const alan = cell.getAttribute('data-field') || '';
+            if (/yapiSinifi|yapiGrubu/.test(alan)) {
+                birimFiyatOtoGuncelle(row);
+            } else if (/yapiYasi|yapimTeknigi/.test(alan)) {
+                yipranmaOtoGuncelle(row);
             }
         });
     }
@@ -733,6 +898,7 @@ function yeniYapiEkle() {
         <td contenteditable="true" data-field="yapiNo">${newIndex + 1}</td>
         <td contenteditable="true" data-field="yapiAdi"></td>
         <td contenteditable="true" data-field="yapiSinifi"></td>
+        <td contenteditable="true" data-field="yapiGrubu"></td>
         <td contenteditable="true" data-field="birimFiyat" class="ed-numeric">0,00</td>
         <td contenteditable="true" data-field="yapiAlani" class="ed-numeric">0,00</td>
         <td contenteditable="true" data-field="yapiYasi"></td>
@@ -1011,6 +1177,7 @@ function kaydet() {
         const sql = `UPDATE raporlar SET 
             ili = ?, ilce = ?, mahalle = ?, ada = ?, parsel = ?,
             ilgiliKurum = ?, resmiYaziSayisi = ?,
+            hesapYili = ?, birimFiyatId = ?, resmiGazeteTarih = ?, resmiGazeteSayili = ?,
             raportorAdi = ?, raportorUnvani = ?,
             parsellerJSON = ?, yapilarJSON = ?, fotograflarJSON = ?,
             toplamYapiBedeli = ?, yapiBedeli = ?,
@@ -1025,6 +1192,10 @@ function kaydet() {
             guncelVeri.parsel,
             guncelVeri.ilgiliKurum,
             guncelVeri.resmiYaziSayisi,
+            guncelVeri.hesapYili,
+            guncelVeri.birimFiyatId,
+            guncelVeri.resmiGazeteTarih,
+            guncelVeri.resmiGazeteSayili,
             guncelVeri.raportorAdi,
             guncelVeri.raportorUnvani,
             JSON.stringify(guncelVeri.parseller),
@@ -1057,6 +1228,7 @@ function kaydet() {
         const sql = `UPDATE raporlar SET 
             ili = ?, ilce = ?, mahalle = ?, ada = ?, parsel = ?,
             ilgiliKurum = ?, resmiYaziSayisi = ?,
+            hesapYili = ?, birimFiyatId = ?, resmiGazeteTarih = ?, resmiGazeteSayili = ?,
             raportorAdi = ?, raportorUnvani = ?,
             yapilarJSON = ?, fotograflarJSON = ?,
             toplamYapiBedeli = ?, yapiBedeli = ?
@@ -1070,6 +1242,10 @@ function kaydet() {
             guncelVeri.parsel,
             guncelVeri.ilgiliKurum,
             guncelVeri.resmiYaziSayisi,
+            guncelVeri.hesapYili,
+            guncelVeri.birimFiyatId,
+            guncelVeri.resmiGazeteTarih,
+            guncelVeri.resmiGazeteSayili,
             guncelVeri.raportorAdi,
             guncelVeri.raportorUnvani,
             JSON.stringify(guncelVeri.yapilar),
@@ -1107,7 +1283,16 @@ function collectEditorData() {
     // Gerekçe bilgileri (her iki modda ortak)
     const ilgiliKurum = document.querySelector('[data-field="ilgiliKurum"]')?.textContent?.trim() || '';
     const resmiYaziSayisi = document.querySelector('[data-field="resmiYaziSayisi"]')?.textContent?.trim() || '';
-    
+
+    // Hesap dönemi bilgileri (her iki modda ortak).
+    // hesapYili metin içinde inline düzenlenebilir; birimFiyatId ve Resmi Gazete bilgisi
+    // yalnızca "Farklı Döneme Kopyala" akışıyla değiştiği için mevcut rapordan taşınır.
+    const hesapYili = document.querySelector('[data-field="hesapYili"]')?.textContent?.trim()
+        || currentRaporData?.hesapYili || '';
+    const birimFiyatId = currentRaporData?.birimFiyatId ?? null;
+    const resmiGazeteTarih = currentRaporData?.resmiGazeteTarih || '';
+    const resmiGazeteSayili = currentRaporData?.resmiGazeteSayili || '';
+
     // Raportör bilgileri (her iki modda ortak)
     const raportorAdlari = [];
     const raportorUnvanlari = [];
@@ -1121,7 +1306,10 @@ function collectEditorData() {
     });
     
     if (isCokluParsel) {
-        return collectCokluParselEditorData(ilgiliKurum, resmiYaziSayisi, raportorAdlari, raportorUnvanlari);
+        return Object.assign(
+            collectCokluParselEditorData(ilgiliKurum, resmiYaziSayisi, raportorAdlari, raportorUnvanlari),
+            { hesapYili, birimFiyatId, resmiGazeteTarih, resmiGazeteSayili }
+        );
     }
     
     // Tekli parsel - Taşınmaz bilgileri
@@ -1140,7 +1328,7 @@ function collectEditorData() {
             yapiNo: row.querySelector('[data-field="yapiNo"]')?.textContent?.trim() || '',
             yapiAdi: row.querySelector('[data-field="yapiAdi"]')?.textContent?.trim() || '',
             yapiSinifi: row.querySelector('[data-field="yapiSinifi"]')?.textContent?.trim() || '',
-            yapiGrubu: '',
+            yapiGrubu: row.querySelector('[data-field="yapiGrubu"]')?.textContent?.trim() || '',
             birimFiyat: parseParaTR(row.querySelector('[data-field="birimFiyat"]')?.textContent),
             yapiAlani: parseFloat(row.querySelector('[data-field="yapiAlani"]')?.textContent?.replace(',', '.')) || 0,
             yapiYasi: row.querySelector('[data-field="yapiYasi"]')?.textContent?.trim() || '',
@@ -1163,6 +1351,10 @@ function collectEditorData() {
         parsel,
         ilgiliKurum,
         resmiYaziSayisi,
+        hesapYili,
+        birimFiyatId,
+        resmiGazeteTarih,
+        resmiGazeteSayili,
         raportorAdi: raportorAdlari.join(', '),
         raportorUnvani: raportorUnvanlari.join(', '),
         yapilar,
@@ -1217,7 +1409,7 @@ function collectCokluParselEditorData(ilgiliKurum, resmiYaziSayisi, raportorAdla
                 yapiNo: row.querySelector(`[data-field="cp-yapiNo-${pIdx}-${yIdx}"]`)?.textContent?.trim() || '',
                 yapiAdi: row.querySelector(`[data-field="cp-yapiAdi-${pIdx}-${yIdx}"]`)?.textContent?.trim() || '',
                 yapiSinifi: row.querySelector(`[data-field="cp-yapiSinifi-${pIdx}-${yIdx}"]`)?.textContent?.trim() || '',
-                yapiGrubu: '',
+                yapiGrubu: row.querySelector(`[data-field="cp-yapiGrubu-${pIdx}-${yIdx}"]`)?.textContent?.trim() || '',
                 birimFiyat: parseParaTR(row.querySelector(`[data-field="cp-birimFiyat-${pIdx}-${yIdx}"]`)?.textContent),
                 yapiAlani: parseFloat(row.querySelector(`[data-field="cp-yapiAlani-${pIdx}-${yIdx}"]`)?.textContent?.replace(',', '.')) || 0,
                 yipranmaPay: parseFloat(row.querySelector(`[data-field="cp-yipranmaPay-${pIdx}-${yIdx}"]`)?.textContent) || 0,
@@ -1300,6 +1492,23 @@ function wordOlarakIndir() {
 
 function yazdir() {
     window.print();
+}
+
+/**
+ * Raporu farklı bir birim fiyat dönemine kopyala (yeni rapor oluşturur).
+ */
+function donemKopyalaAc() {
+    if (!currentRaporId || !db) {
+        if (window.showNotification) {
+            window.showNotification('Önce bir rapor açın.', 'warning');
+        }
+        return;
+    }
+    if (isModified) {
+        const devam = confirm('Kaydedilmemiş değişiklikleriniz var. Kopyalama kayıtlı son hali kullanır.\n\nDevam edilsin mi?');
+        if (!devam) return;
+    }
+    donemKopyala.ac(db, nav, currentRaporId);
 }
 
 function kapat() {

@@ -114,17 +114,30 @@
         background-color: #F8FAFC;
     }
     
+    /* İşlem butonları: 2x2 ızgara, hepsi eşit boyda */
+    .rp-islem-hucre {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+        min-width: 300px;
+    }
+
     .rp-btn {
-        padding: 6px 12px;
-        margin-right: 4px;
+        width: 100%;
+        height: 34px;
+        padding: 0 10px;
         border: none;
         border-radius: 6px;
         cursor: pointer;
         transition: all 0.2s;
         font-size: 12px;
         font-weight: 600;
-        display: inline-block;
         font-family: inherit;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        white-space: nowrap;
     }
     
     .rp-sil-button {
@@ -147,6 +160,52 @@
         background-color: #BFDBFE;
     }
     
+    .rp-donem-etiket {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 100px;
+        font-size: 12px;
+        font-weight: 600;
+        background: #EDE9FE;
+        color: #6D28D9;
+        border: 1px solid #DDD6FE;
+        white-space: nowrap;
+    }
+
+    .rp-donem-etiket.bilinmiyor {
+        background: #F1F5F9;
+        color: #94A3B8;
+        border-color: #E2E8F0;
+    }
+
+    .rp-donem-rg {
+        display: block;
+        margin-top: 3px;
+        font-size: 11px;
+        color: #94A3B8;
+        white-space: nowrap;
+    }
+
+    .rp-word-button {
+        background-color: #E0E7FF;
+        color: #3730A3;
+        border: 1px solid #C7D2FE;
+    }
+
+    .rp-word-button:hover {
+        background-color: #C7D2FE;
+    }
+
+    .rp-donem-button {
+        background-color: #EDE9FE;
+        color: #6D28D9;
+        border: 1px solid #DDD6FE;
+    }
+
+    .rp-donem-button:hover {
+        background-color: #DDD6FE;
+    }
+
     .rp-revize-button {
         background-color: #FEF3C7;
         color: #B45309;
@@ -187,6 +246,7 @@
                 <tr>
                     <th>ID</th>
                     <th>Rapor Tarihi</th>
+                    <th>Dönem</th>
                     <th>İlçe</th>
                     <th>Mahalle</th>
                     <th>Ada</th>

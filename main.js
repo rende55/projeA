@@ -228,6 +228,155 @@ function migrateDatabase() {
             }
         });
     });
+    // 4. raporlar tablosuna birimFiyatId kolonu (hangi birim fiyat dönemi kullanıldı)
+    db.all(`PRAGMA table_info(raporlar)`, [], (err, columns) => {
+        if (err || !columns || columns.length === 0) return;
+
+        const varMi = columns.some(col => col.name === 'birimFiyatId');
+        if (varMi) {
+            tamirEtSinifGrup();
+            return;
+        }
+
+        db.run(`ALTER TABLE raporlar ADD COLUMN birimFiyatId INTEGER`, (e) => {
+            if (e) {
+                console.error('raporlar.birimFiyatId eklenemedi:', e);
+                return;
+            }
+            console.log('✅ raporlar tablosuna birimFiyatId kolonu eklendi.');
+            birimFiyatIdDoldur();
+        });
+    });
+
+    /**
+     * Eski raporların hangi birim fiyat dönemini kullandığını geriye dönük tespit et.
+     * Önce Resmi Gazete sayısı ile eşleştir (kesin), tutmazsa yıl ile eşleştir.
+     * Yılda birden fazla dönem varsa boş bırak - kullanıcı kopyalama ekranında seçer.
+     */
+    function birimFiyatIdDoldur() {
+        db.all(`SELECT id, yil, donem, resmiGazeteSayili FROM birimFiyatlar`, [], (err, donemler) => {
+            if (err || !donemler || donemler.length === 0) { tamirEtSinifGrup(); return; }
+
+            // Yılda kaç dönem var?
+            const yilSayaci = {};
+            donemler.forEach(d => { yilSayaci[d.yil] = (yilSayaci[d.yil] || 0) + 1; });
+
+            db.all(`SELECT id, hesapYili, resmiGazeteSayili FROM raporlar WHERE birimFiyatId IS NULL`, [], (e2, raporlar) => {
+                if (e2 || !raporlar || raporlar.length === 0) { tamirEtSinifGrup(); return; }
+
+                let eslesen = 0;
+                let kalan = raporlar.length;
+
+                raporlar.forEach(rapor => {
+                    let hedef = null;
+
+                    // a) Resmi Gazete sayısı ile kesin eşleşme
+                    if (rapor.resmiGazeteSayili) {
+                        hedef = donemler.find(d => d.resmiGazeteSayili &&
+                            String(d.resmiGazeteSayili).trim() === String(rapor.resmiGazeteSayili).trim());
+                    }
+
+                    // b) Yıl ile eşleşme - yalnızca o yılda tek dönem varsa güvenli
+                    if (!hedef && rapor.hesapYili) {
+                        const yil = parseInt(rapor.hesapYili, 10);
+                        if (yilSayaci[yil] === 1) {
+                            hedef = donemler.find(d => d.yil === yil);
+                        }
+                    }
+
+                    if (!hedef) { if (--kalan === 0) bitir(); return; }
+
+                    db.run(`UPDATE raporlar SET birimFiyatId = ? WHERE id = ?`, [hedef.id, rapor.id], () => {
+                        eslesen++;
+                        if (--kalan === 0) bitir();
+                    });
+                });
+
+                function bitir() {
+                    console.log(`✅ birimFiyatId dolduruldu: ${eslesen}/${raporlar.length} rapor eşleşti.`);
+                    tamirEtSinifGrup();
+                }
+            });
+        });
+    }
+
+    /**
+     * Tek seferlik onarım: editörün eski sürümü yapı sınıfı ile grubunu tek hücrede
+     * birleştirip ("2 C" / "2C") grubu boş bırakıyordu. Bu, birim fiyat sorgusunun
+     * anahtarını yok ediyor. Birleşmiş değerleri tekrar ayır.
+     * Idempotent: ayrılmış kayda ikinci kez dokunmaz.
+     */
+    function tamirEtSinifGrup() {
+        db.all(`SELECT id, yapilarJSON, parsellerJSON FROM raporlar`, [], (err, raporlar) => {
+            if (err || !raporlar || raporlar.length === 0) return;
+
+            // "2 C" | "2C" -> { sinif: '2', grup: 'C' }
+            const ayir = (yapi) => {
+                const sinif = String(yapi.yapiSinifi == null ? '' : yapi.yapiSinifi).trim();
+                const grup = String(yapi.yapiGrubu == null ? '' : yapi.yapiGrubu).trim();
+                if (!sinif || grup) return false;           // zaten ayrılmış ya da boş
+                const m = sinif.match(/^(\d+)\s*([A-Za-zÇĞİÖŞÜçğıöşü]+)$/);
+                if (!m) return false;                        // beklenmedik biçim - dokunma
+                yapi.yapiSinifi = m[1];
+                yapi.yapiGrubu = m[2].toUpperCase();
+                return true;
+            };
+
+            let duzeltilenYapi = 0;
+            let duzeltilenRapor = 0;
+            let kalan = raporlar.length;
+            const bitirKontrol = () => {
+                if (--kalan === 0 && duzeltilenYapi > 0) {
+                    console.log(`✅ Sınıf/grup onarımı: ${duzeltilenRapor} raporda ${duzeltilenYapi} yapı düzeltildi.`);
+                }
+            };
+
+            raporlar.forEach(rapor => {
+                let degisti = false;
+                let yeniYapilar = null;
+                let yeniParseller = null;
+
+                try {
+                    if (rapor.yapilarJSON) {
+                        const yapilar = JSON.parse(rapor.yapilarJSON);
+                        if (Array.isArray(yapilar)) {
+                            yapilar.forEach(y => { if (y && ayir(y)) { degisti = true; duzeltilenYapi++; } });
+                            if (degisti) yeniYapilar = JSON.stringify(yapilar);
+                        }
+                    }
+                } catch (e) { /* bozuk JSON - dokunma */ }
+
+                try {
+                    if (rapor.parsellerJSON) {
+                        const parseller = JSON.parse(rapor.parsellerJSON);
+                        if (Array.isArray(parseller)) {
+                            let pDegisti = false;
+                            parseller.forEach(p => {
+                                (p && Array.isArray(p.yapilar) ? p.yapilar : []).forEach(y => {
+                                    if (y && ayir(y)) { pDegisti = true; duzeltilenYapi++; }
+                                });
+                            });
+                            if (pDegisti) { yeniParseller = JSON.stringify(parseller); degisti = true; }
+                        }
+                    }
+                } catch (e) { /* bozuk JSON - dokunma */ }
+
+                if (!degisti) { bitirKontrol(); return; }
+
+                duzeltilenRapor++;
+                db.run(
+                    `UPDATE raporlar SET yapilarJSON = COALESCE(?, yapilarJSON),
+                                         parsellerJSON = COALESCE(?, parsellerJSON)
+                     WHERE id = ?`,
+                    [yeniYapilar, yeniParseller, rapor.id],
+                    (e) => {
+                        if (e) console.error(`Rapor #${rapor.id} sınıf/grup onarılamadı:`, e);
+                        bitirKontrol();
+                    }
+                );
+            });
+        });
+    }
 }
 
 function createDatabase() {

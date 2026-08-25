@@ -115,6 +115,8 @@ const RENDERER_JS_FILES = [
     'modules/yapi-bedeli/scripts/editor.js',
     'modules/yapi-bedeli/scripts/preview.js',
     'modules/yapi-bedeli/scripts/reportGenerator.js',
+    'modules/yapi-bedeli/scripts/donem-servisi.js',
+    'modules/yapi-bedeli/scripts/donem-kopyala.js',
     'modules/proje-bedeli/scripts/proje-bedeli-page.js',
     'modules/proje-bedeli/scripts/pb-raporlar-page.js',
     'modules/proje-bedeli/scripts/pb-editor-page.js',
