@@ -168,6 +168,14 @@ function setupEventListeners() {
     }
     
     
+    // Header'daki modül ana sayfası butonu
+    const moduleHomeBtn = document.getElementById('yb-moduleHomeButton');
+    if (moduleHomeBtn) {
+        moduleHomeBtn.addEventListener('click', () => {
+            nav.goBack();
+        });
+    }
+    
     // Header'daki raporlar butonu
     const reportsNavBtn = document.getElementById('yb-reportsNavButton');
     if (reportsNavBtn) {

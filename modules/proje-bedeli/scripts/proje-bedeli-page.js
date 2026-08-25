@@ -207,6 +207,14 @@ function setupActionButtons() {
         });
     }
     
+    // Header'daki modül ana sayfası butonu
+    const moduleHomeBtn = pbContainer.querySelector('#pb-moduleHomeButton');
+    if (moduleHomeBtn) {
+        moduleHomeBtn.addEventListener('click', () => {
+            if (pbNavigation) pbNavigation.goBack();
+        });
+    }
+    
     // Header'daki Raporlar butonu
     const reportsNavBtn = pbContainer.querySelector('#pb-reportsNavButton');
     if (reportsNavBtn) {

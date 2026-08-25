@@ -32,9 +32,16 @@ class NavigationManager {
                 template: null, // Dashboard özel, template yok
                 script: null
             },
+            // --- Yapı Bedeli modülü ---
             'yapi-bedeli': {
                 title: 'Yapı Bedeli',
                 icon: '🏗️',
+                template: 'modules/yapi-bedeli/views/yapi-bedeli-hub-content.html',
+                script: 'modules/yapi-bedeli/scripts/yapi-bedeli-hub-page.js'
+            },
+            'yapi-bedeli-form': {
+                title: 'Yeni Hesaplama',
+                icon: '📝',
                 template: 'modules/yapi-bedeli/views/yapi-bedeli-content.html',
                 script: 'modules/yapi-bedeli/scripts/yapi-bedeli-page.js'
             },
@@ -56,9 +63,16 @@ class NavigationManager {
                 template: 'modules/yapi-bedeli/views/admin-content.html',
                 script: 'modules/yapi-bedeli/scripts/admin-page.js'
             },
+            // --- Proje Bedeli modülü ---
             'proje-bedeli': {
                 title: 'Proje Bedeli',
                 icon: '📐',
+                template: 'modules/proje-bedeli/views/proje-bedeli-hub-content.html',
+                script: 'modules/proje-bedeli/scripts/proje-bedeli-hub-page.js'
+            },
+            'proje-bedeli-form': {
+                title: 'Yeni Hesaplama',
+                icon: '📝',
                 template: 'modules/proje-bedeli/views/proje-bedeli-content.html',
                 script: 'modules/proje-bedeli/scripts/proje-bedeli-page.js'
             },

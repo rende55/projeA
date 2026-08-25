@@ -1,0 +1,437 @@
+<!-- Proje Bedeli - Modül Başlangıç Sayfası (Hub) -->
+<style>
+    /* ===== ORTAK HUB STİLLERİ =====
+       Bu blok üç modül hub'ında da aynıdır (yapi-bedeli / proje-bedeli / hesaplama).
+       Projede paylaşılan stylesheet olmadığı için her view kendi kopyasını taşır. */
+
+    .hub-container {
+        max-width: 1400px;
+        margin: 20px auto;
+        padding: 24px;
+        background-color: #FFFFFF;
+        border-radius: 16px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+        border: 1px solid #E2E8F0;
+    }
+
+    .hub-header {
+        background: linear-gradient(135deg, #0F172A 0%, #1E293B 50%, #334155 100%);
+        color: white;
+        padding: 20px 28px;
+        border-radius: 16px 16px 0 0;
+        margin: -24px -24px 24px -24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 15px;
+    }
+
+    .hub-header h1 {
+        margin: 0;
+        font-size: 20px;
+        font-weight: 700;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        letter-spacing: -0.3px;
+    }
+
+    .hub-header h1 .header-icon {
+        width: 36px;
+        height: 36px;
+        background: rgba(59, 130, 246, 0.2);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .hub-header h1 .header-icon svg {
+        width: 20px;
+        height: 20px;
+        color: #93C5FD;
+    }
+
+    .hub-nav-buttons {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+
+    .hub-nav-button {
+        background: rgba(255, 255, 255, 0.1);
+        color: rgba(255,255,255,0.9);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        padding: 8px 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-height: 38px;
+        font-family: inherit;
+    }
+
+    .hub-nav-button:hover {
+        background: rgba(255, 255, 255, 0.18);
+        border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    /* --- Giriş metni --- */
+    .hub-intro {
+        margin-bottom: 24px;
+    }
+
+    .hub-intro h2 {
+        margin: 0 0 6px 0;
+        font-size: 18px;
+        font-weight: 700;
+        color: #0F172A;
+        letter-spacing: -0.2px;
+    }
+
+    .hub-intro p {
+        margin: 0;
+        font-size: 14px;
+        color: #64748B;
+        line-height: 1.6;
+    }
+
+    /* --- Eylem kartları --- */
+    .hub-actions {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 32px;
+    }
+
+    .hub-action-card {
+        background: #FFFFFF;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 20px;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .hub-action-card:hover {
+        transform: translateY(-4px);
+        border-color: #CBD5E1;
+        box-shadow: 0 20px 50px -12px rgba(0,0,0,0.12);
+    }
+
+    .hub-action-card:active {
+        transform: translateY(-1px);
+    }
+
+    .hub-action-card.disabled {
+        cursor: not-allowed;
+        opacity: 0.55;
+        background: #F8FAFC;
+    }
+
+    .hub-action-card.disabled:hover {
+        transform: none;
+        box-shadow: none;
+        border-color: #E2E8F0;
+    }
+
+    .hub-action-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .hub-action-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .hub-action-icon svg {
+        width: 22px;
+        height: 22px;
+        color: #FFFFFF;
+    }
+
+    .hub-action-icon.yeni     { background: linear-gradient(135deg, #3B82F6 0%, #2563EB 100%); }
+    .hub-action-icon.raporlar { background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%); }
+    .hub-action-icon.yonetim  { background: linear-gradient(135deg, #94A3B8 0%, #64748B 100%); }
+    .hub-action-icon.arac     { background: linear-gradient(135deg, #A78BFA 0%, #7C3AED 100%); }
+    .hub-action-icon.pasif    { background: linear-gradient(135deg, #CBD5E1 0%, #94A3B8 100%); }
+
+    .hub-action-badge {
+        display: inline-block;
+        padding: 4px 10px;
+        border-radius: 100px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #EFF6FF;
+        color: #1D4ED8;
+        border: 1px solid #BFDBFE;
+        white-space: nowrap;
+    }
+
+    .hub-action-badge.soft {
+        background: #F1F5F9;
+        color: #64748B;
+        border-color: #E2E8F0;
+    }
+
+    .hub-action-title {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: #0F172A;
+        letter-spacing: -0.1px;
+    }
+
+    .hub-action-desc {
+        margin: 0;
+        font-size: 13px;
+        color: #64748B;
+        line-height: 1.5;
+        flex: 1;
+    }
+
+    .hub-action-go {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+        font-weight: 600;
+        color: #3B82F6;
+    }
+
+    .hub-action-go svg {
+        width: 14px;
+        height: 14px;
+        transition: transform 0.2s ease;
+    }
+
+    .hub-action-card:hover .hub-action-go svg {
+        transform: translateX(3px);
+    }
+
+    /* --- Son kayıtlar --- */
+    .hub-recent-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid #E2E8F0;
+        margin-bottom: 16px;
+    }
+
+    .hub-recent-head h3 {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #0F172A;
+        letter-spacing: -0.2px;
+    }
+
+    .hub-link-button {
+        background: none;
+        border: none;
+        color: #3B82F6;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        font-family: inherit;
+        padding: 4px 6px;
+        border-radius: 6px;
+        transition: background 0.2s ease;
+    }
+
+    .hub-link-button:hover {
+        background: #EFF6FF;
+    }
+
+    .hub-table-container {
+        overflow-x: auto;
+        border-radius: 10px;
+        border: 1px solid #E2E8F0;
+    }
+
+    .hub-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+    }
+
+    .hub-table th,
+    .hub-table td {
+        padding: 12px 14px;
+        text-align: left;
+        border-bottom: 1px solid #E2E8F0;
+        font-size: 13px;
+        white-space: nowrap;
+    }
+
+    .hub-table th {
+        background: #F8FAFC;
+        color: #334155;
+        font-weight: 600;
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #E2E8F0;
+    }
+
+    .hub-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .hub-table tbody tr:hover {
+        background-color: #F8FAFC;
+    }
+
+    .hub-table td.numeric {
+        text-align: right;
+        font-family: 'Consolas', monospace;
+    }
+
+    .hub-btn {
+        padding: 6px 12px;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 12px;
+        font-weight: 600;
+        font-family: inherit;
+        background-color: #DBEAFE;
+        color: #1D4ED8;
+        border: 1px solid #BFDBFE;
+    }
+
+    .hub-btn:hover {
+        background-color: #BFDBFE;
+    }
+
+    .hub-empty-message {
+        text-align: center;
+        padding: 40px;
+        color: #94A3B8;
+        font-size: 14px;
+    }
+
+    @media (max-width: 1024px) {
+        .hub-actions { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 768px) {
+        .hub-actions { grid-template-columns: 1fr; }
+        .hub-header { flex-direction: column; align-items: flex-start; }
+    }
+</style>
+
+<div class="hub-container">
+    <header class="hub-header">
+        <h1>
+            <span class="header-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 20h20"/><path d="M5 20V8.2a1 1 0 0 1 .4-.8l6-4.5a1 1 0 0 1 1.2 0l6 4.5a1 1 0 0 1 .4.8V20"/><path d="M12 10v4"/><path d="M10 12h4"/></svg>
+            </span>
+            Proje Bedeli
+        </h1>
+        <div class="hub-nav-buttons">
+            <button class="hub-nav-button" id="pbh-homeButton" title="Ana Sayfa">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                <span>Ana Sayfa</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="hub-intro">
+        <h2>Proje Bedeli Hesaplama Modülü</h2>
+        <p>Mimarlık ve mühendislik hizmet bedeli hesabı, branş bazlı dağılım ve rapor arşivi.</p>
+    </div>
+
+    <div class="hub-actions">
+        <div class="hub-action-card" data-action="proje-bedeli-form">
+            <div class="hub-action-top">
+                <div class="hub-action-icon yeni">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                </div>
+            </div>
+            <h4 class="hub-action-title">Yeni Hesaplama</h4>
+            <p class="hub-action-desc">Yeni bir proje bedeli raporu oluştur; yapı sınıfı, alan ve branş bilgilerini gir.</p>
+            <span class="hub-action-go">
+                Forma git
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </span>
+        </div>
+
+        <div class="hub-action-card" data-action="pb-raporlar">
+            <div class="hub-action-top">
+                <div class="hub-action-icon raporlar">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                </div>
+                <span class="hub-action-badge" id="pbh-raporSayisi">—</span>
+            </div>
+            <h4 class="hub-action-title">Kayıtlı Raporlar</h4>
+            <p class="hub-action-desc">Daha önce kaydedilmiş proje bedeli raporlarını görüntüle, düzenle veya Word'e aktar.</p>
+            <span class="hub-action-go">
+                Listeye git
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </span>
+        </div>
+
+        <div class="hub-action-card" data-action="admin">
+            <div class="hub-action-top">
+                <div class="hub-action-icon yonetim">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                </div>
+            </div>
+            <h4 class="hub-action-title">Yönetim Paneli</h4>
+            <p class="hub-action-desc">PİD oranları, hizmet dalı katsayıları, birim fiyatlar ve kurum tanımları.</p>
+            <span class="hub-action-go">
+                Panele git
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </span>
+        </div>
+    </div>
+
+    <section class="hub-recent">
+        <div class="hub-recent-head">
+            <h3>Son Kayıtlar</h3>
+            <button class="hub-link-button" id="pbh-tumunuGor">Tümünü gör →</button>
+        </div>
+        <div class="hub-table-container" id="pbh-tableContainer">
+            <table class="hub-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Rapor No</th>
+                        <th>İş Adı</th>
+                        <th>Yapı Sınıfı</th>
+                        <th>Toplam Maliyet</th>
+                        <th>İşlem</th>
+                    </tr>
+                </thead>
+                <tbody id="pbh-tableBody"></tbody>
+            </table>
+        </div>
+        <div id="pbh-emptyMessage" class="hub-empty-message" style="display: none;">
+            Henüz kayıtlı proje bedeli raporu bulunmamaktadır.
+        </div>
+    </section>
+</div>
