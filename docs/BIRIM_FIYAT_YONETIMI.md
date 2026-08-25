@@ -1,464 +1,282 @@
-# Birim Fiyat Yönetimi Rehberi
+# Birim Fiyat Yönetimi
 
-## 📋 İçindekiler
+## İçindekiler
 
 - [Genel Bakış](#genel-bakış)
+- [Dönem Kavramı](#dönem-kavramı)
 - [Nasıl Çalışır](#nasıl-çalışır)
 - [Veri Yapısı](#veri-yapısı)
-- [Yeni Yıl Ekleme](#yeni-yıl-ekleme)
+- [Yeni Dönem Ekleme](#yeni-dönem-ekleme)
 - [Fiyat Güncelleme](#fiyat-güncelleme)
+- [Dönem ve Rapor İlişkisi](#dönem-ve-rapor-i̇lişkisi)
+- [Örnek Senaryolar](#örnek-senaryolar)
 - [Sorun Giderme](#sorun-giderme)
+- [İpuçları](#i̇puçları)
 
 ---
 
-## 🎯 Genel Bakış
+## Genel Bakış
 
-Birim fiyat otomasyonu, **Hesap Yılı** ve **Yapı Sınıfı** seçildiğinde birim fiyatın otomatik olarak forma doldurulmasını sağlar.
+Birim fiyat otomasyonu, **hesap dönemi** ve **yapı sınıfı/grubu** seçildiğinde metrekare birim fiyatının forma otomatik dolmasını sağlar.
 
-### Özellikleri
+### Özellikler
 
-✅ **Otomatik Doldurma**: Hesap yılı + yapı sınıfı → Birim fiyat
-✅ **Resmi Gazete Bilgileri**: Tarih ve sayı otomatik doldurulur
-✅ **Kolay Güncelleme**: JSON dosyasıyla basit yönetim
-✅ **Yıl Bazlı Yönetim**: Her yıl için ayrı tebliğ
-✅ **7 Yapı Sınıfı**: 1. Sınıf'tan 7. Sınıf'a kadar
+- **Otomatik doldurma**: Dönem + sınıf/grup → birim fiyat
+- **Resmi Gazete künyesi**: Dönemin tarih ve sayısı raporla birlikte saklanır
+- **Yıl ve dönem bazlı yönetim**: Aynı yıl içinde birden fazla tebliğ desteklenir
+- **Veritabanı üzerinden yönetim**: Tüm veriler yönetim panelinden düzenlenir
+
+> **Not**: Birim fiyatlar eskiden `modules/yapi-bedeli/birimFiyatlar.json` dosyasından okunuyordu. Bu yapı terk edilmiş, veriler veritabanına taşınmıştır. JSON dosyası depoda duruyor olabilir ancak uygulama tarafından **kullanılmamaktadır**; değişiklikleri yönetim panelinden yapın.
 
 ---
 
-## 🔄 Nasıl Çalışır
+## Dönem Kavramı
+
+Yapı yaklaşık birim maliyetleri tebliği normalde yılda bir yayınlanır; ancak ekonomik koşullara bağlı olarak bir yıl içinde birden fazla tebliğ çıkabilir. Sistem bu yüzden fiyatları **yıl** değil **dönem** bazında tutar.
+
+| Yıl | Dönem sayısı | Etiket |
+|-----|--------------|--------|
+| 2021 | 1 | `2021` |
+| 2022 | 3 | `2022/1`, `2022/2`, `2022/3` |
+| 2023 | 2 | `2023/1`, `2023/2` |
+| 2024 | 1 | `2024` |
+| 2026 | 1 | `2026` |
+
+**Etiketleme kuralı**: Bir yılda tek dönem varsa yalnızca yıl gösterilir; birden fazla dönem varsa `yıl/dönem` biçimi kullanılır.
+
+---
+
+## Nasıl Çalışır
 
 ### Kullanıcı Akışı
 
 ```
-1. Kullanıcı "Genel Bilgiler" sekmesinde "Hesap Yılı"nı girer
+1. Genel Bilgiler sekmesinde "Hesap Yılı / Dönem" seçilir
    ↓
-2. Kullanıcı "Yapı Bilgileri" sekmesinde "Yapı Sınıfı"nı seçer
+2. Yapı Bilgileri sekmesinde yapı sınıfı ve grubu seçilir
    ↓
 3. Sistem otomatik olarak:
-   - Birim fiyatı doldurur
-   - Resmi Gazete tarihini doldurur
-   - Resmi Gazete sayısını doldurur
+   • Birim fiyatı doldurur
+   • Dönemin Resmi Gazete tarih ve sayısını rapora yazar
    ↓
-4. Kullanıcı fiyatı değiştirebilir (isteğe bağlı)
+4. Gerekirse kullanıcı fiyatı elle değiştirebilir
 ```
 
 ### Teknik Akış
 
 ```
-birimFiyatlar.json
+birimFiyatlar (dönem kaydı)
         ↓
-    fs.readFileSync()
+birimFiyatDetay (sınıf/grup fiyatları)
         ↓
-   JSON.parse()
+   SQL sorgusu (birimFiyatId + sınıf + grup)
         ↓
-birimFiyatVerileri (global)
-        ↓
-getBirimFiyat(yil, sinif)
-        ↓
-Form alanına doldurulur
+   Form alanına doldurulur
 ```
 
----
+Dönem uyarlaması ve editördeki otomatik güncelleme için fiyatlar bir `Map` olarak yüklenir:
 
-## 📊 Veri Yapısı
-
-### birimFiyatlar.json
-
-```json
-{
-  "tebligler": [
-    {
-      "id": 1,
-      "yil": 2024,
-      "resmiGazeteTarih": "2024-01-15",
-      "resmiGazeteSayili": "32768",
-      "tebligAdi": "2024 Yılı Yapı Yaklaşık Birim Maliyetleri",
-      "fiyatlar": {
-        "1. Sınıf": 22500,
-        "2. Sınıf": 20000,
-        "3. Sınıf": 17500,
-        "4. Sınıf": 15000,
-        "5. Sınıf": 12500,
-        "6. Sınıf": 10000,
-        "7. Sınıf": 7500
-      }
-    }
-  ],
-  "varsayilan": {
-    "yil": 2024,
-    "id": 1
-  }
-}
-```
-
-### Alan Açıklamaları
-
-| Alan | Tip | Zorunlu | Açıklama |
-|------|-----|---------|----------|
-| `id` | number | ✅ | Benzersiz tebliğ ID |
-| `yil` | number | ✅ | Hesap yılı (YYYY) |
-| `resmiGazeteTarih` | string | ✅ | ISO 8601 formatında (YYYY-MM-DD) |
-| `resmiGazeteSayili` | string | ✅ | Resmi Gazete sayısı |
-| `tebligAdi` | string | ❌ | Tebliğ açıklaması |
-| `fiyatlar` | object | ✅ | Yapı sınıflarına göre fiyatlar (TL/m²) |
-
----
-
-## ➕ Yeni Yıl Ekleme
-
-### Adım 1: birimFiyatlar.json Dosyasını Açın
-
-Proje kök dizininde `birimFiyatlar.json` dosyasını bir metin editöründe açın.
-
-### Adım 2: Yeni Tebliğ Ekleyin
-
-`tebligler` dizisine yeni bir obje ekleyin:
-
-```json
-{
-  "tebligler": [
-    {
-      "id": 3,
-      "yil": 2025,
-      "resmiGazeteTarih": "2025-01-20",
-      "resmiGazeteSayili": "33000",
-      "tebligAdi": "2025 Yılı Yapı Yaklaşık Birim Maliyetleri",
-      "fiyatlar": {
-        "1. Sınıf": 25000,
-        "2. Sınıf": 22000,
-        "3. Sınıf": 19500,
-        "4. Sınıf": 17000,
-        "5. Sınıf": 14500,
-        "6. Sınıf": 12000,
-        "7. Sınıf": 9000
-      }
-    },
-    // Mevcut tebliğler...
-  ]
-}
-```
-
-### Adım 3: Varsayılan Yılı Güncelleyin (İsteğe Bağlı)
-
-```json
-"varsayilan": {
-  "yil": 2025,
-  "id": 3
-}
-```
-
-### Adım 4: Kaydedin ve Uygulamayı Yeniden Başlatın
-
-```bash
-# Uygulamayı kapatın
-# Dosyayı kaydedin
-# Uygulamayı yeniden başlatın
-npm start
-```
-
----
-
-## 🔧 Fiyat Güncelleme
-
-### Mevcut Yıl Fiyatlarını Güncelleme
-
-```json
-{
-  "id": 1,
-  "yil": 2024,
-  "resmiGazeteTarih": "2024-01-15",
-  "resmiGazeteSayili": "32768",
-  "tebligAdi": "2024 Yılı Yapı Yaklaşık Birim Maliyetleri",
-  "fiyatlar": {
-    "1. Sınıf": 23500,  // 22500 → 23500 güncellendi
-    "2. Sınıf": 21000,  // 20000 → 21000 güncellendi
-    "3. Sınıf": 18500,  // Vb...
-    "4. Sınıf": 16000,
-    "5. Sınıf": 13500,
-    "6. Sınıf": 11000,
-    "7. Sınıf": 8500
-  }
-}
-```
-
-### Tek Bir Sınıf Fiyatını Güncelleme
-
-Sadece değiştirmek istediğiniz sınıfın fiyatını düzenleyin:
-
-```json
-"fiyatlar": {
-  "1. Sınıf": 22500,
-  "2. Sınıf": 20000,
-  "3. Sınıf": 18000,  // ← Sadece bu güncellendi
-  "4. Sınıf": 15000,
-  "5. Sınıf": 12500,
-  "6. Sınıf": 10000,
-  "7. Sınıf": 7500
-}
-```
-
----
-
-## 📝 Örnek Kullanım Senaryoları
-
-### Senaryo 1: 2025 Yılı Tebliği Yayınlandı
-
-**Durum**: Yeni yıl için Resmi Gazete'de tebliğ yayınlandı.
-
-**Çözüm**:
-1. Resmi Gazete'den bilgileri alın:
-   - Tarih: 20.01.2025
-   - Sayı: 33000
-   - Birim fiyatlar
-
-2. JSON dosyasına ekleyin:
-
-```json
-{
-  "id": 3,
-  "yil": 2025,
-  "resmiGazeteTarih": "2025-01-20",
-  "resmiGazeteSayili": "33000",
-  "tebligAdi": "2025 Yılı Yapı Yaklaşık Birim Maliyetleri",
-  "fiyatlar": {
-    "1. Sınıf": 25000,
-    "2. Sınıf": 22000,
-    "3. Sınıf": 19500,
-    "4. Sınıf": 17000,
-    "5. Sınıf": 14500,
-    "6. Sınıf": 12000,
-    "7. Sınıf": 9000
-  }
-}
-```
-
-3. Uygulamayı yeniden başlatın
-
----
-
-### Senaryo 2: Fiyat Revizyonu
-
-**Durum**: 2024 yılı ortasında fiyatlar revize edildi.
-
-**Çözüm**:
-1. Mevcut 2024 tebliğini bulun
-2. Sadece fiyatları güncelleyin
-3. Uygulamayı yeniden başlatın
-
----
-
-### Senaryo 3: Geçmiş Yıl Raporları
-
-**Durum**: 2023 yılı için rapor hazırlanacak ama 2023 fiyatları yok.
-
-**Çözüm**:
-1. 2023 tebliğini JSON'a ekleyin
-2. Formda "Hesap Yılı: 2023" seçin
-3. Sistem 2023 fiyatlarını otomatik çeker
-
----
-
-## 🐛 Sorun Giderme
-
-### Sorun 1: Birim fiyat otomatik doldurulmuyor
-
-**Olası Nedenler**:
-- JSON dosyası mevcut değil
-- JSON syntax hatası
-- Yıl veritabanında yok
-- Yapı sınıfı eşleşmedi
-
-**Çözüm**:
-```bash
-# Console'da kontrol edin
-F12 → Console sekmesi
-
-# Şu mesajları arayın:
-"✅ Birim fiyat verileri yüklendi: 2 tebliğ"
-"✅ Birim fiyat otomatik dolduruldu: 17500 TL/m²"
-
-# Hata varsa:
-"❌ Birim fiyat verileri yüklenemedi"
-"⚠️ 2025 yılı için birim fiyat bulunamadı"
-```
-
-**Debug**:
 ```javascript
-// Console'a yazın:
-birimFiyatVerileri
-// JSON verisini görürsünüz
+const fiyatlar = await donemServisi.fiyatTablosuGetir(db, birimFiyatId);
+const fiyat = fiyatlar.get(donemServisi.fiyatAnahtari('4', 'B'));   // "4|B"
 ```
+
+`fiyatAnahtari()` sınıfı trim eder, grubu büyük harfe çevirir; böylece `"4 "` ve `"4"`, `"b"` ve `"B"` aynı kayda düşer.
 
 ---
 
-### Sorun 2: JSON syntax hatası
+## Veri Yapısı
 
-**Hata Mesajı**:
+Birim fiyatlar iki tabloda tutulur.
+
+### `birimFiyatlar` - Dönem Kaydı
+
+| Sütun | Açıklama |
+|-------|----------|
+| `id` | Dönem kimliği; raporlar bu değere bağlanır |
+| `yil` | Tebliğ yılı |
+| `donem` | Yıl içindeki sıra (1, 2, 3...) |
+| `resmiGazeteTarih` | R.G. yayın tarihi |
+| `resmiGazeteSayili` | R.G. sayısı |
+| `tebligAdi` | Tebliğin adı |
+| `aktif` | Pasife alınan dönemler listelerde görünmez |
+
+### `birimFiyatDetay` - Sınıf/Grup Fiyatları
+
+| Sütun | Açıklama |
+|-------|----------|
+| `id` | Kayıt kimliği |
+| `birimFiyatId` | Bağlı olduğu dönem |
+| `yapiSinifi` | Yapı sınıfı (1-5) |
+| `yapiGrubu` | Yapı grubu (A, B, C, D, E) |
+| `birimFiyat` | Metrekare birim fiyatı (TL) |
+| `aktif` | Pasif kayıtlar sorgulara girmez |
+
+### Sınıf ve Grup Kombinasyonları
+
+Tanımlı kombinasyonlar tebliğe göre değişir. Tipik olarak:
+
 ```
-❌ Birim fiyat verileri yüklenemedi: Unexpected token
+1. Sınıf: A, B, C, D
+2. Sınıf: A, B, C
+3. Sınıf: A, B, C
+4. Sınıf: A, B, C
+5. Sınıf: A, B, C, D, E
 ```
 
-**Çözüm**:
-1. JSON dosyasını online validator'da kontrol edin: [jsonlint.com](https://jsonlint.com)
-2. Yaygın hatalar:
-   - Son elemanın sonunda virgül (`,`)
-   - Eksik süslü parantez (`{`, `}`)
-   - Eksik köşeli parantez (`[`, `]`)
-   - Tırnak işareti hatası (`"` yerine `'`)
-
-**Örnek Hatalı**:
-```json
-{
-  "tebligler": [
-    {
-      "yil": 2024,
-      "fiyatlar": {
-        "1. Sınıf": 22500,  ← Son satırda virgül olmamalı
-      }
-    },  ← Son elemanda virgül olmamalı
-  ]
-}
-```
-
-**Doğrusu**:
-```json
-{
-  "tebligler": [
-    {
-      "yil": 2024,
-      "fiyatlar": {
-        "1. Sınıf": 22500
-      }
-    }
-  ]
-}
-```
+> **Sınıf ve grup ayrı alanlardır.** Birim fiyat sorgusu ikisinin birleşimiyle yapılır; yalnızca sınıf seçmek yeterli değildir.
 
 ---
 
-### Sorun 3: Resmi Gazete bilgileri doldurulmuyor
+## Yeni Dönem Ekleme
 
-**Çözüm**:
-JSON'da `resmiGazeteTarih` ve `resmiGazeteSayili` alanlarının doğru yazıldığından emin olun.
+Yeni bir tebliğ yayınlandığında:
 
-```json
-{
-  "resmiGazeteTarih": "2024-01-15",  // ISO formatı: YYYY-MM-DD
-  "resmiGazeteSayili": "32768"       // String olmalı
-}
-```
+### Adım 1: Dönem Kaydını Açın
 
----
+**Dashboard → Yönetici Paneli → Birim Fiyat Dönemleri**
 
-### Sorun 4: Yapı sınıfı eşleşmiyor
+| Alan | Örnek |
+|------|-------|
+| Yıl | 2026 |
+| Dönem | 1 |
+| R.G. Tarihi | 2026-03-15 |
+| R.G. Sayılı | 33157 |
+| Tebliğ Adı | Yapı Yaklaşık Birim Maliyetleri Hakkında Tebliğ |
 
-**Hata**:
-```
-⚠️ 3.Sınıf için birim fiyat bulunamadı
-```
+**Dönem Ekle** butonuna basın.
 
-**Neden**: JSON'da "3. Sınıf" (nokta ve boşluklu), formda "3.Sınıf" (boşluksuz)
+> **R.G. sayısını mutlaka girin.** Bu değer, raporların hangi döneme ait olduğunu kesin olarak belirlemekte kullanılır. Boş bırakılırsa ve o yılda birden fazla dönem varsa raporlarda dönem `Belirsiz` görünebilir.
 
-**Çözüm**: JSON'daki yapı sınıfı adları formla tam eşleşmeli:
-```json
-"fiyatlar": {
-  "1. Sınıf": 22500,  // ✅ Doğru: "1. Sınıf" (nokta + boşluk)
-  "2.Sınıf": 20000    // ❌ Yanlış: boşluk yok
-}
-```
+### Adım 2: Sınıf/Grup Fiyatlarını Girin
 
----
+Dönem listesinden yeni kaydın fiyat düzenleme işlemine girin. Açılan tabloda her sınıf/grup için tebliğdeki metrekare fiyatını yazın ve **Tüm Grupları Kaydet** ile kaydedin.
 
-## 📊 JSON Şablonu
+### Adım 3: Doğrulayın
 
-Yeni yıl eklerken bu şablonu kullanın:
+Yeni bir rapor açıp:
 
-```json
-{
-  "id": 999,
-  "yil": YYYY,
-  "resmiGazeteTarih": "YYYY-MM-DD",
-  "resmiGazeteSayili": "XXXXX",
-  "tebligAdi": "YYYY Yılı Yapı Yaklaşık Birim Maliyetleri",
-  "fiyatlar": {
-    "1. Sınıf": 0,
-    "2. Sınıf": 0,
-    "3. Sınıf": 0,
-    "4. Sınıf": 0,
-    "5. Sınıf": 0,
-    "6. Sınıf": 0,
-    "7. Sınıf": 0
-  }
-}
-```
-
-**Doldurulacak Alanlar**:
-- `id` → Benzersiz sayı (örn: son id + 1)
-- `YYYY` → Yıl (örn: 2025)
-- `YYYY-MM-DD` → Resmi Gazete tarihi (örn: 2025-01-20)
-- `XXXXX` → Resmi Gazete sayısı (örn: 33000)
-- `0` → Birim fiyatlar (TL/m²)
+1. Genel Bilgiler'de yeni dönemi seçin
+2. Yapı Bilgileri'nde bir sınıf/grup seçin
+3. Birim fiyatın doğru geldiğini kontrol edin
 
 ---
 
-## 💡 İpuçları
+## Fiyat Güncelleme
 
-### 1. Yedekleme
+### Mevcut Bir Dönemin Fiyatını Düzeltme
 
-Her güncelleme öncesi JSON dosyasını yedekleyin:
+Yönetici panelinde ilgili dönemin fiyat tablosunu açın, değeri düzeltin ve kaydedin.
 
-```bash
-copy birimFiyatlar.json birimFiyatlar_backup_20241026.json
+> **Düzeltme geçmiş raporları etkilemez.** Raporlar kaydedildikleri andaki birim fiyatı kendi kayıtlarında saklar. Bu kasıtlıdır: geçmiş bir rapor sonradan yapılan bir veri düzeltmesiyle kendiliğinden değişmez.
+
+### Geçmiş Bir Raporu Güncel Fiyatlarla Yeniden Değerleme
+
+Fiyat düzeltmesi yapmak yerine **Farklı Döneme Kopyala** özelliğini kullanın: rapor, seçilen dönemin fiyatlarıyla yeniden hesaplanıp yeni bir rapor olarak kaydedilir, kaynak rapor korunur. Ayrıntı için [KULLANIM.md](./KULLANIM.md#farklı-döneme-kopyalama).
+
+---
+
+## Dönem ve Rapor İlişkisi
+
+Her rapor, kullanıldığı dönemi `birimFiyatId` sütununda tutar. Bu bağ üç yerde işe yarar:
+
+| Yer | Kullanımı |
+|-----|-----------|
+| Kayıtlı Raporlar listesi | Dönem sütununda etiket ve R.G. sayısı gösterilir |
+| Rapor editörü | Otomatik birim fiyat ve yıpranma güncellemesinin kaynağıdır |
+| Döneme kopyalama | Kaynak dönemin ne olduğu, yıl farkının hesabında kullanılır |
+
+### Eski Raporlar
+
+`birimFiyatId` sütunu sonradan eklenmiştir. Mevcut raporlar şu sırayla geriye dönük eşleştirilmiştir:
+
+1. Raporun R.G. sayısı bir dönemin künyesiyle birebir tutuyorsa o dönem atanır
+2. Tutmazsa ve raporun yılında tek dönem varsa yıl üzerinden eşleştirilir
+3. Yılda birden fazla dönem varsa ve künye yoksa boş bırakılır (`Belirsiz`)
+
+Dönemi belirsiz kalan bir raporu düzeltmek için raporu editörde açıp doğru dönemle yeniden kaydedin.
+
+---
+
+## Örnek Senaryolar
+
+### Senaryo 1: Yıl İçinde İkinci Tebliğ Yayınlandı
+
+2026 yılında ikinci bir tebliğ çıktı.
+
+1. Yönetici panelinde **Yıl: 2026, Dönem: 2** ile yeni kayıt açın
+2. Yeni tebliğin R.G. tarih ve sayısını girin
+3. Sınıf/grup fiyatlarını yeni tebliğe göre doldurun
+
+Artık listelerde `2026/1` ve `2026/2` ayrı ayrı görünür. Eski raporlar `2026/1` ile ilişkili kalır.
+
+### Senaryo 2: Bir Sınıf/Grup Tebliğde Yok
+
+Tebliğde tanımlı olmayan bir kombinasyon için fiyat girmeyin. O sınıfa sahip bir yapı girildiğinde birim fiyat otomatik gelmez; değer elle yazılır.
+
+Dönem kopyalamada bu durum "fiyat tanımlı değil" uyarısıyla bildirilir ve eski fiyat korunur.
+
+### Senaryo 3: Geçmiş Yılların Fiyatlarını Sisteme Girme
+
+Eski raporları yeniden üretmek veya karşılaştırma yapmak için geçmiş tebliğler de girilebilir. Her yıl için dönem kaydı açıp fiyatlarını doldurmanız yeterlidir; sistem tüm dönemleri eşit şekilde kullanır.
+
+---
+
+## Sorun Giderme
+
+### Birim fiyat otomatik gelmiyor
+
+Sırayla kontrol edin:
+
+1. **Dönem seçili mi?** Genel Bilgiler sekmesindeki hesap yılı/dönem alanı boş olabilir
+2. **Sınıf ve grup birlikte seçili mi?** Yalnızca sınıf yeterli değildir
+3. **O kombinasyon tanımlı mı?** Yönetim panelinde dönemin fiyat tablosunu açıp kontrol edin
+4. **Dönem aktif mi?** Pasife alınmış dönemler listelerde görünmez
+
+### Yanlış fiyat geliyor
+
+Seçili dönemi kontrol edin. Aynı yılda birden fazla dönem varsa yanlış dönem seçilmiş olabilir; etiketteki R.G. sayısı hangi tebliğ olduğunu gösterir.
+
+### Editörde fiyat kendiliğinden değişti
+
+Bu beklenen davranıştır: editörde yapı sınıfı veya grubu değiştirildiğinde birim fiyat, raporun dönemine göre yeniden çekilir ve hücre kısa süre vurgulanır. Değeri elle yazarsanız girdiğiniz değer korunur.
+
+### Dönem kopyalamada fiyat değişmedi
+
+Uyarı listesine bakın. Sınıf/grup bilgisi eksik olan veya hedef dönemde karşılığı bulunmayan yapılarda eski fiyat korunur.
+
+### Fiyat tablosunda sınıf/grup satırı göremiyorum
+
+Fiyat tablosu tebliğdeki kombinasyonlara göre düzenlenir. Eksik bir kombinasyon varsa dönem kaydının fiyat düzenleme ekranından ekleyebilirsiniz.
+
+---
+
+## İpuçları
+
+### Tebliğ Girişini Tek Seferde Tamamlayın
+
+Dönem kaydını açıp fiyatları girmeden bırakmayın. Yarım kalan dönem, formda seçilebilir ancak fiyat getirmez ve karışıklığa yol açar.
+
+### R.G. Künyesini Eksiksiz Girin
+
+Tarih ve sayı hem rapor çıktısında görünür hem de raporların dönemle eşleştirilmesinde kullanılır.
+
+### Fiyatları Tebliğden Doğrudan Kontrol Edin
+
+Girişten sonra bir test raporu oluşturup birkaç sınıf/grup için gelen fiyatı tebliğle karşılaştırın.
+
+### Yedek Alın
+
+Toplu fiyat girişi öncesi veritabanının bir kopyasını alın:
+
+```powershell
+Copy-Item raporlar.db "yedek/raporlar_$(Get-Date -Format 'yyyyMMdd').db"
 ```
 
-### 2. Sürüm Kontrolü
+### Veritabanını Elle Güncellemeyin
 
-JSON dosyasını Git'e ekleyin:
-
-```bash
-git add birimFiyatlar.json
-git commit -m "feat: 2025 yılı birim fiyatları eklendi"
-```
-
-### 3. Ekip Paylaşımı
-
-JSON dosyasını ekip üyeleriyle paylaşın. Herkes aynı fiyatları kullanır.
-
-### 4. Manuel Değiştirme
-
-Kullanıcı formda birim fiyatı manuel değiştirebilir. Otomatik doldurma sadece ilk değeri koyar.
-
-### 5. Önizleme
-
-Değişiklikleri test etmek için:
-1. Uygulamayı açın
-2. F12 → Console
-3. `birimFiyatVerileri` yazın
-4. Tüm veriyi görürsünüz
+Fiyatları PowerShell üzerinden `sqlite3` komutuyla güncellemeyin; Türkçe karakterler yanlış kodlamayla (Windows-1254) yazılabilir. Panel üzerinden veya Node.js script'i ile güncelleyin.
 
 ---
 
-## 🔮 Gelecek İyileştirmeler
-
-### Planlanan Özellikler
-
-- [ ] UI'dan birim fiyat yönetimi (admin panel)
-- [ ] SQLite'a taşıma seçeneği
-- [ ] Excel import/export
-- [ ] Otomatik Resmi Gazete çekme (API)
-- [ ] Geçmiş fiyat karşılaştırması
-- [ ] Enflasyon hesaplama
-
----
-
-## 📞 Destek
-
-JSON düzenlemede sorun yaşarsanız:
-1. [jsonlint.com](https://jsonlint.com) ile validate edin
-2. Console log'larını kontrol edin (F12)
-3. Bu dokümantasyonu tekrar okuyun
-
----
-
-**Son Güncelleme**: 2024-10-26
-
+*Son Güncelleme: 25.08.2026 | Versiyon 2.2.0*

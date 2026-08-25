@@ -1,18 +1,18 @@
 # Geliştirici Rehberi
 
-## 📋 İçindekiler
+## İçindekiler
 
 - [Geliştirme Ortamı](#geliştirme-ortamı)
 - [Kod Standartları](#kod-standartları)
 - [Yeni Özellik Ekleme](#yeni-özellik-ekleme)
 - [Debugging](#debugging)
-- [Testing](#testing)
+- [Test](#test)
 - [Build ve Deployment](#build-ve-deployment)
 - [Katkıda Bulunma](#katkıda-bulunma)
 
 ---
 
-## 💻 Geliştirme Ortamı
+## Geliştirme Ortamı
 
 ### Önerilen IDE
 
@@ -117,7 +117,7 @@ out/
 
 ---
 
-## 📝 Kod Standartları
+## Kod Standartları
 
 ### JavaScript Style Guide
 
@@ -249,138 +249,197 @@ db.run(query, params, function(err) {
 
 ---
 
-## 🚀 Yeni Özellik Ekleme
+## Yeni Özellik Ekleme
 
-### Özellik Geliştirme Süreci
+### Geliştirme Süreci
 
 ```
 1. Planlama
    ├─ Gereksinim analizi
-   ├─ Tasarım
-   └─ Veritabanı değişiklikleri
+   ├─ Hangi modüle ait? (yeni modül mü, mevcut modüle sayfa mı)
+   └─ Veritabanı değişikliği gerekiyor mu
 
 2. Geliştirme
-   ├─ Backend (main.js)
-   ├─ Frontend (HTML/CSS)
-   └─ Logic (renderer.js)
+   ├─ Veritabanı: main.js (şema + migration)
+   ├─ Görünüm: modules/<modul>/views/*.html (fragment)
+   ├─ Mantık:  modules/<modul>/scripts/*-page.js
+   ├─ Saf hesap: ayrı dosyaya (DOM'suz)
+   └─ Route: shared/scripts/navigation.js
 
-3. Test
-   ├─ Manuel test
-   ├─ Edge case test
-   └─ Integration test
+3. Build listesi
+   └─ build.js → RENDERER_JS_FILES
 
-4. Dokümantasyon
-   ├─ Kod yorumları
-   ├─ README güncelleme
-   └─ KULLANIM.md güncelleme
+4. Test
+   ├─ Sayfayı açıp konsol hatası kontrolü
+   ├─ Saf hesap fonksiyonlarını node ile doğrulama
+   └─ Migration'ı mevcut veritabanında deneme
 
-5. Deployment
-   └─ Version bump
+5. Dokümantasyon
+   ├─ CHANGELOG.md
+   ├─ docs/ ilgili rehberler
+   └─ package.json sürüm
 ```
 
 ---
 
-### Örnek: Yeni Form Alanı Ekleme
+### Örnek: Yeni SPA Sayfası Ekleme
 
-#### 1. HTML Güncelleme
+#### 1. Görünüm Dosyası
 
-**index.html**:
+`modules/hesaplama/views/yeni-arac-content.html` — tam HTML belgesi değil, **fragment**:
+
 ```html
-<div class="form-group">
-    <label for="yeniAlan">Yeni Alan *</label>
-    <input type="text" id="yeniAlan" placeholder="Değer girin" required>
+<style>
+    /* Modül öneki kullanın; stiller global'e sızar */
+    .ya-container { padding: 24px; }
+    .ya-baslik { font-size: 20px; font-weight: 600; }
+</style>
+
+<div class="ya-container">
+    <h1 class="ya-baslik">Yeni Araç</h1>
+    <button id="ya-hesaplaBtn">Hesapla</button>
 </div>
 ```
 
-#### 2. Veritabanı Güncelleme
+#### 2. Sayfa Script'i
 
-**main.js**:
+`modules/hesaplama/scripts/yeni-arac-page.js`:
+
 ```javascript
-db.run(`ALTER TABLE raporlar ADD COLUMN yeniAlan TEXT`);
+const sqlite3 = require('sqlite3').verbose();
+const { getDbPath } = require('../../../shared/scripts/db-helper');
+
+let db = null;
+let nav = null;
+
+async function onLoad(container, data, navigation) {
+    nav = navigation;
+    db = new sqlite3.Database(getDbPath());
+
+    // Template'teki onclick'ler için köprü (gerekiyorsa)
+    window.yaPage = { satirSil };
+
+    document.getElementById('ya-hesaplaBtn').addEventListener('click', hesapla);
+}
+
+async function onUnload() {
+    if (db) { db.close(); db = null; }
+}
+
+function hasUnsavedChanges() { return false; }
+
+module.exports = { onLoad, onUnload, hasUnsavedChanges };
 ```
 
-**Veya yeni tablo oluşturma**:
+> **Dikkat**: Sayfa script'leri `require()` önbelleğinde kalır. Modül seviyesi değişkenler sayfa kapanınca sıfırlanmaz; durumu `onLoad` içinde kurun, `onUnload` içinde temizleyin. IPC dinleyicileri `onUnload`'da `removeListener` ile kaldırılmazsa her açılışta birikir.
+
+#### 3. Route Kaydı
+
+`shared/scripts/navigation.js` içindeki `pages` nesnesine ekleyin:
+
 ```javascript
-db.run(`CREATE TABLE IF NOT EXISTS raporlar (
+'yeni-arac': {
+    title: 'Yeni Araç',
+    icon: '🔧',
+    template: 'modules/hesaplama/views/yeni-arac-content.html',
+    script: 'modules/hesaplama/scripts/yeni-arac-page.js'
+}
+```
+
+Sayfaya geçiş:
+
+```javascript
+nav.navigateTo('yeni-arac', { kayitId: 5 });   // data, onLoad'a geçer
+```
+
+#### 4. Build Listesi
+
+`build.js` içindeki `RENDERER_JS_FILES` dizisine yeni script'i ekleyin. **Bu adım atlanırsa dosya karartılmadan paketlenir.**
+
+```javascript
+const RENDERER_JS_FILES = [
+    // ...
+    'modules/hesaplama/scripts/yeni-arac-page.js',
+];
+```
+
+---
+
+### Örnek: Veritabanı Değişikliği
+
+#### Yeni Tablo
+
+`main.js` → `createDatabase()` içine:
+
+```javascript
+db.run(`CREATE TABLE IF NOT EXISTS yeniTablo (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    // ... mevcut kolonlar
-    yeniAlan TEXT
-)`);
-```
-
-#### 3. Form Logic Güncelleme
-
-**renderer.js**:
-```javascript
-// Form submit event'inde
-form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    
-    // Mevcut alanlar...
-    const yeniAlan = document.getElementById('yeniAlan').value;
-    
-    // INSERT query güncelleme
-    db.run(`INSERT INTO raporlar (..., yeniAlan) VALUES (..., ?)`, 
-        [...values..., yeniAlan], 
-        function(err) { ... }
-    );
+    adi TEXT,
+    verilerJSON TEXT,
+    aktif INTEGER DEFAULT 1,
+    olusturmaTarihi TEXT DEFAULT CURRENT_TIMESTAMP
+)`, (err) => {
+    if (err) console.error('yeniTablo oluşturulamadı:', err);
 });
 ```
 
-#### 4. Rapor Oluşturma Güncelleme
+`CREATE TABLE IF NOT EXISTS` kullanıldığı için mevcut veritabanlarında bir sonraki açılışta otomatik oluşur.
 
-**reportGenerator.js**:
+#### Yeni Kolon
+
+Koşulsuz `ALTER TABLE` **kullanmayın**; her açılışta hata verir. Önce kolonun varlığını kontrol edin:
+
 ```javascript
-function generateReport(raporData, outputPath) {
-    // Yeni alan kullanımı
-    new Paragraph({
-        children: [
-            new TextRun({
-                text: `Yeni Alan: ${raporData.yeniAlan || ''}`
-            })
-        ]
-    })
+db.all(`PRAGMA table_info(raporlar)`, [], (err, columns) => {
+    if (err || !columns || columns.length === 0) return;
+    if (columns.some(col => col.name === 'yeniKolon')) return;   // zaten var
+
+    db.run(`ALTER TABLE raporlar ADD COLUMN yeniKolon TEXT`, (e) => {
+        if (e) { console.error('yeniKolon eklenemedi:', e); return; }
+        console.log('raporlar tablosuna yeniKolon eklendi.');
+    });
+});
+```
+
+**Migration kuralları**:
+
+| Kural | Neden |
+|-------|-------|
+| Idempotent olmalı | Her açılışta çalışır; ikinci kez bir şey değiştirmemeli |
+| Veri silmemeli | Kullanıcının mevcut kayıtları korunmalı |
+| Hata durumunda sessizce geçmeli | Migration hatası uygulamanın açılmasını engellememeli |
+| Veri dönüştürüyorsa dar kapsamlı olmalı | Yalnızca bozuk kayda dokunun; `tamirEtSinifGrup()` örneğine bakın |
+
+---
+
+### Saf Hesap Katmanı
+
+Hesap mantığını DOM'dan ayırın. Bu, mantığın arayüz açmadan doğrulanabilmesini ve birden fazla ekrandan kullanılabilmesini sağlar.
+
+```javascript
+// metraj-hesap.js - DOM'a dokunmaz
+function hesaplaCephe(cephe) {
+    const brutAlan = sayi(cephe.en) * sayi(cephe.yukseklik);
+    return { brutAlan, yuzeyler: { /* ... */ } };
 }
+module.exports = { hesaplaCephe };
+```
+
+Doğrulama:
+
+```bash
+node -e "const h=require('./modules/hesaplama/scripts/metraj-hesap'); console.log(h.hesaplaCephe({en:10,yukseklik:3}));"
+```
+
+**Girdi verisini değiştirmeyin**; kopya üzerinde çalışın:
+
+```javascript
+const y = Object.assign({}, yapi);
 ```
 
 ---
 
-### Örnek: Yeni Hesaplama Fonksiyonu
-
-```javascript
-/**
- * Arsa değeri hesaplar
- * @param {number} yuzolcumu - Arsa yüzölçümü (m²)
- * @param {number} m2Fiyat - m² başına fiyat (TL)
- * @returns {number} Toplam arsa değeri
- */
-function hesaplaArsaDegeri(yuzolcumu, m2Fiyat) {
-    if (!yuzolcumu || !m2Fiyat) {
-        throw new Error('Geçersiz parametreler');
-    }
-    
-    const yuzolcum = parseFloat(yuzolcumu);
-    const fiyat = parseFloat(m2Fiyat);
-    
-    if (isNaN(yuzolcum) || isNaN(fiyat)) {
-        throw new Error('Sayısal değer bekleniyor');
-    }
-    
-    return yuzolcum * fiyat;
-}
-
-// Kullanım
-try {
-    const arsaDegeri = hesaplaArsaDegeri('150.50', '5000');
-    console.log('Arsa Değeri:', arsaDegeri.toFixed(2));
-} catch (error) {
-    console.error('Hesaplama hatası:', error.message);
-}
-```
-
----
-
-## 🐛 Debugging
+## Debugging
 
 ### Chrome DevTools
 
@@ -467,7 +526,7 @@ ipcMain.on('show-reports', (event) => {
 });
 ```
 
-**renderer.js**:
+**Sayfa script (`*-page.js`)**:
 ```javascript
 console.log('[IPC] show-reports mesajı gönderiliyor');
 ipcRenderer.send('show-reports');
@@ -475,221 +534,156 @@ ipcRenderer.send('show-reports');
 
 ---
 
-## 🧪 Testing
+## Test
 
-### Manuel Test Checklist
+Projede otomatik test altyapısı kurulu değildir. Hesap mantığı saf fonksiyonlara ayrıldığı için bu katman Node ile doğrudan doğrulanabilir; arayüz akışları elle test edilir.
 
-#### Form Testi
-- [ ] Tüm zorunlu alanlar dolu olmadan kayıt yapılamıyor
-- [ ] Tarih alanları geçerli tarih kabul ediyor
-- [ ] Sayısal alanlar sadece sayı kabul ediyor
-- [ ] Tab navigasyonu çalışıyor
-- [ ] İleri/Geri butonları doğru çalışıyor
+### Saf Fonksiyonları Doğrulama
 
-#### Hesaplama Testi
-- [ ] Yıpranma payı otomatik hesaplanıyor
-- [ ] Yapı bedeli doğru hesaplanıyor
-- [ ] Levazım bedeli doğru hesaplanıyor
-- [ ] Sayıyı yazıya çevirme doğru çalışıyor
+`metraj-hesap.js` ve `donem-servisi.js` DOM gerektirmez; doğrudan çalıştırılabilir:
 
-#### Veritabanı Testi
-- [ ] Kayıt ekleniyor
-- [ ] Kayıtlar listeleniyor
-- [ ] Kayıt siliniyor
-- [ ] Veritabanı dosyası oluşuyor
-
-#### Rapor Testi
-- [ ] Word dosyası oluşuyor
-- [ ] Rapor içeriği doğru
-- [ ] Dosya adı doğru formatlanıyor
-- [ ] Dosya otomatik açılıyor
-
----
-
-### Unit Test Örneği (Jest)
-
-**Kurulum**:
-```bash
-npm install --save-dev jest
-```
-
-**package.json**:
-```json
-{
-  "scripts": {
-    "test": "jest"
-  }
-}
-```
-
-**reportGenerator.test.js**:
 ```javascript
-const { sayiyiYaziyaCevir, formatTarih } = require('./reportGenerator');
+// dogrula.js
+const h = require('./modules/hesaplama/scripts/metraj-hesap');
 
-describe('sayiyiYaziyaCevir', () => {
-    test('0 sayısını sıfır olarak döndürmeli', () => {
-        expect(sayiyiYaziyaCevir(0)).toBe('sıfır');
-    });
-    
-    test('1234 sayısını doğru çevirmeli', () => {
-        expect(sayiyiYaziyaCevir(1234)).toBe('bin ikiyüz otuz dört');
-    });
-    
-    test('Geçersiz input için boş string döndürmeli', () => {
-        expect(sayiyiYaziyaCevir(null)).toBe('');
-        expect(sayiyiYaziyaCevir(undefined)).toBe('');
-        expect(sayiyiYaziyaCevir('abc')).toBe('');
-    });
+const cephe = h.hesaplaCephe({
+    en: 10, yukseklik: 3,
+    bosluklar: [{ tip: 'pencere', en: 1.5, boy: 1.2, adet: 2, gommeDerinligi: 0.05 }]
 });
 
-describe('formatTarih', () => {
-    test('Tarih doğru formatlanmalı', () => {
-        expect(formatTarih('2024-10-26')).toBe('26.10.2024');
-    });
-    
-    test('Geçersiz input için boş string döndürmeli', () => {
-        expect(formatTarih(null)).toBe('');
-        expect(formatTarih(undefined)).toBe('');
-    });
-});
+console.log('brüt:', cephe.brutAlan);              // 30
+console.log('cephe ön:', cephe.yuzeyler.cepheOn);  // 30 - 3.6 = 26.4
 ```
 
-**Test çalıştırma**:
+`donem-servisi.js` veritabanı gerektirir; **veritabanının bir kopyası üzerinde** çalışın:
+
 ```bash
-npm test
+cp raporlar.db test.db
+node -e "
+const ds = require('./modules/yapi-bedeli/scripts/donem-servisi');
+const db = new (require('sqlite3').verbose().Database)('test.db');
+ds.listeDonemler(db).then(d => console.log(d.length + ' dönem'));
+"
 ```
+
+### Elle Test Kontrol Listesi
+
+#### Navigasyon
+- [ ] Her modül kartı kendi hub sayfasını açıyor
+- [ ] Hub'dan form, liste ve editöre geçişler çalışıyor
+- [ ] Geri / ana sayfa butonları ve breadcrumb doğru çalışıyor
+- [ ] Kaydedilmemiş değişiklikle çıkışta uyarı geliyor
+
+#### Yapı Bedeli
+- [ ] Sınıf/grup seçilince birim fiyat otomatik geliyor
+- [ ] Yapım tekniği + yaş girilince yıpranma payı geliyor
+- [ ] Çoklu yapı ekleme/silme çalışıyor
+- [ ] Çoklu parsel modunda her parselde yapı numaraları 1'den başlıyor
+- [ ] Toplam bedel ve Türkçe yazı doğru
+
+#### Dönem Kopyalama
+- [ ] Önizlemedeki eski→yeni değerler doğru
+- [ ] Yaş kaydırma yıl farkı kadar uygulanıyor
+- [ ] Tanımsız fiyat için uyarı çıkıyor ve eski fiyat korunuyor
+- [ ] Kopyalama sonrası **kaynak rapor değişmemiş** olmalı
+
+#### Cephe Metrajı
+- [ ] Boşluk, çıkma ve saçak satırları toplamları etkiliyor
+- [ ] Kapı ve denizlikli pencerede şafak çevresi `2*boy+en`
+- [ ] Boya ve yalıtım toplamları ayarlara göre değişiyor
+- [ ] Kayıt açılıp düzenlenebiliyor
+
+#### Veritabanı
+- [ ] Yeni kayıt ekleniyor, listeleniyor, siliniyor
+- [ ] Migration mevcut veritabanında hatasız çalışıyor
+- [ ] Uygulama silinmiş veritabanıyla açıldığında şema yeniden oluşuyor
+
+### Uçtan Uca Sayfa Testi
+
+Tüm sayfaların hatasız yüklendiğini toplu kontrol etmek için proje köküne geçici bir Electron giriş dosyası koyup `navigateTo` ile sayfaları sırayla gezebilirsiniz. Giriş dosyası **proje kökünde** olmalıdır; `getAppPath()` o klasörü döndürdüğü için template yolları ancak böyle çözülür.
 
 ---
 
-## 📦 Build ve Deployment
+## Build ve Deployment
 
-### Electron Builder Kurulumu
+Build sistemi kuruludur. `build.js` obfuscation ve hazırlık yapar, `electron-builder` portable exe üretir.
 
-```bash
-npm install --save-dev electron-builder
-```
-
-### Build Konfigürasyonu
-
-**package.json**:
-```json
-{
-  "name": "Kitar",
-  "version": "1.0.0",
-  "main": "main.js",
-  "scripts": {
-    "start": "electron .",
-    "build": "electron-builder",
-    "build:win": "electron-builder --win",
-    "build:mac": "electron-builder --mac",
-    "build:linux": "electron-builder --linux"
-  },
-  "build": {
-    "appId": "com.kitar.app",
-    "productName": "Kıymet Takdir Raporu",
-    "copyright": "Copyright © 2024",
-    "directories": {
-      "output": "dist",
-      "buildResources": "assets"
-    },
-    "files": [
-      "**/*",
-      "!**/*.md",
-      "!docs/**/*",
-      "!.vscode/**/*",
-      "!.git/**/*"
-    ],
-    "win": {
-      "target": ["nsis", "portable"],
-      "icon": "assets/icon.ico"
-    },
-    "mac": {
-      "target": "dmg",
-      "icon": "assets/icon.icns",
-      "category": "public.app-category.business"
-    },
-    "linux": {
-      "target": ["AppImage", "deb"],
-      "icon": "assets/icon.png",
-      "category": "Office"
-    },
-    "nsis": {
-      "oneClick": false,
-      "allowToChangeInstallationDirectory": true,
-      "createDesktopShortcut": true,
-      "createStartMenuShortcut": true
-    }
-  }
-}
-```
-
----
-
-### İkonlar
-
-Gerekli ikon formatları:
-
-```
-assets/
-├── icon.ico      # Windows (256x256)
-├── icon.icns     # macOS
-└── icon.png      # Linux (512x512)
-```
-
-**İkon oluşturma aracı**:
-```bash
-npm install --global electron-icon-maker
-
-electron-icon-maker --input=./icon.png --output=./assets
-```
-
----
-
-### Build Komutları
+### Komutlar
 
 ```bash
-# Tüm platformlar için build
+# Yalnızca obfuscation - build-temp/ hazırlanır
+npm run obfuscate
+
+# Portable exe (obfuscation + electron-builder)
 npm run build
 
-# Sadece Windows
-npm run build:win
+# Paketlenmemiş klasör çıktısı (hata ayıklama)
+npm run build:dir
 
-# Sadece macOS
-npm run build:mac
-
-# Sadece Linux
-npm run build:linux
+# Obfuscation'ı atlayarak hazırlık (sorun ayıklama)
+node build.js --no-obfuscate
 ```
 
-**Çıktı**:
-```
-dist/
-├── Kitar Setup 1.0.0.exe        # Windows installer
-├── Kitar 1.0.0.exe              # Windows portable
-├── Kitar-1.0.0.dmg              # macOS
-├── Kitar-1.0.0.AppImage         # Linux AppImage
-└── kitar_1.0.0_amd64.deb        # Linux Debian
-```
+Çıktı: `dist/ProjeA-<sürüm>-Portable.exe`
+
+### build.js Adımları
+
+| Adım | Yaptığı |
+|------|---------|
+| 1 | `build-temp/` temizlenir (node_modules junction'ı korunarak) |
+| 2 | Kaynak dosyalar kopyalanır (node_modules, .git, dist, raporlar hariç) |
+| 3 | `package.json`'dan devDependencies silinir, electronVersion sabitlenir, `npmRebuild: false` yapılır |
+| 4 | Ana projedeki `node_modules` için junction kurulur |
+| 5 | Tohum veritabanı `build-temp/extra/raporlar.db` olarak hazırlanır |
+| 6 | JS dosyaları obfuscate edilir |
+
+### Obfuscation Ayarları
+
+İki ayrı profil vardır:
+
+| Profil | Hedef | Kullanıldığı dosyalar |
+|--------|-------|------------------------|
+| `MAIN_OBFUSCATION_OPTIONS` | `target: 'node'` | `main.js` |
+| `RENDERER_OBFUSCATION_OPTIONS` | `target: 'browser-no-eval'` | `dashboard.js`, `navigation.js`, modül script'leri |
+
+> **Yeni bir renderer script'i eklediğinizde `RENDERER_JS_FILES` listesine eklemeyi unutmayın.** Liste dışındaki dosyalar karartılmadan paketlenir; hata vermez, sessizce açık kalır.
+
+### node_modules Junction
+
+`electron-builder`, `build-temp` altında baştan `npm install` ve native rebuild yapmasın diye ana projedeki `node_modules` klasörüne Windows junction kurulur. `sqlite3` zaten doğru Electron sürümü için derlenmiş olduğundan yeniden derleme hem gereksiz hem uzundur.
+
+### Tohum Veritabanı
+
+| Kaynak | Ne zaman kullanılır |
+|--------|---------------------|
+| `raporlar_build.db` | Varsa tercih edilir (kasıtlı temizlenmiş sürüm) |
+| `raporlar.db` | Tohum yoksa veya `--use-dev-db` verildiyse |
+
+Seçilen dosya `extraResources` ile ASAR dışında, exe'nin yanına konur. Uygulama ilk açılışta kalıcı klasörde veritabanı yoksa bu dosyayı oraya kopyalar (`seedDatabaseIfMissing()`).
+
+> **Encoding uyarısı**: Tohum veritabanını PowerShell'den `sqlite3` komutuyla güncellemeyin. Türkçe karakterler Windows-1254 olarak yazılabilir (`İ` = `DD` olur, UTF-8'de `C4B0` olmalı). Güncellemeleri Node.js script'i ile yapın.
+
+### Portable Sürüm ve Veritabanı Konumu
+
+Portable exe kendini geçici klasöre açar; oraya yazılan veri her çıkışta silinir. Bu yüzden veritabanı yolu `PORTABLE_EXECUTABLE_DIR` (kullanıcının exe'yi çalıştırdığı kalıcı klasör) üzerinden çözülür. Kod içinde veritabanı yolu asla elle yazılmamalı, daima `getDbPath()` kullanılmalıdır.
+
+### Sürüm Yükseltme
+
+Sürüm birden fazla yerde geçer; hepsini birlikte güncelleyin:
+
+| Yer | Ne |
+|-----|-----|
+| `package.json` | `version` alanı |
+| `dashboard.html` | Footer'daki sürüm yazısı, versiyon modalı rozeti ve yayın tarihi, modal içeriği |
+| `dashboard.js` | Konsol banner'ındaki sürüm |
+| `CHANGELOG.md` | Yeni sürüm girişi |
+| `README.md` | Sürüm rozeti ve alt bilgi |
+
+Versiyon modalı, kullanıcıya o sürümün yeniliklerini gösterir; yeni sürümde içeriğini güncellemeyi unutmayın.
 
 ---
 
-### Version Management
-
-**package.json version güncelleme**:
-```bash
-# Minor version bump (1.0.0 -> 1.0.1)
-npm version patch
-
-# Minor version bump (1.0.0 -> 1.1.0)
-npm version minor
-
-# Major version bump (1.0.0 -> 2.0.0)
-npm version major
-```
-
----
-
-## 🤝 Katkıda Bulunma
+## Katkıda Bulunma
 
 ### Git Workflow
 
@@ -788,7 +782,7 @@ Reviewer için kontrol listesi:
 
 ---
 
-## 📚 Öğrenme Kaynakları
+## Öğrenme Kaynakları
 
 ### Electron
 - [Electron Docs](https://www.electronjs.org/docs)
@@ -804,7 +798,7 @@ Reviewer için kontrol listesi:
 
 ---
 
-## 🔧 Gelişmiş Konular
+## Gelişmiş Konular
 
 ### Performance Optimization
 

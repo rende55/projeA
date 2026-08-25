@@ -1,453 +1,231 @@
-# Admin Panel Rehberi - Birim Fiyat Yönetimi
+# Yönetici Paneli Rehberi
 
-## 📋 İçindekiler
+## İçindekiler
 
 - [Genel Bakış](#genel-bakış)
-- [Admin Paneline Erişim](#admin-paneline-erişim)
-- [Yeni Yıl Ekleme](#yeni-yıl-ekleme)
-- [Fiyat Güncelleme](#fiyat-güncelleme)
-- [Kayıt Silme](#kayıt-silme)
-- [Veritabanı Yapısı](#veritabanı-yapısı)
+- [Panele Erişim](#panele-erişim)
+- [Birim Fiyat Dönemleri](#birim-fiyat-dönemleri)
+- [Raportörler](#raportörler)
+- [Kurumlar](#kurumlar)
+- [İl / İlçe](#i̇l--i̇lçe)
+- [PID Oranları](#pid-oranları)
 - [Sorun Giderme](#sorun-giderme)
+- [İyi Pratikler](#i̇yi-pratikler)
 
 ---
 
-## 🎯 Genel Bakış
+## Genel Bakış
 
-Admin Paneli, birim fiyatları veritabanı üzerinden yönetmenizi sağlayan kullanıcı dostu bir arayüzdür.
+Yönetici Paneli, uygulamanın hesaplamalarını besleyen tanım verilerini yönetir. Formlarda seçilen her liste ve otomatik gelen her katsayı bu panelden yönetilir.
+
+### Sekmeler
+
+| Sekme | Yönetilen veri | Etkilediği yer |
+|-------|----------------|----------------|
+| **Birim Fiyat Dönemleri** | Tebliğ dönemleri ve sınıf/grup fiyatları | Yapı Bedeli hesabı, dönem kopyalama |
+| **Raportörler** | Raportör ad, soyad ve ünvanları | Rapor imza bölümü |
+| **Kurumlar** | Kurum ve alt kurum tanımları | Genel Bilgiler sekmesindeki "İlgili Kurum" |
+| **İl / İlçe** | İl ve ilçe listeleri | Arsa Bilgileri sekmesi |
+| **PID Oranları** | Alan aralığı × hizmet sınıfı oranları | Proje Bedeli hesabı |
 
 ### Özellikler
 
-✅ **Kullanıcı Dostu UI**: Modern ve anlaşılır arayüz
-✅ **CRUD İşlemleri**: Ekle, Düzenle, Sil
-✅ **Otomatik Doldurma**: Resmi Gazete bilgileri
-✅ **Doğrulama**: Form validasyonu ve hata kontrolü
-✅ **Anında Yansıma**: Değişiklikler hemen aktif olur
-✅ **Güvenli Silme**: Soft delete (veri kaybolmaz)
+- Ekleme, düzenleme ve pasife alma (soft delete) işlemleri
+- Değişiklikler anında geçerli olur; uygulamayı yeniden başlatmaya gerek yoktur
+- Pasife alınan kayıtlar listelerde görünmez ama veritabanında korunur; eski raporlarla bağ kopmaz
 
 ---
 
-## 🔐 Admin Paneline Erişim
+## Panele Erişim
 
-### Adım 1: Uygulamayı Açın
-
-```bash
-npm start
-```
-
-### Adım 2: Admin Paneline Gidin
-
-Ana formda, **Yapı Bilgileri** sekmesinin alt kısmında:
+Dashboard'daki **Yönetici Paneli** kartına tıklayın. Panel, diğer sayfalar gibi aynı pencerede açılır; üst çubuktaki geri oku veya `ESC` ile çıkabilirsiniz.
 
 ```
-[⚙️ Birim Fiyat Yönetimi] butonuna tıklayın
-```
-
-### Adım 3: Admin Penceresi Açılır
-
-Yeni bir pencerede admin paneli görünür.
-
-```
-┌──────────────────────────────────────────┐
-│ ⚙️ Admin Panel - Birim Fiyat Yönetimi   │
-│                                  [✕ Kapat]│
-├──────────────────────────────────────────┤
-│                                          │
-│  📝 Yeni Yıl / Fiyat Güncelleme         │
-│  [Form alanları...]                      │
-│                                          │
-│  📊 Kayıtlı Birim Fiyatlar              │
-│  [Tablo...]                              │
-└──────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  Yönetim Paneli                                              │
+├──────────────────────────────────────────────────────────────┤
+│ [Birim Fiyat Dönemleri] [Raportörler] [Kurumlar]             │
+│ [İl / İlçe] [PID Oranları]                                   │
+├──────────────────────────────────────────────────────────────┤
+│  (seçili sekmenin formu ve listesi)                          │
+└──────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## ➕ Yeni Yıl Ekleme
+## Birim Fiyat Dönemleri
 
-### Form Alanları
+Yapı yaklaşık birim maliyetleri tebliğlerinin yönetildiği sekmedir. İki katmanlıdır: önce **dönem** kaydı açılır, sonra o döneme **sınıf/grup fiyatları** girilir.
 
-| Alan | Zorunlu | Açıklama | Örnek |
-|------|---------|----------|-------|
-| **Hesap Yılı** | ✅ | Tebliğ yılı (UNIQUE) | 2024 |
-| **Tebliğ Adı** | ❌ | Açıklayıcı isim | 2024 Yılı Yapı Yaklaşık Birim Maliyetleri |
-| **R.G. Tarihi** | ✅ | Resmi Gazete yayın tarihi | 15.01.2024 |
-| **R.G. Sayısı** | ✅ | Resmi Gazete sayı numarası | 32768 |
-| **1-7. Sınıf** | ✅ | Birim fiyatlar (TL/m²) | 22500, 20000, ... |
+### Yeni Dönem Ekleme
 
-### Adım Adım Ekleme
+| Alan | Zorunlu | Açıklama |
+|------|---------|----------|
+| Yıl | ✓ | Tebliğ yılı (örn. 2026) |
+| Dönem | ✓ | Yıl içindeki sıra; ilk tebliğ için 1 |
+| R.G. Tarihi | — | Resmi Gazete yayın tarihi |
+| R.G. Sayılı | — | Resmi Gazete sayısı (örn. 33157) |
+| Tebliğ Adı | — | Tebliğin tam adı |
 
-#### 1. Hesap Yılını Girin
+**Dönem Ekle** butonuyla kayıt oluşturulur.
 
-```
-Hesap Yılı: [2025]
-```
+> **Dönem alanı neden var?** Bir yıl içinde birden fazla tebliğ yayınlanabilir. Örneğin 2022'de üç tebliğ çıkmıştır. Bu durumda dönemler `2022/1`, `2022/2`, `2022/3` olarak ayrılır ve listelerde bu biçimde görünür. Bir yılda tek dönem varsa sadece yıl gösterilir.
 
-**Not**: Yıl benzersiz olmalı. Eğer 2025 zaten varsa, güncelleme yapılır.
+> **Resmi Gazete sayısını mutlaka girin.** Bu değer yalnızca rapor künyesinde kullanılmaz; raporların hangi döneme ait olduğunu kesin olarak belirlemekte de kullanılır. Sayı girilmemişse ve o yılda birden fazla dönem varsa raporlar listesinde dönem `Belirsiz` görünebilir.
 
-#### 2. Resmi Gazete Bilgilerini Girin
+### Sınıf ve Grup Fiyatları
 
-```
-Resmi Gazete Tarihi: [20.01.2025]
-Resmi Gazete Sayısı: [33000]
-Tebliğ Adı: [2025 Yılı Yapı Yaklaşık Birim Maliyetleri]  (opsiyonel)
-```
+Dönem listesinden bir kaydın fiyat düzenleme işlemine girildiğinde sınıf/grup fiyat tablosu açılır. Her yapı sınıfı (1-5) ve grubu (A, B, C, D) için metrekare birim fiyatı girilir.
 
-#### 3. Yapı Sınıfı Fiyatlarını Girin
+**Tüm Grupları Kaydet** ile değişiklikler tek seferde yazılır.
 
-```
-1. Sınıf: [25000]
-2. Sınıf: [22000]
-3. Sınıf: [19500]
-4. Sınıf: [17000]
-5. Sınıf: [14500]
-6. Sınıf: [12000]
-7. Sınıf: [9000]
-```
+> Bir sınıf/grup için fiyat girilmemişse, o sınıfa sahip yapılarda birim fiyat otomatik gelmez. Dönem kopyalama sırasında da "fiyat tanımlı değil" uyarısı alırsınız.
 
-**İpucu**: Resmi Gazete'de yayınlanan fiyatları doğrudan kopyalayın.
+Birim fiyat verisinin ayrıntılı yönetimi ve toplu giriş için [BIRIM_FIYAT_YONETIMI.md](./BIRIM_FIYAT_YONETIMI.md) rehberine bakın.
 
-#### 4. Kaydet Butonuna Basın
+### Dönem Listesi
 
-```
-[💾 Kaydet / Güncelle]
-```
-
-#### 5. Başarı Mesajı
-
-```
-✅ 2025 yılı başarıyla eklendi!
-```
-
-Form otomatik temizlenir ve tablo güncellenir.
+| Sütun | Açıklama |
+|-------|----------|
+| ID | Kayıt numarası |
+| Yıl/Dönem | Dönem etiketi |
+| R.G. Tarihi / Sayılı | Resmi Gazete künyesi |
+| Tebliğ Adı | Tebliğin adı |
+| Durum | Aktif / pasif |
+| İşlemler | Fiyat düzenleme, düzenleme, pasife alma |
 
 ---
 
-## 🔄 Fiyat Güncelleme
+## Raportörler
 
-### Mevcut Yılı Düzenleme
+Raporları imzalayan kişilerin tanımlandığı sekmedir.
 
-#### Yöntem 1: Düzenle Butonu
+| Alan | Açıklama |
+|------|----------|
+| Adı | Raportörün adı |
+| Soyadı | Raportörün soyadı |
+| Ünvanı | Listeden seçilir veya elle yazılır |
 
-1. Kayıtlı fiyatlar tablosunda düzenlemek istediğiniz yılı bulun
-2. **[✏️ Düzenle]** butonuna tıklayın
-3. Form otomatik doldurulur
-4. Değiştirmek istediğiniz alanları düzenleyin
-5. **[💾 Kaydet / Güncelle]** butonuna basın
+### Ünvan Listesi
 
-```
-📋 Tabloda:
-2024  |  15.01.2024  |  32768  |  22,500₺  |  ...  |  [✏️ Düzenle] [🗑️ Sil]
-                                                          ↑
-                                                    Tıklayın
-↓
-📝 Form doldurulur:
-Hesap Yılı: [2024] (readonly - değiştirilemez)
-R.G. Tarihi: [15.01.2024]
-1. Sınıf: [22500]  ← Düzenleyin
-2. Sınıf: [20000]
-...
-[💾 Kaydet / Güncelle]  ← Tıklayın
-```
+Ünvanlar kategorilere ayrılmıştır:
 
-#### Yöntem 2: Aynı Yılı Yeniden Girme
+| Kategori | Örnekler |
+|----------|----------|
+| Mühendislik | İnşaat Mühendisi, Makine Mühendisi, Elektrik-Elektronik Mühendisi, Çevre Mühendisi, Jeofizik Mühendisi |
+| İdari | Müdür, Şef, Memur |
+| Teknik | Tekniker, Teknisyen, Teknik Ressam |
+| Diğer | Mimar, Şehir Plancısı |
 
-Eğer formda mevcut bir yılı yazarsanız:
-- Sistem otomatik güncelleme yapar
-- "Zaten kayıtlı!" uyarısı verir
-- Düzenle butonunu kullanmanızı önerir
+Listede olmayan bir ünvan için **Elle Giriş** seçeneği kullanılır. Mevcut bir kaydı düzenlerken ünvanı listede yoksa form otomatik olarak elle giriş moduna geçer.
+
+Rapor formunda raportör sayısı 1-3 arasında seçilebilir; her raportör için ayrı ad ve ünvan alanı açılır.
 
 ---
 
-## 🗑️ Kayıt Silme
+## Kurumlar
 
-### Soft Delete (Güvenli Silme)
+Rapor talep eden kurumların tanımlandığı sekmedir.
 
-Uygulama **soft delete** kullanır. Veri fiziksel olarak silinmez, sadece pasif hale getirilir.
+| Alan | Açıklama |
+|------|----------|
+| Kurum Adı | Ana kurum (örn. Milli Emlak Genel Müdürlüğü) |
+| Alt Kurum | Bağlı birim (örn. Samsun Emlak Müdürlüğü) |
 
-#### Silme Adımları
-
-1. Tabloda silmek istediğiniz yılı bulun
-2. **[🗑️ Sil]** butonuna tıklayın
-3. Onay mesajı görünür:
-
-```
-⚠️ 2023 yılına ait birim fiyatları silmek istediğinize emin misiniz?
-
-Bu işlem geri alınamaz!
-
-[İptal] [Evet, Sil]
-```
-
-4. **[Evet, Sil]** butonuna basın
-5. Başarı mesajı:
-
-```
-✅ 2023 yılı başarıyla silindi!
-```
-
-### Silinen Veriler Nerede?
-
-Veriler `birimFiyatlar` tablosunda kalır ama `aktif = 0` olur.
-
-```sql
--- Silinen kayıtları görmek için:
-SELECT * FROM birimFiyatlar WHERE aktif = 0;
-
--- Geri getirmek için (SQL ile):
-UPDATE birimFiyatlar SET aktif = 1 WHERE yil = 2023;
-```
+Bu ikili, rapor formundaki **İlgili Kurum** alanını besler ve Word çıktısında rapor künyesinde yer alır.
 
 ---
 
-## 🗄️ Veritabanı Yapısı
+## İl / İlçe
 
-### birimFiyatlar Tablosu
+Arsa Bilgileri sekmesindeki il ve ilçe listelerini yönetir.
 
-```sql
-CREATE TABLE birimFiyatlar (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    yil INTEGER NOT NULL UNIQUE,           -- Hesap yılı
-    resmiGazeteTarih TEXT,                 -- R.G. tarihi (YYYY-MM-DD)
-    resmiGazeteSayili TEXT,                -- R.G. sayısı
-    tebligAdi TEXT,                        -- Açıklama
-    sinif1 REAL,                           -- 1. Sınıf fiyat (TL/m²)
-    sinif2 REAL,                           -- 2. Sınıf fiyat
-    sinif3 REAL,                           -- 3. Sınıf fiyat
-    sinif4 REAL,                           -- 4. Sınıf fiyat
-    sinif5 REAL,                           -- 5. Sınıf fiyat
-    sinif6 REAL,                           -- 6. Sınıf fiyat
-    sinif7 REAL,                           -- 7. Sınıf fiyat
-    olusturmaTarihi TEXT DEFAULT (datetime('now','localtime')),
-    guncellemeTarihi TEXT DEFAULT (datetime('now','localtime')),
-    aktif INTEGER DEFAULT 1                 -- 1: Aktif, 0: Silinmiş
-);
-```
+### İl ve İlçelerini Yükle
 
-### Örnek Kayıt
+**İl Seçin** listesinden bir il seçip **İli ve İlçelerini Yükle** butonuna basıldığında, il ve ona bağlı tüm ilçeler paket veriden (`sehirler.json` / `ilceler.json`) veritabanına aktarılır.
 
-```sql
-INSERT INTO birimFiyatlar (
-    yil, resmiGazeteTarih, resmiGazeteSayili, tebligAdi,
-    sinif1, sinif2, sinif3, sinif4, sinif5, sinif6, sinif7
-) VALUES (
-    2024, '2024-01-15', '32768', '2024 Yılı Yapı Yaklaşık Birim Maliyetleri',
-    22500, 20000, 17500, 15000, 12500, 10000, 7500
-);
-```
+### Elle Düzenleme
+
+Yüklenen il ve ilçeler üzerinde ekleme, düzenleme ve pasife alma yapılabilir. Yeni kurulan veya adı değişen ilçeler bu şekilde eklenir.
+
+### Varsayılan İl
+
+Bir il varsayılan olarak işaretlendiğinde, rapor formlarında önceden seçili gelir.
+
+> İlçe listesi rapor formunda seçili ile göre filtrelenir. Bir ilçe görünmüyorsa önce bağlı olduğu ilin yüklü ve aktif olduğunu kontrol edin.
 
 ---
 
-## 🔄 Otomatik Doldurma Sistemi
+## PID Oranları
 
-### Ana Formda Kullanım
+Proje Bedeli modülünün hizmet bedeli hesabında kullanılan oran tablosudur.
+
+### Tablo Yapısı
+
+Satırlar yapı yaklaşık maliyeti aralıklarını (m² veya tutar bandı), sütunlar hizmet sınıflarını (1-5) temsil eder:
 
 ```
-Kullanıcı Akışı:
-1. Genel Bilgiler → Hesap Yılı: [2024]
-2. Yapı Bilgileri → Yapı Sınıfı: [3. Sınıf]
-   ↓
-   ⚡ Sistem veritabanından çeker:
-   ├─ Birim Fiyat: 17,500 TL/m²
-   ├─ R.G. Tarihi: 15.01.2024
-   └─ R.G. Sayısı: 32768
+   m²        | 1. Sınıf | 2. Sınıf | 3. Sınıf | 4. Sınıf | 5. Sınıf
+─────────────┼──────────┼──────────┼──────────┼──────────┼──────────
+   ...       |   ...    |   ...    |   ...    |   ...    |   ...
 ```
 
-### Teknik Akış
+Hücrelere doğrudan yazılarak düzenlenir; **Tüm Değişiklikleri Kaydet** ile toplu kaydedilir. **Yenile** butonu tabloyu veritabanından yeniden yükler.
 
-```javascript
-// 1. Kullanıcı hesap yılı ve yapı sınıfı seçer
-onChange() → updateBirimFiyat()
+> Proje Bedeli hesabında alan ve hizmet sınıfı verildiğinde bu tablodan ilgili oran bulunur. Bir aralık için oran tanımlı değilse o branşın hesabı yapılamaz.
 
-// 2. Veritabanından sorgu
-loadBirimFiyatFromDB(yil) → db.get(SELECT * FROM birimFiyatlar WHERE yil = ? AND aktif = 1)
+---
 
-// 3. Cache'e kaydet (hızlı erişim)
-birimFiyatCache[yil] = data
+## Sorun Giderme
 
-// 4. Forma doldur
-document.getElementById('birimFiyat').value = data.sinif3
-document.getElementById('resmiGazeteTarih').value = data.resmiGazeteTarih
+### Formda birim fiyat otomatik gelmiyor
+
+1. Rapor formunda hesap dönemi seçili mi?
+2. Yapı sınıfı **ve** grubu birlikte seçili mi?
+3. Panelde o dönemin fiyat tablosunda ilgili sınıf/grup dolu mu?
+
+### Yeni eklediğim kurum/raportör listede görünmüyor
+
+Sayfayı terk edip tekrar girin. Listeler sayfa açılışında yüklenir.
+
+### İlçe listesi boş
+
+İl / İlçe sekmesinden ilgili ili yükleyin. Yükleme yapılmamış illerin ilçeleri veritabanında bulunmaz.
+
+### Dönemi sildim, eski raporlar ne olacak?
+
+Dönemler kalıcı olarak silinmez, pasife alınır. Eski raporlar dönem bilgilerini kendi kayıtlarında da tuttuğu için etkilenmez; ancak pasif dönem yeni raporlarda ve dönem kopyalama listesinde görünmez.
+
+### Fiyat girdim ama eski raporlar değişmedi
+
+Bu beklenen davranıştır. Raporlar kaydedildikleri andaki değerleri saklar. Bir raporu güncel fiyatlarla yeniden değerlemek için **Farklı Döneme Kopyala** özelliğini kullanın.
+
+---
+
+## İyi Pratikler
+
+### Yeni Tebliğ Yayınlandığında
+
+1. Önce dönem kaydını açın (yıl, dönem, R.G. tarihi ve sayısı, tebliğ adı)
+2. Sınıf/grup fiyatlarını eksiksiz girin
+3. Bir test raporu oluşturup birim fiyatın doğru geldiğini kontrol edin
+
+### Resmi Gazete Künyesi
+
+R.G. sayısını her dönemde doldurun. Bu alan raporların dönemle eşleştirilmesinde birincil anahtardır.
+
+### Silme Yerine Pasife Alma
+
+Hatalı bir kaydı silmek yerine pasife almak, eski raporlarla bağı korur. Bu nedenle panel varsayılan olarak pasife alma kullanır.
+
+### Yedekleme
+
+Tanım verilerini güncellemeden önce `raporlar.db` dosyasının bir kopyasını alın:
+
+```powershell
+Copy-Item raporlar.db "yedek/raporlar_$(Get-Date -Format 'yyyyMMdd').db"
 ```
 
 ---
 
-## 🐛 Sorun Giderme
-
-### Sorun 1: Admin paneli açılmıyor
-
-**Çözüm**:
-1. Uygulamayı yeniden başlatın
-2. Console'da hata kontrolü: `F12` → Console
-3. `show-admin` IPC event'inin tanımlı olduğundan emin olun
-
-### Sorun 2: Kayıt eklenmiyor
-
-**Hata**: "UNIQUE constraint failed: birimFiyatlar.yil"
-
-**Neden**: Bu yıl zaten kayıtlı
-
-**Çözüm**: 
-- Düzenle butonunu kullanın
-- Veya farklı bir yıl girin
-
-### Sorun 3: Tablo görünmüyor
-
-**Çözüm**:
-1. Veritabanında kayıt var mı kontrol edin:
-```bash
-sqlite3 raporlar.db "SELECT * FROM birimFiyatlar WHERE aktif = 1;"
-```
-
-2. Eğer boşsa, örnek veri ekleyin:
-   - Admin panelinden yeni kayıt ekleyin
-   - Veya uygulamayı ilk başlatın (otomatik 2024 ve 2023 eklenir)
-
-### Sorun 4: Birim fiyat formda otomatik doldurulmuyor
-
-**Debug Adımları**:
-
-1. Console kontrolü (`F12`):
-```javascript
-// Veritabanında kayıt var mı?
-db.all("SELECT * FROM birimFiyatlar WHERE aktif = 1", [], (e, r) => console.log(r))
-
-// Cache'de var mı?
-birimFiyatCache
-```
-
-2. Yıl doğru girildi mi?
-   - "Hesap Yılı" alanına tam sayı girin (2024)
-   - "Yapı Sınıfı" seçimi yapıldı mı?
-
-3. Veritabanı bağlantısı var mı?
-```javascript
-db.get("SELECT COUNT(*) as count FROM birimFiyatlar", [], (e, r) => console.log('Kayıt sayısı:', r.count))
-```
-
-### Sorun 5: Güncelleme çalışmıyor
-
-**Çözüm**:
-1. Düzenleme modundan emin olun (form başlığında bilgi görünür)
-2. Yıl alanı `readonly` olmalı (düzenle modunda)
-3. Formu temizleyip tekrar düzenle butonuna basın
-
----
-
-## 💡 İpuçları ve Best Practices
-
-### 1. Resmi Gazete Kontrolü
-
-Fiyatları eklerken mutlaka Resmi Gazete'den doğrulayın:
-- Tarih doğru mu?
-- Sayı numarası doğru mu?
-- Fiyatlar tutarlı mı?
-
-### 2. Fiyat Tutarlılığı
-
-Yapı sınıfı fiyatları mantıklı sırada olmalı:
-```
-1. Sınıf (En yüksek) > 2. Sınıf > ... > 7. Sınıf (En düşük)
-
-Örnek:
-25000 > 22000 > 19500 > 17000 > 14500 > 12000 > 9000  ✅
-25000 > 30000 > 15000 (Mantıksız sıralama)           ❌
-```
-
-### 3. Yedekleme
-
-Önemli değişiklikler öncesi yedekleme yapın:
-```bash
-copy raporlar.db raporlar_backup_20241026.db
-```
-
-### 4. Test Edin
-
-Yeni yıl ekledikten sonra:
-1. Ana forma gidin
-2. Hesap yılını seçin
-3. Yapı sınıfı seçin
-4. Birim fiyatın doğru geldiğini kontrol edin
-
-### 5. Toplu Güncelleme
-
-Birden fazla yılı güncelleyecekseniz:
-- Her yıl için tek tek düzenle
-- Veya SQL ile toplu güncelleme:
-```sql
-UPDATE birimFiyatlar 
-SET sinif1 = sinif1 * 1.10  -- %10 artış
-WHERE yil IN (2022, 2023, 2024);
-```
-
----
-
-## 📊 Örnek Kullanım Senaryoları
-
-### Senaryo 1: Yeni Yıl Tebliği Yayınlandı
-
-**Durum**: 2025 yılı için yeni tebliğ yayınlandı
-
-**Adımlar**:
-1. Admin panelini açın
-2. Hesap Yılı: `2025`
-3. R.G. Tarihi: `20.01.2025`
-4. R.G. Sayısı: `33000`
-5. Tüm sınıf fiyatlarını girin
-6. Kaydet
-
-**Sonuç**: Artık formda 2025 seçildiğinde fiyatlar otomatik gelir.
-
----
-
-### Senaryo 2: Fiyat Revizyonu
-
-**Durum**: 2024 yılı ortasında fiyatlar güncellendi
-
-**Adımlar**:
-1. Admin panelinde 2024'ü bulun
-2. Düzenle butonuna basın
-3. Sadece değişen fiyatları güncelleyin
-4. Kaydet
-
-**Sonuç**: Mevcut raporlar eskisi gibi, yeni raporlar güncel fiyatla.
-
----
-
-### Senaryo 3: Yanlış Veri Girildi
-
-**Durum**: 2024 fiyatlarında hata var
-
-**Adımlar**:
-1. Düzenle butonuna basın
-2. Yanlış alanı düzeltin
-3. Kaydet
-
-**Not**: Geçmiş raporlar etkilenmez (onlar kendi fiyatlarını saklar).
-
----
-
-## 📞 Destek
-
-Admin paneli ile ilgili sorunlar için:
-1. Console log'larını kontrol edin (`F12`)
-2. Veritabanını kontrol edin (`sqlite3 raporlar.db`)
-3. Bu dokümantasyonu tekrar okuyun
-4. Destek ekibiyle iletişime geçin
-
----
-
-## 🔮 Gelecek Özellikler
-
-Planlanan iyileştirmeler:
-- [ ] Toplu veri import (Excel/CSV)
-- [ ] Fiyat geçmişi grafiği
-- [ ] Otomatik yedekleme
-- [ ] Kullanıcı rolleri (admin/user)
-- [ ] Değişiklik log'u
-- [ ] Export fonksiyonu
-
----
-
-**Son Güncelleme**: 2024-10-26
-
+*Son Güncelleme: 25.08.2026 | Versiyon 2.2.0*

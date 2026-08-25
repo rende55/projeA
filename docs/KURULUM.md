@@ -1,6 +1,6 @@
 # Kurulum ve Yapılandırma Rehberi
 
-## 📋 İçindekiler
+## İçindekiler
 
 - [Sistem Gereksinimleri](#sistem-gereksinimleri)
 - [Kurulum Adımları](#kurulum-adımları)
@@ -10,7 +10,7 @@
 
 ---
 
-## 💻 Sistem Gereksinimleri
+## Sistem Gereksinimleri
 
 ### Minimum Gereksinimler
 
@@ -42,7 +42,7 @@
 
 ---
 
-## 🚀 Kurulum Adımları
+## Kurulum Adımları
 
 ### 1. Node.js Kurulumu
 
@@ -92,14 +92,14 @@ npm --version
 git clone [repository-url]
 
 # Proje dizinine gidin
-cd kitar
+cd projeA
 ```
 
 #### ZIP ile
 ```bash
 # Projeyi ZIP olarak indirip açın
 # Terminal/CMD ile proje dizinine gidin
-cd path/to/kitar
+cd path/to/projeA
 ```
 
 ### 4. Bağımlılıkları Yükleme
@@ -145,7 +145,7 @@ electron .
 
 ---
 
-## ⚙️ Yapılandırma
+## Yapılandırma
 
 ### Package.json
 
@@ -154,7 +154,7 @@ electron .
 ```json
 {
   "name": "Kitar",
-  "version": "1.0.0",
+  "version": "2.2.0",
   "main": "main.js",
   "scripts": {
     "start": "electron ."
@@ -166,12 +166,12 @@ electron .
 
 **Uygulama Adı**
 ```json
-"name": "KitarYeniAd"
+"name": "proje-a"
 ```
 
 **Versiyon**
 ```json
-"version": "2.0.0"
+"version": "2.2.0"
 ```
 
 **Ek Scriptler Ekleme**
@@ -206,7 +206,7 @@ const outputDir = path.join(__dirname, 'custom_output_folder');
 
 ---
 
-## 🐛 Sorun Giderme
+## Sorun Giderme
 
 ### 1. "Cannot find module" Hatası
 
@@ -290,7 +290,7 @@ killall electron
 
 ---
 
-## 🔄 Güncelleme
+## Güncelleme
 
 ### Uygulama Güncellemeleri
 
@@ -330,71 +330,70 @@ npx electron-rebuild
 
 ---
 
-## 📦 Production Build (Gelecek Özellik)
+## Production Build
 
-### Electron Builder Kurulumu
-
-```bash
-npm install --save-dev electron-builder
-```
-
-### Build Konfigürasyonu
-
-`package.json` içine ekleyin:
-
-```json
-"build": {
-  "appId": "com.kitar.app",
-  "productName": "Kıymet Takdir Raporu",
-  "directories": {
-    "output": "dist"
-  },
-  "win": {
-    "target": "nsis",
-    "icon": "assets/icon.ico"
-  },
-  "mac": {
-    "target": "dmg",
-    "icon": "assets/icon.icns"
-  },
-  "linux": {
-    "target": "AppImage",
-    "icon": "assets/icon.png"
-  }
-}
-```
+Uygulama portable Windows exe olarak paketlenir. Build sistemi kurulu ve çalışır durumdadır.
 
 ### Build Komutları
 
 ```bash
-# Windows için
-npm run build:win
+# Yalnızca obfuscation - build-temp/ klasörü hazırlanır
+npm run obfuscate
 
-# macOS için
-npm run build:mac
-
-# Linux için
-npm run build:linux
-
-# Tüm platformlar
+# Portable exe üretimi (obfuscation + electron-builder)
 npm run build
+
+# Paketlenmemiş klasör çıktısı (hata ayıklama için)
+npm run build:dir
 ```
+
+Çıktı `dist/` klasörüne `ProjeA-<sürüm>-Portable.exe` adıyla yazılır.
+
+### Build Süreci
+
+`build.js` sırasıyla şunları yapar:
+
+1. `build-temp/` klasörünü temizler
+2. Kaynak dosyaları kopyalar (node_modules, .git, dist hariç)
+3. `package.json`'dan devDependencies'i siler, electron sürümünü sabitler
+4. Ana projedeki `node_modules` için junction oluşturur (yeniden derleme yapılmaz)
+5. Tohum veritabanını `build-temp/extra/raporlar.db` olarak hazırlar
+6. JS dosyalarını obfuscate eder:
+   - Main process (`main.js`) - `target: node`
+   - Renderer dosyaları - `target: browser-no-eval`
+
+> **Önemli**: Yeni bir renderer script'i eklediğinizde `build.js` içindeki `RENDERER_JS_FILES` listesine de eklemelisiniz. Aksi halde dosya karartılmadan paketlenir.
+
+### Tohum Veritabanı
+
+Build'e gömülecek veritabanı şu sırayla seçilir:
+
+| Kaynak | Ne zaman |
+|--------|----------|
+| `raporlar_build.db` | Varsa tercih edilir (kasıtlı temizlenmiş sürüm) |
+| `raporlar.db` | Tohum DB yoksa veya `--use-dev-db` verildiyse |
+
+Seçilen dosya `extraResources` ile ASAR dışında, exe'nin yanına yerleştirilir. Uygulama ilk açılışta kalıcı klasörde veritabanı yoksa bu dosyayı oraya kopyalar.
+
+> **Encoding uyarısı**: Tohum veritabanını PowerShell üzerinden `sqlite3` komutuyla güncellemeyin; Türkçe karakterler Windows-1254 olarak yazılabilir. Güncellemeleri Node.js script'i ile yapın.
+
+### Portable Sürüm ve Veritabanı Konumu
+
+Portable exe çalışırken kendini geçici bir klasöre açar. Veritabanı oraya değil, kullanıcının exe'yi çalıştırdığı kalıcı klasöre yazılır (`PORTABLE_EXECUTABLE_DIR`). Uygulamayı başka bir yere taşırken `raporlar.db` dosyasını da yanında taşıyın.
 
 ---
 
-## 🧪 Test Kurulumu (Gelecek Özellik)
+## Test
+
+Projede otomatik test altyapısı henüz kurulmamıştır. Hesap mantığı saf fonksiyonlar hâlinde ayrıldığı için (`metraj-hesap.js`, `donem-servisi.js`) bu dosyalar arayüz açmadan Node ile doğrudan çalıştırılıp doğrulanabilir:
 
 ```bash
-# Jest test framework
-npm install --save-dev jest
-
-# Spectron (Electron test framework)
-npm install --save-dev spectron
+node -e "const h=require('./modules/hesaplama/scripts/metraj-hesap'); console.log(h.hesaplaBosluk({tip:'pencere',en:1.5,boy:1.2,adet:2,gommeDerinligi:0.05}));"
 ```
 
 ---
 
-## 📝 Kurulum Sonrası Kontrol Listesi
+## Kurulum Sonrası Kontrol Listesi
 
 - [ ] Node.js ve npm kurulu mu?
 - [ ] `npm install` başarılı mı?
@@ -407,7 +406,7 @@ npm install --save-dev spectron
 
 ---
 
-## 🆘 Destek
+## Destek
 
 Kurulum sırasında sorun yaşarsanız:
 
