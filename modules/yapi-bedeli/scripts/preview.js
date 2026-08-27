@@ -17,18 +17,22 @@ document.addEventListener('DOMContentLoaded', () => {
 ipcRenderer.on('preview-content', (event, data) => {
     console.log('📄 İçerik alındı');
     
-    if (data.content) {
+    // content: Word çıktısının HTML karşılığı (rapor-onizleme.js)
+    // htmlContent: eski editör DOM'u - geriye uyumluluk için hâlâ destekleniyor
+    const icerik = data.content || data.htmlContent;
+
+    if (icerik) {
         const a4Page = document.getElementById('a4Page');
-        a4Page.innerHTML = data.content;
-        
+        a4Page.innerHTML = icerik;
+
         // Contenteditable'ları kaldır (sadece görüntüleme)
         const editables = a4Page.querySelectorAll('[contenteditable]');
         editables.forEach(el => {
             el.removeAttribute('contenteditable');
         });
-        
+
         // Section label'ları gizle
-        const labels = a4Page.querySelectorAll('.section-label');
+        const labels = a4Page.querySelectorAll('.section-label, .ed-section-label');
         labels.forEach(el => {
             el.style.display = 'none';
         });

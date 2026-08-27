@@ -9,6 +9,7 @@ const path = require('path');
 const { getDbPath } = require('../../../shared/scripts/db-helper');
 const donemKopyala = require('./donem-kopyala');
 const donemServisi = require('./donem-servisi');
+const { raporOnizlemeHTML } = require('./rapor-onizleme');
 
 // Veritabanı bağlantısı
 const dbPath = getDbPath();
@@ -1149,11 +1150,22 @@ function tumunuSec() { document.execCommand('selectAll'); }
 
 function onIzlemeAc() {
     if (!currentRaporData) return;
-    
-    const editorContent = document.getElementById('ed-editorContent');
+
+    // Ön izleme editör DOM'unu değil, Word çıktısının HTML karşılığını gösterir.
+    // Word export ile aynı veri seti kullanılır ki ön izleme ile çıktı ayrışmasın:
+    // kaydedilmemiş değişiklikler editörden, malik/yuzolcumu gibi editörde
+    // bulunmayan alanlar rapor kaydından gelir.
+    let onizlemeVerisi = Object.assign({}, currentRaporData, { fotograflar: fotograflar || [] });
+    try {
+        const guncelVeri = collectEditorData();
+        Object.assign(onizlemeVerisi, guncelVeri, { yapiBedeli: guncelVeri.toplamYapiBedeli });
+    } catch (e) {
+        console.error('Ön izleme verisi toplanamadı, kayıtlı veri kullanılıyor:', e);
+    }
+
     ipcRenderer.send('open-preview', {
         raporId: currentRaporId,
-        htmlContent: editorContent?.innerHTML || '',
+        content: raporOnizlemeHTML(onizlemeVerisi),
         raporData: currentRaporData
     });
 }
