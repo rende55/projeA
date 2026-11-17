@@ -28,6 +28,30 @@ let fotograflar = []; // Fotoğraf listesi
 // Sınıf/grup veya yaş/teknik değişince otomatik güncelleme için kullanılır.
 let fiyatTablosu = new Map();
 let yipranmaCache = [];
+let kurumlarCache = [];
+let ilcelerCache = [];
+let raportorlerCache = [];
+
+/**
+ * Hücre veya form elemanından (select/input ya da contenteditable) metin değerini oku.
+ */
+function degerAl(el) {
+    if (!el) return '';
+    if (el.tagName === 'SELECT' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+        return (el.value || '').trim();
+    }
+    const ic = el.querySelector && el.querySelector('select, input, textarea');
+    if (ic) return (ic.value || '').trim();
+    return (el.textContent || '').trim();
+}
+
+function htmlKacir(metin) {
+    return String(metin ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+}
 
 /**
  * Sayfa yüklendiğinde çağrılır
@@ -39,16 +63,16 @@ async function onLoad(container, data, navigation) {
     // Veritabanı bağlantısı
     db = new sqlite3.Database(dbPath);
     
+    // Seçim listeleri için yardımcı verileri yükle
+    await yardimciVerileriYukle();
+
     // Rapor ID'sini al
     if (data && data.raporId) {
         currentRaporId = data.raporId;
         document.getElementById('ed-raporId').textContent = currentRaporId;
         
-        // Raporu yükle
+        // Raporu ve dönem verilerini yükle, ardından içeriği render et
         await loadRapor(currentRaporId);
-
-        // Otomatik fiyat/yıpranma güncellemesi için dönem verilerini yükle
-        await donemVerileriniYukle(currentRaporData);
     }
     
     // Event listener'ları kur
@@ -144,11 +168,63 @@ function handleKeyboard(e) {
 }
 
 /**
+ * Seçim listeleri için kurum, ilçe ve raportör önbelleklerini yükle
+ */
+async function yardimciVerileriYukle() {
+    // 1. Kurumlar
+    try {
+        kurumlarCache = await new Promise((resolve) => {
+            db.all(`SELECT * FROM kurumlar WHERE aktif = 1 ORDER BY kurumAdi, altKurum`, [], (err, rows) => {
+                if (err || !rows) { resolve([]); return; }
+                resolve(rows.map(r => r.altKurum ? `${r.kurumAdi} (${r.altKurum})` : r.kurumAdi));
+            });
+        });
+    } catch (e) { kurumlarCache = []; }
+
+    // 2. İlçeler
+    try {
+        ilcelerCache = await new Promise((resolve) => {
+            const sql = `
+                SELECT ilceler.ilce_adi
+                FROM ilceler
+                INNER JOIN iller ON ilceler.il_id = iller.id
+                WHERE ilceler.aktif = 1
+                  AND iller.aktif = 1
+                  AND iller.id = (
+                      SELECT id FROM iller
+                      WHERE aktif = 1
+                      ORDER BY varsayilan DESC, id ASC
+                      LIMIT 1
+                  )
+                ORDER BY ilceler.ilce_adi
+            `;
+            db.all(sql, [], (err, rows) => {
+                if (err || !rows) { resolve([]); return; }
+                resolve(rows.map(r => r.ilce_adi));
+            });
+        });
+    } catch (e) { ilcelerCache = []; }
+
+    // 3. Raportörler
+    try {
+        raportorlerCache = await new Promise((resolve) => {
+            db.all(`SELECT * FROM raportorleri WHERE aktif = 1 ORDER BY adi, soyadi`, [], (err, rows) => {
+                if (err || !rows) { resolve([]); return; }
+                resolve(rows.map(r => ({
+                    adSoyad: `${r.adi} ${r.soyadi}`.trim(),
+                    unvan: r.unvani || ''
+                })));
+            });
+        });
+    } catch (e) { raportorlerCache = []; }
+}
+
+/**
  * Raporu yükle
  */
 function loadRapor(id) {
     return new Promise((resolve, reject) => {
-        db.get(`SELECT * FROM raporlar WHERE id = ?`, [id], (err, row) => {
+        db.get(`SELECT * FROM raporlar WHERE id = ?`, [id], async (err, row) => {
             if (err) {
                 console.error('Rapor yüklenemedi:', err);
                 reject(err);
@@ -173,6 +249,9 @@ function loadRapor(id) {
                     console.error('Fotoğraf parse hatası:', e);
                 }
             }
+
+            // Önce dönem verilerini ve yıpranma cetvelini yükle ki seçim listeleri hazır olsun
+            await donemVerileriniYukle(row);
             
             renderRaporIcerigi(row);
             donemSeridiGuncelle(row);
@@ -194,7 +273,35 @@ async function donemVerileriniYukle(rapor) {
     }
 
     fiyatTablosu = new Map();
-    if (!rapor || !rapor.birimFiyatId) {
+    if (!rapor) return;
+
+    // birimFiyatId eksikse Resmi Gazete sayısı veya hesapYili ile dönemi bulmaya çalış
+    if (!rapor.birimFiyatId) {
+        try {
+            const donemler = await donemServisi.listeDonemler(db);
+            let eslesen = null;
+            if (rapor.resmiGazeteSayili) {
+                eslesen = donemler.find(d =>
+                    d.resmiGazeteSayili &&
+                    String(d.resmiGazeteSayili).trim() === String(rapor.resmiGazeteSayili).trim()
+                );
+            }
+            if (!eslesen && rapor.hesapYili) {
+                const yil = parseInt(rapor.hesapYili, 10);
+                if (!isNaN(yil)) {
+                    eslesen = donemler.find(d => d.yil === yil);
+                }
+            }
+            if (eslesen) {
+                rapor.birimFiyatId = eslesen.id;
+                db.run(`UPDATE raporlar SET birimFiyatId = ? WHERE id = ?`, [eslesen.id, rapor.id]);
+            }
+        } catch (e) {
+            console.warn('Dönem otomatik eşleştirilemedi:', e);
+        }
+    }
+
+    if (!rapor.birimFiyatId) {
         console.warn('Raporun birim fiyat dönemi belirsiz; birim fiyat otomatik çekilemeyecek.');
         return;
     }
@@ -208,6 +315,149 @@ async function donemVerileriniYukle(rapor) {
 }
 
 /**
+ * Seçilen yapı sınıfına ait mevcut grupları döndürür.
+ */
+function sinifIcinGruplar(sinif) {
+    const temizSinif = String(sinif == null ? '' : sinif).replace(/[^\d]/g, '').trim();
+    const varsayilan = {
+        '1': ['A', 'B', 'C'],
+        '2': ['A', 'B', 'C', 'D', 'E'],
+        '3': ['A', 'B', 'C', 'D'],
+        '4': ['A', 'B', 'C'],
+        '5': ['A', 'B', 'C', 'D']
+    };
+    if (!temizSinif) return [];
+
+    const bulunanlar = [];
+    if (fiyatTablosu && fiyatTablosu.size > 0) {
+        fiyatTablosu.forEach((_, anahtar) => {
+            const [s, g] = anahtar.split('|');
+            if (s === temizSinif && g && !bulunanlar.includes(g)) {
+                bulunanlar.push(g);
+            }
+        });
+    }
+    bulunanlar.sort();
+    return bulunanlar.length > 0 ? bulunanlar : (varsayilan[temizSinif] || ['A', 'B', 'C', 'D', 'E']);
+}
+
+/**
+ * Yapı Sınıfı <select> HTML üreteci
+ */
+function renderSinifSelect(mevcutSinif, dataField = 'yapiSinifi') {
+    const secili = String(mevcutSinif == null ? '' : mevcutSinif).replace(/[^\d]/g, '').trim();
+    const siniflar = ['1', '2', '3', '4', '5'];
+    return `
+        <select class="ed-cell-select" data-field="${dataField}">
+            <option value="">Seçiniz...</option>
+            ${siniflar.map(s => `<option value="${s}" ${secili === s ? 'selected' : ''}>${s}. Sınıf</option>`).join('')}
+        </select>
+    `;
+}
+
+/**
+ * Yapı Grubu <select> HTML üreteci
+ */
+function renderGrupSelect(mevcutSinif, mevcutGrup, dataField = 'yapiGrubu') {
+    const seciliSinif = String(mevcutSinif == null ? '' : mevcutSinif).replace(/[^\d]/g, '').trim();
+    const seciliGrup = String(mevcutGrup == null ? '' : mevcutGrup).replace(/^grup\s+/i, '').trim().toUpperCase();
+    const gruplar = sinifIcinGruplar(seciliSinif);
+    if (seciliGrup && !gruplar.includes(seciliGrup)) {
+        gruplar.push(seciliGrup);
+    }
+    return `
+        <select class="ed-cell-select" data-field="${dataField}">
+            <option value="">${seciliSinif ? 'Grup Seçiniz...' : 'Önce sınıf seçin...'}</option>
+            ${gruplar.map(g => `<option value="${htmlKacir(g)}" ${seciliGrup === g ? 'selected' : ''}>Grup ${htmlKacir(g)}</option>`).join('')}
+        </select>
+    `;
+}
+
+/**
+ * Yapı Yaşı <select> HTML üreteci (Rapor oluşturma ekranıyla birebir aynı yaş aralıkları)
+ */
+function renderYasSelect(mevcutYas, dataField = 'yapiYasi') {
+    const seciliDeger = donemServisi.normalizeYasSecimDegeri(mevcutYas);
+    return `
+        <select class="ed-cell-select" data-field="${dataField}">
+            <option value="">Seçiniz...</option>
+            ${donemServisi.YAS_SECENEKLERI.map(s =>
+                `<option value="${s.value}" ${seciliDeger === s.value ? 'selected' : ''}>${s.label}</option>`
+            ).join('')}
+        </select>
+    `;
+}
+
+/**
+ * Yapım Tekniği <select> HTML üreteci (Rapor oluşturma ekranıyla birebir aynı yapım teknikleri)
+ */
+function renderTeknikSelect(mevcutTeknik, dataField = 'yapimTeknigi') {
+    const seciliTeknik = donemServisi.normalizeYapimTeknigi(mevcutTeknik);
+    const teknikler = [...donemServisi.YAPIM_TEKNIKLERI];
+    if (seciliTeknik && !teknikler.includes(seciliTeknik)) {
+        teknikler.push(seciliTeknik);
+    }
+    return `
+        <select class="ed-cell-select" data-field="${dataField}">
+            <option value="">Seçiniz...</option>
+            ${teknikler.map(t => `<option value="${htmlKacir(t)}" ${seciliTeknik === t ? 'selected' : ''}>${htmlKacir(t)}</option>`).join('')}
+        </select>
+    `;
+}
+
+/**
+ * İlçe <select> HTML üreteci
+ */
+function renderIlceSelect(mevcutIlce, dataField = 'ilce') {
+    const mevcut = String(mevcutIlce || '').trim();
+    const liste = [...ilcelerCache];
+    const eslesen = liste.find(i => i.toLocaleLowerCase('tr-TR') === mevcut.toLocaleLowerCase('tr-TR'));
+    const seciliDeger = eslesen || mevcut;
+    if (seciliDeger && !eslesen) {
+        liste.unshift(seciliDeger);
+    }
+    return `
+        <select class="ed-cell-select" data-field="${dataField}">
+            <option value="">İlçe Seçiniz...</option>
+            ${liste.map(i => `<option value="${htmlKacir(i)}" ${i === seciliDeger ? 'selected' : ''}>${htmlKacir(i)}</option>`).join('')}
+        </select>
+    `;
+}
+
+/**
+ * İlgili Kurum <select> HTML üreteci
+ */
+function renderKurumSelect(mevcutKurum, dataField = 'ilgiliKurum') {
+    const mevcut = String(mevcutKurum || '').trim();
+    const liste = [...kurumlarCache];
+    if (mevcut && !liste.includes(mevcut)) {
+        liste.unshift(mevcut);
+    }
+    return `
+        <select class="ed-inline-select" data-field="${dataField}">
+            <option value="">Kurum Seçiniz...</option>
+            ${liste.map(k => `<option value="${htmlKacir(k)}" ${k === mevcut ? 'selected' : ''}>${htmlKacir(k)}</option>`).join('')}
+        </select>
+    `;
+}
+
+/**
+ * Satırdaki yapı sınıfı değiştiğinde grup seçeneklerini güncelle
+ */
+function satirGrupSecenekleriniGuncelle(row) {
+    const sinifEl = row.querySelector('[data-field="yapiSinifi"], [data-field^="cp-yapiSinifi-"]');
+    const grupEl = row.querySelector('[data-field="yapiGrubu"], [data-field^="cp-yapiGrubu-"]');
+    if (!sinifEl || !grupEl || grupEl.tagName !== 'SELECT') return;
+
+    const yeniSinif = degerAl(sinifEl);
+    const oncekiGrup = degerAl(grupEl);
+    const gruplar = sinifIcinGruplar(yeniSinif);
+
+    grupEl.innerHTML = `<option value="">${yeniSinif ? 'Grup Seçiniz...' : 'Önce sınıf seçin...'}</option>` +
+        gruplar.map(g => `<option value="${htmlKacir(g)}" ${oncekiGrup === g ? 'selected' : ''}>Grup ${htmlKacir(g)}</option>`).join('');
+}
+
+/**
  * Satırdaki sınıf/grup değişince birim fiyatı raporun döneminden çek.
  * Tekli ve çoklu parsel tablolarının ikisinde de çalışır.
  */
@@ -217,11 +467,11 @@ function birimFiyatOtoGuncelle(row) {
     const fiyatCell = row.querySelector('[data-field*="birimFiyat"]');
     if (!sinifCell || !grupCell || !fiyatCell) return;
 
-    const sinif = sinifCell.textContent.trim();
-    const grup = grupCell.textContent.trim();
+    const sinif = degerAl(sinifCell);
+    const grup = degerAl(grupCell);
     if (!sinif || !grup) return;   // ikisi de girilmeden arama yapma
 
-    const etiket = `${sinif} ${grup.toUpperCase()}`;
+    const etiket = `${sinif}. Sınıf Grup ${grup.toUpperCase()}`;
 
     if (!currentRaporData || !currentRaporData.birimFiyatId) {
         bildir(`Raporun birim fiyat dönemi belirsiz olduğu için ${etiket} fiyatı otomatik çekilemedi.`, 'warning');
@@ -235,7 +485,10 @@ function birimFiyatOtoGuncelle(row) {
     }
 
     const eskiFiyat = parseParaTR(fiyatCell.textContent);
-    if (Math.abs(eskiFiyat - yeniFiyat) < 0.005) return;   // zaten güncel
+    if (Math.abs(eskiFiyat - yeniFiyat) < 0.005) {
+        hesaplaSatir(row);
+        return;
+    }
 
     fiyatCell.textContent = formatPara(yeniFiyat);
     vurgula(fiyatCell);
@@ -248,18 +501,20 @@ function birimFiyatOtoGuncelle(row) {
 
 /**
  * Satırdaki yaş/yapım tekniği değişince yıpranma payını cetvelden çek.
- * Çoklu parsel tablosunda yaş/teknik sütunu olmadığı için orada devreye girmez.
+ * Hem tekli hem çoklu parsel tablosunda çalışır.
  */
 function yipranmaOtoGuncelle(row) {
-    const yasCell = row.querySelector('[data-field="yapiYasi"]');
-    const teknikCell = row.querySelector('[data-field="yapimTeknigi"]');
+    const yasCell = row.querySelector('[data-field="yapiYasi"], [data-field^="cp-yapiYasi-"]');
+    const teknikCell = row.querySelector('[data-field="yapimTeknigi"], [data-field^="cp-yapimTeknigi-"]');
     const yiprCell = row.querySelector('[data-field*="yipranmaPay"]');
     if (!yasCell || !teknikCell || !yiprCell) return;
 
-    const teknik = teknikCell.textContent.trim();
-    const yas = parseInt(yasCell.textContent.trim(), 10);
-    if (!teknik || isNaN(yas)) return;
+    const teknikHam = degerAl(teknikCell);
+    const yasHam = degerAl(yasCell);
+    const yas = donemServisi.cozumleYas(yasHam);
+    if (!teknikHam || isNaN(yas)) return;
 
+    const teknik = donemServisi.normalizeYapimTeknigi(teknikHam);
     const oran = donemServisi.yipranmaBul(yipranmaCache, teknik, yas);
     if (oran === null) {
         bildir(`"${teknik}" için ${yas} yaşına uygun yıpranma oranı bulunamadı. Mevcut oran korundu.`, 'warning');
@@ -267,7 +522,10 @@ function yipranmaOtoGuncelle(row) {
     }
 
     const eskiOran = parseFloat(yiprCell.textContent) || 0;
-    if (eskiOran === oran) return;   // zaten güncel
+    if (eskiOran === oran) {
+        hesaplaSatir(row);
+        return;
+    }
 
     yiprCell.textContent = oran;
     vurgula(yiprCell);
@@ -275,7 +533,9 @@ function yipranmaOtoGuncelle(row) {
     isModified = true;
     updateStatus();
 
-    bildir(`${teknik} / ${yas} yaş: yıpranma payı %${oran} olarak güncellendi.`, 'success');
+    const yasSecenek = donemServisi.YAS_SECENEKLERI.find(s => yas >= s.min && yas <= s.max);
+    const yasEtiket = yasSecenek ? yasSecenek.label : `${yas} yaş`;
+    bildir(`${teknik} (${yasEtiket}): yıpranma payı %${oran} olarak güncellendi.`, 'success');
 }
 
 /**
@@ -346,6 +606,23 @@ function renderTekliParselIcerigi(rapor, container) {
     } catch (e) {
         console.error('Yapılar parse edilemedi:', e);
     }
+
+    // Eski format raporlar için fallback (yapilarJSON yoksa üst düzey sütunlardan al)
+    if ((!Array.isArray(yapilar) || yapilar.length === 0) && (rapor.yapiAdi || rapor.yapiSinifi || rapor.yapiAlani)) {
+        yapilar = [{
+            yapiNo: rapor.yapiNo || '1',
+            yapiAdi: rapor.yapiAdi || '',
+            yapiYasi: rapor.yapiYasi || '',
+            yapiSinifi: rapor.yapiSinifi || '',
+            yapiGrubu: rapor.yapiGrubu || '',
+            yapimTeknigi: rapor.yapimTeknigi || '',
+            yapiAlani: rapor.yapiAlani || 0,
+            birimFiyat: rapor.birimFiyat || 0,
+            eksikImalatOrani: rapor.eksikImalatOrani || 0,
+            yipranmaPay: rapor.yipranmaPay || 0,
+            yapiBedeli: rapor.yapiBedeli || 0
+        }];
+    }
     
     // Toplam yapı bedeli hesapla
     let toplamYapiBedeli = 0;
@@ -368,8 +645,8 @@ function renderTekliParselIcerigi(rapor, container) {
         <div class="ed-editable-section">
             <span class="ed-section-label">Gerekçe</span>
             <div class="ed-editable-field heading" contenteditable="true">Gerekçe:</div>
-            <div class="ed-editable-field paragraph" contenteditable="true" data-field="gerekceMetni">
-                Bu rapor, <span class="ed-inline-edit" data-field="ilgiliKurum" contenteditable="true">${rapor.ilgiliKurum || ''}</span> 
+            <div class="ed-editable-field paragraph" data-field="gerekceMetni">
+                Bu rapor, ${renderKurumSelect(rapor.ilgiliKurum, 'ilgiliKurum')} 
                 <span class="ed-inline-edit" data-field="resmiYaziTarihi" contenteditable="true">${formatTarih(rapor.resmiYaziTarihi)}</span> tarih 
                 <span class="ed-inline-edit" data-field="resmiYaziSayisi" contenteditable="true">${rapor.resmiYaziSayisi || ''}</span> sayılı yazısına istinaden hazırlanmıştır.
             </div>
@@ -401,7 +678,7 @@ function renderTekliParselIcerigi(rapor, container) {
                 <tbody>
                     <tr>
                         <td contenteditable="true" data-field="ili">${rapor.ili || 'Samsun'}</td>
-                        <td contenteditable="true" data-field="ilce">${rapor.ilce || ''}</td>
+                        <td>${renderIlceSelect(rapor.ilce, 'ilce')}</td>
                         <td contenteditable="true" data-field="mahalle">${rapor.mahalle || ''}</td>
                         <td contenteditable="true" data-field="ada">${rapor.ada || ''}</td>
                         <td contenteditable="true" data-field="parsel">${rapor.parsel || ''}</td>
@@ -412,7 +689,7 @@ function renderTekliParselIcerigi(rapor, container) {
         
         <!-- Yapı Bilgileri -->
         <div class="ed-editable-section">
-            <span class="ed-section-label">Yapı Bilgileri — Sınıf/grup değişince birim fiyat, yaş/teknik değişince yıpranma payı dönemden otomatik çekilir</span>
+            <span class="ed-section-label">Yapı Bilgileri — Sınıf/grup seçilince birim fiyat, yaş/teknik seçilince yıpranma payı dönemden otomatik çekilir</span>
             <table class="ed-editor-table" id="ed-yapilarTable">
                 <thead>
                     <tr>
@@ -435,14 +712,14 @@ function renderTekliParselIcerigi(rapor, container) {
                             <tr data-yapi-index="${index}">
                                 <td contenteditable="true" data-field="yapiNo">${yapi.yapiNo || ''}</td>
                                 <td contenteditable="true" data-field="yapiAdi">${yapi.yapiAdi || ''}</td>
-                                <td contenteditable="true" data-field="yapiSinifi">${yapi.yapiSinifi || ''}</td>
-                                <td contenteditable="true" data-field="yapiGrubu">${yapi.yapiGrubu || ''}</td>
+                                <td>${renderSinifSelect(yapi.yapiSinifi, 'yapiSinifi')}</td>
+                                <td>${renderGrupSelect(yapi.yapiSinifi, yapi.yapiGrubu, 'yapiGrubu')}</td>
                                 <td contenteditable="true" data-field="birimFiyat" class="ed-numeric">${formatPara(yapi.birimFiyat)}</td>
                                 <td contenteditable="true" data-field="yapiAlani" class="ed-numeric">${parseFloat(yapi.yapiAlani || 0).toFixed(2)}</td>
-                                <td contenteditable="true" data-field="yapiYasi">${yapi.yapiYasi || ''}</td>
-                                <td contenteditable="true" data-field="yapimTeknigi">${yapi.yapimTeknigi || ''}</td>
-                                <td contenteditable="true" data-field="yipranmaPay" class="ed-numeric">${yapi.yipranmaPay || '0'}</td>
-                                <td contenteditable="true" data-field="eksikImalatOrani" class="ed-numeric">${yapi.eksikImalatOrani || '0'}</td>
+                                <td>${renderYasSelect(yapi.yapiYasi, 'yapiYasi')}</td>
+                                <td>${renderTeknikSelect(yapi.yapimTeknigi, 'yapimTeknigi')}</td>
+                                <td contenteditable="true" data-field="yipranmaPay" class="ed-numeric">${yapi.yipranmaPay ?? '0'}</td>
+                                <td contenteditable="true" data-field="eksikImalatOrani" class="ed-numeric">${yapi.eksikImalatOrani ?? '0'}</td>
                                 <td data-field="yapiBedeli" class="ed-calculated">${formatPara(yapi.yapiBedeli)}</td>
                             </tr>
                         `;
@@ -542,7 +819,7 @@ function renderCokluParselIcerigi(rapor, container) {
     const asgariLevazimHesapla = rapor.asgariLevazimHesapla === 1;
     const levazimBedeli = asgariLevazimHesapla ? toplamYapiBedeli * 0.7 * 0.75 : 0;
     
-    // 10 sütunlu yapı tablosu: Ada/Parsel/Y.No/Yapı Adı/Sınıfı/B.Fiyat/Alan/Yıpr./Eks.İm./Yapı Bedeli
+    // Yapı tablosu: Ada/Parsel/Y.No/Yapı Adı/Sınıf/Grup/B.Fiyat/Alan/Yaş/Teknik/Yıpr./Eks.İm./Yapı Bedeli
     let yapiSatirlari = '';
     let genelToplam = 0;
     
@@ -560,12 +837,14 @@ function renderCokluParselIcerigi(rapor, container) {
                     <td contenteditable="true" data-field="cp-yparsel-${pIdx}-${yIdx}">${yIdx === 0 ? (parsel.parsel || '') : ''}</td>
                     <td contenteditable="true" data-field="cp-yapiNo-${pIdx}-${yIdx}">${yapi.yapiNo || ''}</td>
                     <td contenteditable="true" data-field="cp-yapiAdi-${pIdx}-${yIdx}">${yapi.yapiAdi || ''}</td>
-                    <td contenteditable="true" data-field="cp-yapiSinifi-${pIdx}-${yIdx}">${yapi.yapiSinifi || ''}</td>
-                    <td contenteditable="true" data-field="cp-yapiGrubu-${pIdx}-${yIdx}">${yapi.yapiGrubu || ''}</td>
+                    <td>${renderSinifSelect(yapi.yapiSinifi, `cp-yapiSinifi-${pIdx}-${yIdx}`)}</td>
+                    <td>${renderGrupSelect(yapi.yapiSinifi, yapi.yapiGrubu, `cp-yapiGrubu-${pIdx}-${yIdx}`)}</td>
                     <td contenteditable="true" data-field="cp-birimFiyat-${pIdx}-${yIdx}" class="ed-numeric">${formatPara(yapi.birimFiyat)}</td>
                     <td contenteditable="true" data-field="cp-yapiAlani-${pIdx}-${yIdx}" class="ed-numeric">${parseFloat(yapi.yapiAlani || 0).toFixed(2)}</td>
-                    <td contenteditable="true" data-field="cp-yipranmaPay-${pIdx}-${yIdx}" class="ed-numeric">${yapi.yipranmaPay || '0'}</td>
-                    <td contenteditable="true" data-field="cp-eksikImalat-${pIdx}-${yIdx}" class="ed-numeric">${yapi.eksikImalatOrani || '0'}</td>
+                    <td>${renderYasSelect(yapi.yapiYasi, `cp-yapiYasi-${pIdx}-${yIdx}`)}</td>
+                    <td>${renderTeknikSelect(yapi.yapimTeknigi, `cp-yapimTeknigi-${pIdx}-${yIdx}`)}</td>
+                    <td contenteditable="true" data-field="cp-yipranmaPay-${pIdx}-${yIdx}" class="ed-numeric">${yapi.yipranmaPay ?? '0'}</td>
+                    <td contenteditable="true" data-field="cp-eksikImalat-${pIdx}-${yIdx}" class="ed-numeric">${yapi.eksikImalatOrani ?? '0'}</td>
                     <td data-field="cp-yapiBedeli-${pIdx}-${yIdx}" class="ed-calculated">${formatPara(yapiBedeli)}</td>
                 </tr>
             `;
@@ -576,7 +855,7 @@ function renderCokluParselIcerigi(rapor, container) {
         // Ara toplam satırı
         yapiSatirlari += `
             <tr class="ed-cp-aratoplam-row" data-parsel-index="${pIdx}" style="background: #e8f0fe; font-weight: bold;">
-                <td colspan="10" style="text-align: right; padding-right: 10px;">Ara Toplam (Parsel ${parsel.ada || ''}/${parsel.parsel || ''})</td>
+                <td colspan="12" style="text-align: right; padding-right: 10px;">Ara Toplam (Parsel ${parsel.ada || ''}/${parsel.parsel || ''})</td>
                 <td data-field="cp-araToplam-${pIdx}" class="ed-calculated" style="font-weight: bold;">${formatPara(araToplam)}</td>
             </tr>
         `;
@@ -585,7 +864,7 @@ function renderCokluParselIcerigi(rapor, container) {
     // Genel toplam satırı
     yapiSatirlari += `
         <tr class="ed-cp-geneltoplam-row" style="background: #d4edda; font-weight: bold;">
-            <td colspan="10" style="text-align: right; padding-right: 10px; font-weight: bold;">GENEL TOPLAM</td>
+            <td colspan="12" style="text-align: right; padding-right: 10px; font-weight: bold;">GENEL TOPLAM</td>
             <td id="ed-cpGenelToplam" class="ed-calculated" style="font-weight: bold;">${formatPara(genelToplam)}</td>
         </tr>
     `;
@@ -602,8 +881,8 @@ function renderCokluParselIcerigi(rapor, container) {
         <div class="ed-editable-section">
             <span class="ed-section-label">Gerekçe</span>
             <div class="ed-editable-field heading" contenteditable="true">Gerekçe:</div>
-            <div class="ed-editable-field paragraph" contenteditable="true" data-field="gerekceMetni">
-                Bu rapor, <span class="ed-inline-edit" data-field="ilgiliKurum" contenteditable="true">${rapor.ilgiliKurum || ''}</span> 
+            <div class="ed-editable-field paragraph" data-field="gerekceMetni">
+                Bu rapor, ${renderKurumSelect(rapor.ilgiliKurum, 'ilgiliKurum')} 
                 <span class="ed-inline-edit" data-field="resmiYaziTarihi" contenteditable="true">${formatTarih(rapor.resmiYaziTarihi)}</span> tarih 
                 <span class="ed-inline-edit" data-field="resmiYaziSayisi" contenteditable="true">${rapor.resmiYaziSayisi || ''}</span> sayılı yazısına istinaden hazırlanmıştır.
             </div>
@@ -633,6 +912,8 @@ function renderCokluParselIcerigi(rapor, container) {
                         <th>GRUP</th>
                         <th>B.FİYAT</th>
                         <th>ALAN</th>
+                        <th>YAŞ</th>
+                        <th>TEKNİK</th>
                         <th>YIPR.</th>
                         <th>EKS.İM.</th>
                         <th>YAPI BEDELİ</th>
@@ -720,6 +1001,21 @@ function setupContentEventListeners() {
             isModified = true;
             updateStatus();
         });
+        editorContent.addEventListener('change', (e) => {
+            isModified = true;
+            updateStatus();
+
+            // Raportör seçimi değiştiğinde unvanı otomatik doldur
+            const target = e.target;
+            if (target && target.matches && target.matches('select[data-field^="raportorAdi_"]')) {
+                const idx = target.getAttribute('data-field').replace('raportorAdi_', '');
+                const seciliOpt = target.options[target.selectedIndex];
+                const unvanEl = document.querySelector(`[data-field="raportorUnvani_${idx}"]`);
+                if (unvanEl && seciliOpt && seciliOpt.dataset.unvan !== undefined) {
+                    unvanEl.textContent = seciliOpt.dataset.unvan;
+                }
+            }
+        });
     }
     
     // Yeni yapı ekle butonu
@@ -749,9 +1045,27 @@ function setupContentEventListeners() {
             }
         });
 
-        // Sınıf/grup ya da yaş/teknik değişince ilgili değeri veritabanından çek.
-        // Hücreden çıkılınca (focusout) tetiklenir; her tuş vuruşunda değil.
+        // <select> listelerinden seçim yapıldığında anında ilgili değeri veritabanından çek
+        yapilarTbody.addEventListener('change', (e) => {
+            const target = e.target;
+            if (!target) return;
+            const row = target.closest('tr');
+            if (!row || row.classList.contains('ed-cp-aratoplam-row') || row.classList.contains('ed-cp-geneltoplam-row')) return;
+
+            const alan = target.getAttribute('data-field') || '';
+            if (/yapiSinifi/.test(alan)) {
+                satirGrupSecenekleriniGuncelle(row);
+                birimFiyatOtoGuncelle(row);
+            } else if (/yapiGrubu/.test(alan)) {
+                birimFiyatOtoGuncelle(row);
+            } else if (/yapiYasi|yapimTeknigi/.test(alan)) {
+                yipranmaOtoGuncelle(row);
+            }
+        });
+
+        // Manuel hücre düzenlemeleri için focusout desteği
         yapilarTbody.addEventListener('focusout', (e) => {
+            if (e.target && e.target.tagName === 'SELECT') return; // select zaten change ile işlendi
             const cell = e.target.closest ? e.target.closest('td') : null;
             if (!cell) return;
 
@@ -770,7 +1084,7 @@ function setupContentEventListeners() {
 }
 
 /**
- * İmzacıları render et
+ * İmzacıları render et (Raportör listeden seçilebilir, seçilince unvan otomatik gelir)
  */
 function renderImzacilar(rapor) {
     const adlar = (rapor.raportorAdi || '').split(',').map(s => s.trim()).filter(s => s);
@@ -778,10 +1092,22 @@ function renderImzacilar(rapor) {
     
     let html = '';
     for (let i = 0; i < Math.max(adlar.length, 1); i++) {
+        const mevcutAd = adlar[i] || '';
+        const mevcutUnvan = unvanlar[i] || '';
+        const liste = [...raportorlerCache];
+        const eslesen = liste.find(r => r.adSoyad.toLocaleLowerCase('tr-TR') === mevcutAd.toLocaleLowerCase('tr-TR'));
+        const seciliAd = eslesen ? eslesen.adSoyad : mevcutAd;
+        if (seciliAd && !eslesen) {
+            liste.unshift({ adSoyad: seciliAd, unvan: mevcutUnvan });
+        }
+
         html += `
             <div class="ed-signature-block">
-                <div class="name" contenteditable="true" data-field="raportorAdi_${i}">${adlar[i] || ''}</div>
-                <div class="title" contenteditable="true" data-field="raportorUnvani_${i}">${unvanlar[i] || ''}</div>
+                <select class="ed-signature-select" data-field="raportorAdi_${i}">
+                    <option value="" data-unvan="">Raportör Seçiniz...</option>
+                    ${liste.map(r => `<option value="${htmlKacir(r.adSoyad)}" data-unvan="${htmlKacir(r.unvan)}" ${r.adSoyad === seciliAd ? 'selected' : ''}>${htmlKacir(r.adSoyad)}</option>`).join('')}
+                </select>
+                <div class="title" contenteditable="true" data-field="raportorUnvani_${i}">${htmlKacir(mevcutUnvan)}</div>
             </div>
         `;
     }
@@ -898,12 +1224,12 @@ function yeniYapiEkle() {
     newRow.innerHTML = `
         <td contenteditable="true" data-field="yapiNo">${newIndex + 1}</td>
         <td contenteditable="true" data-field="yapiAdi"></td>
-        <td contenteditable="true" data-field="yapiSinifi"></td>
-        <td contenteditable="true" data-field="yapiGrubu"></td>
+        <td>${renderSinifSelect('', 'yapiSinifi')}</td>
+        <td>${renderGrupSelect('', '', 'yapiGrubu')}</td>
         <td contenteditable="true" data-field="birimFiyat" class="ed-numeric">0,00</td>
         <td contenteditable="true" data-field="yapiAlani" class="ed-numeric">0,00</td>
-        <td contenteditable="true" data-field="yapiYasi"></td>
-        <td contenteditable="true" data-field="yapimTeknigi"></td>
+        <td>${renderYasSelect('', 'yapiYasi')}</td>
+        <td>${renderTeknikSelect('', 'yapimTeknigi')}</td>
         <td contenteditable="true" data-field="yipranmaPay" class="ed-numeric">0</td>
         <td contenteditable="true" data-field="eksikImalatOrani" class="ed-numeric">0</td>
         <td data-field="yapiBedeli" class="ed-calculated">0,00</td>
@@ -1293,13 +1619,13 @@ function collectEditorData() {
     const isCokluParsel = !!document.querySelector('[data-coklu-parsel]');
     
     // Gerekçe bilgileri (her iki modda ortak)
-    const ilgiliKurum = document.querySelector('[data-field="ilgiliKurum"]')?.textContent?.trim() || '';
-    const resmiYaziSayisi = document.querySelector('[data-field="resmiYaziSayisi"]')?.textContent?.trim() || '';
+    const ilgiliKurum = degerAl(document.querySelector('[data-field="ilgiliKurum"]'));
+    const resmiYaziSayisi = degerAl(document.querySelector('[data-field="resmiYaziSayisi"]'));
 
     // Hesap dönemi bilgileri (her iki modda ortak).
     // hesapYili metin içinde inline düzenlenebilir; birimFiyatId ve Resmi Gazete bilgisi
     // yalnızca "Farklı Döneme Kopyala" akışıyla değiştiği için mevcut rapordan taşınır.
-    const hesapYili = document.querySelector('[data-field="hesapYili"]')?.textContent?.trim()
+    const hesapYili = degerAl(document.querySelector('[data-field="hesapYili"]'))
         || currentRaporData?.hesapYili || '';
     const birimFiyatId = currentRaporData?.birimFiyatId ?? null;
     const resmiGazeteTarih = currentRaporData?.resmiGazeteTarih || '';
@@ -1309,11 +1635,11 @@ function collectEditorData() {
     const raportorAdlari = [];
     const raportorUnvanlari = [];
     document.querySelectorAll('[data-field^="raportorAdi_"]').forEach(el => {
-        const ad = el.textContent?.trim();
+        const ad = degerAl(el);
         if (ad) raportorAdlari.push(ad);
     });
     document.querySelectorAll('[data-field^="raportorUnvani_"]').forEach(el => {
-        const unvan = el.textContent?.trim();
+        const unvan = degerAl(el);
         raportorUnvanlari.push(unvan || '');
     });
     
@@ -1325,11 +1651,11 @@ function collectEditorData() {
     }
     
     // Tekli parsel - Taşınmaz bilgileri
-    const ili = document.querySelector('[data-field="ili"]')?.textContent?.trim() || 'Samsun';
-    const ilce = document.querySelector('[data-field="ilce"]')?.textContent?.trim() || '';
-    const mahalle = document.querySelector('[data-field="mahalle"]')?.textContent?.trim() || '';
-    const ada = document.querySelector('[data-field="ada"]')?.textContent?.trim() || '';
-    const parsel = document.querySelector('[data-field="parsel"]')?.textContent?.trim() || '';
+    const ili = degerAl(document.querySelector('[data-field="ili"]')) || 'Samsun';
+    const ilce = degerAl(document.querySelector('[data-field="ilce"]'));
+    const mahalle = degerAl(document.querySelector('[data-field="mahalle"]'));
+    const ada = degerAl(document.querySelector('[data-field="ada"]'));
+    const parsel = degerAl(document.querySelector('[data-field="parsel"]'));
     
     // Yapı bilgileri
     const yapilar = [];
@@ -1337,16 +1663,16 @@ function collectEditorData() {
     
     document.querySelectorAll('#ed-yapilarTbody tr').forEach(row => {
         const yapi = {
-            yapiNo: row.querySelector('[data-field="yapiNo"]')?.textContent?.trim() || '',
-            yapiAdi: row.querySelector('[data-field="yapiAdi"]')?.textContent?.trim() || '',
-            yapiSinifi: row.querySelector('[data-field="yapiSinifi"]')?.textContent?.trim() || '',
-            yapiGrubu: row.querySelector('[data-field="yapiGrubu"]')?.textContent?.trim() || '',
+            yapiNo: degerAl(row.querySelector('[data-field="yapiNo"]')),
+            yapiAdi: degerAl(row.querySelector('[data-field="yapiAdi"]')),
+            yapiSinifi: degerAl(row.querySelector('[data-field="yapiSinifi"]')),
+            yapiGrubu: degerAl(row.querySelector('[data-field="yapiGrubu"]')),
             birimFiyat: parseParaTR(row.querySelector('[data-field="birimFiyat"]')?.textContent),
-            yapiAlani: parseFloat(row.querySelector('[data-field="yapiAlani"]')?.textContent?.replace(',', '.')) || 0,
-            yapiYasi: row.querySelector('[data-field="yapiYasi"]')?.textContent?.trim() || '',
-            yapimTeknigi: row.querySelector('[data-field="yapimTeknigi"]')?.textContent?.trim() || '',
-            yipranmaPay: parseFloat(row.querySelector('[data-field="yipranmaPay"]')?.textContent) || 0,
-            eksikImalatOrani: parseFloat(row.querySelector('[data-field="eksikImalatOrani"]')?.textContent) || 0,
+            yapiAlani: parseFloat(degerAl(row.querySelector('[data-field="yapiAlani"]')).replace(',', '.')) || 0,
+            yapiYasi: degerAl(row.querySelector('[data-field="yapiYasi"]')),
+            yapimTeknigi: degerAl(row.querySelector('[data-field="yapimTeknigi"]')),
+            yipranmaPay: parseFloat(degerAl(row.querySelector('[data-field="yipranmaPay"]'))) || 0,
+            eksikImalatOrani: parseFloat(degerAl(row.querySelector('[data-field="eksikImalatOrani"]'))) || 0,
             yapiBedeli: parseParaTR(row.querySelector('[data-field="yapiBedeli"]')?.textContent)
         };
         
@@ -1401,8 +1727,8 @@ function collectCokluParselEditorData(ilgiliKurum, resmiYaziSayisi, raportorAdla
         
         // Ada/Parsel bilgisini yapı tablosunun ilk satırından al
         const ilkSatir = document.querySelector(`#ed-yapilarTbody tr.ed-cp-yapi-row[data-parsel-index="${pIdx}"]`);
-        const ada = ilkSatir?.querySelector(`[data-field="cp-yada-${pIdx}-0"]`)?.textContent?.trim() || orijinal.ada || '';
-        const parselNo = ilkSatir?.querySelector(`[data-field="cp-yparsel-${pIdx}-0"]`)?.textContent?.trim() || orijinal.parsel || '';
+        const ada = degerAl(ilkSatir?.querySelector(`[data-field="cp-yada-${pIdx}-0"]`)) || orijinal.ada || '';
+        const parselNo = degerAl(ilkSatir?.querySelector(`[data-field="cp-yparsel-${pIdx}-0"]`)) || orijinal.parsel || '';
         
         const parselData = {
             ilce: orijinal.ilce || '',
@@ -1418,14 +1744,16 @@ function collectCokluParselEditorData(ilgiliKurum, resmiYaziSayisi, raportorAdla
         document.querySelectorAll(`#ed-yapilarTbody tr.ed-cp-yapi-row[data-parsel-index="${pIdx}"]`).forEach(row => {
             const yIdx = row.dataset.yapiIndex;
             const yapi = {
-                yapiNo: row.querySelector(`[data-field="cp-yapiNo-${pIdx}-${yIdx}"]`)?.textContent?.trim() || '',
-                yapiAdi: row.querySelector(`[data-field="cp-yapiAdi-${pIdx}-${yIdx}"]`)?.textContent?.trim() || '',
-                yapiSinifi: row.querySelector(`[data-field="cp-yapiSinifi-${pIdx}-${yIdx}"]`)?.textContent?.trim() || '',
-                yapiGrubu: row.querySelector(`[data-field="cp-yapiGrubu-${pIdx}-${yIdx}"]`)?.textContent?.trim() || '',
+                yapiNo: degerAl(row.querySelector(`[data-field="cp-yapiNo-${pIdx}-${yIdx}"]`)),
+                yapiAdi: degerAl(row.querySelector(`[data-field="cp-yapiAdi-${pIdx}-${yIdx}"]`)),
+                yapiSinifi: degerAl(row.querySelector(`[data-field="cp-yapiSinifi-${pIdx}-${yIdx}"]`)),
+                yapiGrubu: degerAl(row.querySelector(`[data-field="cp-yapiGrubu-${pIdx}-${yIdx}"]`)),
                 birimFiyat: parseParaTR(row.querySelector(`[data-field="cp-birimFiyat-${pIdx}-${yIdx}"]`)?.textContent),
-                yapiAlani: parseFloat(row.querySelector(`[data-field="cp-yapiAlani-${pIdx}-${yIdx}"]`)?.textContent?.replace(',', '.')) || 0,
-                yipranmaPay: parseFloat(row.querySelector(`[data-field="cp-yipranmaPay-${pIdx}-${yIdx}"]`)?.textContent) || 0,
-                eksikImalatOrani: parseFloat(row.querySelector(`[data-field="cp-eksikImalat-${pIdx}-${yIdx}"]`)?.textContent) || 0,
+                yapiAlani: parseFloat(degerAl(row.querySelector(`[data-field="cp-yapiAlani-${pIdx}-${yIdx}"]`)).replace(',', '.')) || 0,
+                yapiYasi: degerAl(row.querySelector(`[data-field="cp-yapiYasi-${pIdx}-${yIdx}"]`)),
+                yapimTeknigi: degerAl(row.querySelector(`[data-field="cp-yapimTeknigi-${pIdx}-${yIdx}"]`)),
+                yipranmaPay: parseFloat(degerAl(row.querySelector(`[data-field="cp-yipranmaPay-${pIdx}-${yIdx}"]`))) || 0,
+                eksikImalatOrani: parseFloat(degerAl(row.querySelector(`[data-field="cp-eksikImalat-${pIdx}-${yIdx}"]`))) || 0,
                 yapiBedeli: parseParaTR(row.querySelector(`[data-field="cp-yapiBedeli-${pIdx}-${yIdx}"]`)?.textContent)
             };
             

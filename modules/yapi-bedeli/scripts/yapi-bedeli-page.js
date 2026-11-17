@@ -777,12 +777,12 @@ function kaydet() {
             let hataOlustu = false;
             
             const sqlSekans = `INSERT INTO raporlar (
-                raporTarihi, resmiYaziTarihi, resmiYaziSayisi, ilgiliKurum, hesapYili,
+                raporTarihi, resmiYaziTarihi, resmiYaziSayisi, ilgiliKurum, hesapYili, birimFiyatId,
                 ili, ilce, mahalle, ada, parsel, yuzolcumu, malik,
                 raportorAdi, raportorUnvani, resmiGazeteTarih, resmiGazeteSayili,
                 asgariLevazimHesapla, yapilarJSON, fotograflarJSON, toplamYapiBedeli, yapiBedeli, modul,
                 cokluParsel
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
             
             // Veritabanı işlemleri asenkron olduğu için Promise ile yönetelim
             const savePromises = formData.parseller.map(parsel => {
@@ -800,6 +800,7 @@ function kaydet() {
                         formData.resmiYaziSayisi,
                         formData.ilgiliKurum,
                         formData.hesapYili,
+                        formData.birimFiyatId,
                         'Samsun',
                         parsel.ilce || '',
                         parsel.mahalle || '',
@@ -857,12 +858,12 @@ function kaydet() {
             console.log('📊 Çoklu Parsel Kayıt - Toplam Yapı Bedeli:', toplamYapiBedeli);
             
             const sql = `INSERT INTO raporlar (
-                raporTarihi, resmiYaziTarihi, resmiYaziSayisi, ilgiliKurum, hesapYili,
+                raporTarihi, resmiYaziTarihi, resmiYaziSayisi, ilgiliKurum, hesapYili, birimFiyatId,
                 ili, ilce, mahalle, ada, parsel, yuzolcumu, malik,
                 raportorAdi, raportorUnvani, resmiGazeteTarih, resmiGazeteSayili,
                 asgariLevazimHesapla, yapilarJSON, fotograflarJSON, toplamYapiBedeli, yapiBedeli, modul,
                 cokluParsel, parsellerJSON
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
             
             // İlk parselin bilgilerini ana alanlara yaz (geriye uyumluluk)
             const ilkParsel = formData.parseller[0] || {};
@@ -873,6 +874,7 @@ function kaydet() {
                 formData.resmiYaziSayisi,
                 formData.ilgiliKurum,
                 formData.hesapYili,
+                formData.birimFiyatId,
                 'Samsun',
                 ilkParsel.ilce || '',
                 ilkParsel.mahalle || '',
@@ -928,11 +930,11 @@ function kaydet() {
         console.log('📷 Kayıt - Fotoğraf sayısı:', fotograflar.length);
         
         const sql = `INSERT INTO raporlar (
-            raporTarihi, resmiYaziTarihi, resmiYaziSayisi, ilgiliKurum, hesapYili,
+            raporTarihi, resmiYaziTarihi, resmiYaziSayisi, ilgiliKurum, hesapYili, birimFiyatId,
             ili, ilce, mahalle, ada, parsel, yuzolcumu, malik,
             raportorAdi, raportorUnvani, resmiGazeteTarih, resmiGazeteSayili,
             asgariLevazimHesapla, yapilarJSON, fotograflarJSON, toplamYapiBedeli, yapiBedeli, modul
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         
         db.run(sql, [
             formData.raporTarihi,
@@ -940,6 +942,7 @@ function kaydet() {
             formData.resmiYaziSayisi,
             formData.ilgiliKurum,
             formData.hesapYili,
+            formData.birimFiyatId,
             'Samsun',
             formData.ilce,
             formData.mahalle,
@@ -1035,6 +1038,7 @@ function collectFormData() {
         ].filter(v => v.trim() !== '').join('-'),
         ilgiliKurum: document.getElementById('yb-ilgiliKurum')?.value,
         hesapYili: selectedOption?.dataset.yil || '',
+        birimFiyatId: parseInt(hesapYiliSelect?.value, 10) || null,
         ilce: document.getElementById('yb-ilce')?.value,
         mahalle: document.getElementById('yb-mahalle')?.value,
         ada: document.getElementById('yb-ada')?.value,
@@ -1869,6 +1873,7 @@ function collectCokluParselFormData() {
         ].filter(v => v.trim() !== '').join('-'),
         ilgiliKurum: document.getElementById('yb-ilgiliKurum')?.value,
         hesapYili: selectedOption?.dataset.yil || '',
+        birimFiyatId: parseInt(hesapYiliSelect?.value, 10) || null,
         raportorAdi: raportorAdlari.join(', '),
         raportorUnvani: raportorUnvanlari.join(', '),
         resmiGazeteTarih: selectedOption?.dataset.rgTarih || '',

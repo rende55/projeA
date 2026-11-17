@@ -137,11 +137,11 @@
     }
 
     .ed-editor-content {
-        max-width: 800px;
+        max-width: 960px;
         margin: 0 auto;
         background: white;
         min-height: 100%;
-        padding: 40px 50px;
+        padding: 36px 40px;
         box-shadow: 0 0 20px rgba(0,0,0,0.1);
         border: 1px solid #e0e0e0;
     }
@@ -226,6 +226,58 @@
         background: #fff;
         outline: 2px solid #2A4C6E;
         outline-offset: -2px;
+    }
+
+    .ed-cell-select {
+        width: 100%;
+        padding: 4px 6px;
+        border: 1px solid #CBD5E1;
+        border-radius: 4px;
+        background-color: #fff;
+        color: #0F172A;
+        font-size: 11px;
+        font-family: inherit;
+        cursor: pointer;
+        box-sizing: border-box;
+    }
+
+    .ed-cell-select:focus {
+        outline: none;
+        border-color: #2A4C6E;
+        box-shadow: 0 0 0 2px rgba(42, 76, 110, 0.15);
+    }
+
+    .ed-inline-select {
+        padding: 2px 6px;
+        border: 1px dashed #ffc107;
+        border-radius: 4px;
+        background: #fffde7;
+        font-size: 12px;
+        font-family: inherit;
+        color: #0F172A;
+        cursor: pointer;
+        max-width: 100%;
+    }
+
+    .ed-inline-select:focus {
+        outline: none;
+        background: #fff9c4;
+        border-style: solid;
+        border-color: #2A4C6E;
+    }
+
+    .ed-signature-select {
+        width: 100%;
+        padding: 4px 8px;
+        border: 1px solid #CBD5E1;
+        border-radius: 4px;
+        background: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        text-align: center;
+        font-family: inherit;
+        cursor: pointer;
+        margin-bottom: 4px;
     }
 
     /* Signature Area */

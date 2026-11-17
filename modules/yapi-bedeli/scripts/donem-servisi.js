@@ -71,15 +71,118 @@ function yipranmaPaylariGetir(db) {
     });
 }
 
-// ===== YARDIMCILAR =====
+// ===== SABİTLER & YARDIMCILAR =====
+
+const YAPIM_TEKNIKLERI = [
+    'Çelik',
+    'Betonarme Karkas',
+    'Yığma Kagir',
+    'Yığma Yarı Kagir',
+    'Ahşap',
+    'Taş Duvarlı (Çamur Harçlı)',
+    'Kerpiç',
+    'Diğer Basit Binalar'
+];
+
+const YAS_SECENEKLERI = [
+    { value: '3',  label: '0-3 yaş',      min: 0,  max: 3 },
+    { value: '5',  label: '4-5 yaş',      min: 4,  max: 5 },
+    { value: '10', label: '6-10 yaş',     min: 6,  max: 10 },
+    { value: '15', label: '11-15 yaş',    min: 11, max: 15 },
+    { value: '20', label: '16-20 yaş',    min: 16, max: 20 },
+    { value: '30', label: '21-30 yaş',    min: 21, max: 30 },
+    { value: '40', label: '31-40 yaş',    min: 31, max: 40 },
+    { value: '50', label: '41-50 yaş',    min: 41, max: 50 },
+    { value: '75', label: '51-75 yaş',    min: 51, max: 75 },
+    { value: '76', label: '75 üstü yaş',  min: 76, max: 999 }
+];
+
+/**
+ * Yapım tekniği metnini veritabanındaki standart karşılığına normalize eder.
+ * Örn: "betonarme", "B.Arme" -> "Betonarme Karkas"
+ */
+function normalizeYapimTeknigi(teknik) {
+    if (!teknik) return '';
+    const ham = String(teknik).trim();
+    if (!ham) return '';
+
+    const kucuk = ham.toLocaleLowerCase('tr-TR').replace(/\s+/g, ' ');
+
+    for (const std of YAPIM_TEKNIKLERI) {
+        if (std.toLocaleLowerCase('tr-TR') === kucuk) return std;
+    }
+
+    if (kucuk === 'betonarme' || kucuk === 'b.arme' || kucuk === 'b. arme' || kucuk.includes('betonarme')) {
+        return 'Betonarme Karkas';
+    }
+    if (kucuk === 'çelik' || kucuk === 'celik') {
+        return 'Çelik';
+    }
+    if (kucuk === 'yarı kagir' || kucuk === 'yari kagir' || kucuk.includes('yarı kagir') || kucuk.includes('yari kagir')) {
+        return 'Yığma Yarı Kagir';
+    }
+    if (kucuk === 'yığma' || kucuk === 'yigma' || kucuk.includes('yığma') || kucuk.includes('yigma')) {
+        return 'Yığma Kagir';
+    }
+    if (kucuk === 'ahşap' || kucuk === 'ahsap') {
+        return 'Ahşap';
+    }
+    if (kucuk.includes('taş') || kucuk.includes('tas ') || kucuk === 'taş duv.') {
+        return 'Taş Duvarlı (Çamur Harçlı)';
+    }
+    if (kucuk === 'kerpiç' || kucuk === 'kerpic') {
+        return 'Kerpiç';
+    }
+    if (kucuk.includes('basit')) {
+        return 'Diğer Basit Binalar';
+    }
+
+    return ham;
+}
+
+/**
+ * Yaş değerini (sayı veya "11-15", "16-20", "75 üstü" gibi aralık metnini) sayısal yaşa çevirir.
+ */
+function cozumleYas(yas) {
+    if (yas === null || yas === undefined) return NaN;
+    const str = String(yas).trim().toLocaleLowerCase('tr-TR');
+    if (!str || str === '-') return NaN;
+
+    if (str.includes('75 üstü') || str.includes('75 ustu') || str.includes('76+')) {
+        return 76;
+    }
+
+    const aralikMatch = str.match(/^(\d+)\s*-\s*(\d+)/);
+    if (aralikMatch) {
+        return parseInt(aralikMatch[2], 10);
+    }
+
+    const artiMatch = str.match(/^(\d+)\s*\+/);
+    if (artiMatch) {
+        return parseInt(artiMatch[1], 10);
+    }
+
+    const y = parseInt(str, 10);
+    return isNaN(y) ? NaN : y;
+}
+
+/**
+ * Herhangi bir yaş girdisini form/editör <select> listesindeki standart option value'suna ('3','5','10'...) çevirir.
+ */
+function normalizeYasSecimDegeri(yas) {
+    const y = cozumleYas(yas);
+    if (isNaN(y) || y < 0) return '';
+    const secenek = YAS_SECENEKLERI.find(s => y >= s.min && y <= s.max);
+    return secenek ? secenek.value : (y > 75 ? '76' : '');
+}
 
 /**
  * Sınıf/grup için tek biçimli arama anahtarı.
  * Sınıf sayıya, grup büyük harfe normalize edilir; böylece "4"/"4 " / "b"/"B" aynı yere düşer.
  */
 function fiyatAnahtari(sinif, grup) {
-    const s = String(sinif == null ? '' : sinif).trim();
-    const g = String(grup == null ? '' : grup).trim().toUpperCase();
+    const s = String(sinif == null ? '' : sinif).replace(/[^\d]/g, '').trim() || String(sinif == null ? '' : sinif).trim();
+    const g = String(grup == null ? '' : grup).replace(/^grup\s+/i, '').trim().toUpperCase();
     return `${s}|${g}`;
 }
 
@@ -89,12 +192,14 @@ function fiyatAnahtari(sinif, grup) {
  */
 function yipranmaBul(yipranmaCache, yapimTeknigi, yas) {
     if (!yapimTeknigi) return null;
-    const teknik = String(yapimTeknigi).trim();
-    const y = parseInt(yas, 10);
+    const teknik = normalizeYapimTeknigi(yapimTeknigi);
+    const teknikKucuk = teknik.toLocaleLowerCase('tr-TR');
+    const y = cozumleYas(yas);
     if (isNaN(y)) return null;
 
     const kayit = (yipranmaCache || []).find(k =>
-        String(k.yapimTeknigi).trim() === teknik && y >= k.minYas && y <= k.maxYas
+        String(k.yapimTeknigi).trim().toLocaleLowerCase('tr-TR') === teknikKucuk &&
+        y >= k.minYas && y <= k.maxYas
     );
     return kayit ? kayit.yipranmaOrani : null;
 }
@@ -142,7 +247,7 @@ function raporuDonemeUyarla(yapilar, opts) {
         const etiket = y.yapiAdi || `Yapı ${y.yapiNo || index + 1}`;
 
         // --- Yaş ve yıpranma ---
-        const eskiYas = parseInt(y.yapiYasi, 10);
+        const eskiYas = cozumleYas(y.yapiYasi);
         let yeniYas = eskiYas;
         let yeniYipranma = sayi(y.yipranmaPay);
 
@@ -259,6 +364,11 @@ function donemEtiketi(donem, tumDonemler) {
 }
 
 module.exports = {
+    YAPIM_TEKNIKLERI,
+    YAS_SECENEKLERI,
+    normalizeYapimTeknigi,
+    cozumleYas,
+    normalizeYasSecimDegeri,
     listeDonemler,
     donemGetir,
     fiyatTablosuGetir,
